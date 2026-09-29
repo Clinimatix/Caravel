@@ -24,10 +24,13 @@ public sealed class Program
         builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = 16 * 1024);
         builder.AddCaravel();
         var database = builder.Configuration["Caravel:IdentityDatabase"];
+        var provider = builder.Configuration["Caravel:DatabaseProvider"] ?? "sqlite";
         if (string.IsNullOrWhiteSpace(database))
-            throw new InvalidOperationException("Set Caravel__IdentityDatabase to an explicit disposable SQLite file path.");
-        var connection = new SqliteConnectionStringBuilder { DataSource = Path.GetFullPath(database) }.ToString();
-        builder.Services.AddHealthChecks().AddCheck("required-schema", new BackendReadinessCheck(connection), timeout: TimeSpan.FromSeconds(5));
+            throw new InvalidOperationException("Set Caravel__IdentityDatabase to a SQLite file path or the selected provider's connection string.");
+        var connection = provider == "sqlite"
+            ? new SqliteConnectionStringBuilder { DataSource = Path.GetFullPath(database) }.ToString()
+            : database;
+        builder.Services.AddHealthChecks().AddCheck("required-schema", new BackendReadinessCheck(provider, connection), timeout: TimeSpan.FromSeconds(5));
         var concurrency = builder.Configuration.GetValue("Caravel:Limits:Concurrency", 32);
         var loginPermits = builder.Configuration.GetValue("Caravel:Limits:LoginPermitLimit", 10);
         var loginWindow = builder.Configuration.GetValue("Caravel:Limits:LoginWindowSeconds", 60);
@@ -46,10 +49,8 @@ public sealed class Program
                 options.QueueLimit = 0;
             });
         });
-        builder.Services.AddClarion<IdentityContext>(options => options.UseSqlite(connection));
-        builder.Services.AddDbContextFactory<QueueDbContext>(options => options.UseSqlite(connection, sqlite =>
-            sqlite.MigrationsAssembly(typeof(Program).Assembly.GetName().Name)
-                .MigrationsHistoryTable("__CaravelQueueMigrations")));
+        builder.Services.AddClarion<IdentityContext>(options => SampleDatabase.Configure(options, provider, connection));
+        builder.Services.AddDbContextFactory<QueueDbContext>(options => SampleDatabase.Configure(options, provider, connection, queue: true));
         builder.Services.AddCaravelDatabaseQueue();
         builder.Services.AddQueueJob<CounterEvent, CounterEventHandler>("counter.record.v1");
         if (builder.Configuration.GetValue<bool>("Caravel:RunWorker"))

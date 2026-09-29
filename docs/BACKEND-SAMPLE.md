@@ -19,6 +19,8 @@ dotnet ef database update --project samples/Caravel.Identity --context QueueDbCo
 
 `IdentityContext` holds users, notes and counter results. `QueueDbContext` holds the queue in the same file, with its own `__CaravelQueueMigrations` history table. Neither creates its schema when the app starts. The included migrations are for SQLite; other databases need their own.
 
+The sample also accepts `Caravel:DatabaseProvider` set to `sqlserver` or `postgres`. For those providers, `Caravel:IdentityDatabase` is a connection string instead of a file path. Generate and review provider-specific migrations for both contexts in your own application; do not apply the included SQLite migrations to a server database. The [packaged backend tests](TESTING.md#test-against-sql-server-and-postgresql) demonstrate this using disposable copies and databases.
+
 Follow [the authentication guide](AUTHENTICATION.md#try-the-sample) to create a demo user. There are no built-in credentials or public registration endpoint.
 
 To run this demo with its queue worker enabled:
@@ -100,17 +102,18 @@ Only these two paths skip the rate limiters, so restrict access to them as your 
 
 ## What the tests cover
 
-The sample's tests in `tests/Caravel.Identity.Tests` run the real endpoints against fresh SQLite databases with two test accounts. They cover:
+The sample's shared tests in `tests/Caravel.Identity.Tests` run the real endpoints against fresh SQLite, SQL Server or PostgreSQL databases with synthetic accounts. They cover:
 
 - anonymous requests, missing antiforgery tokens and invalid input
 - oversized bodies, including a check against a real Kestrel server
 - retries with the same key, conflicting payloads and queue failures
 - users only ever seeing their own jobs, results and totals
 - a worker that saves its result and then loses the acknowledgement, followed by redelivery without double-counting
+- disposing and recreating the application host over the same database, recovering pending work and unacknowledged results after sessions have been revoked
 - 96 concurrent submissions processed by four workers, with exact per-user totals
-- upgrading a database created by the original notes-only migration without losing accounts or notes
+- upgrading a notes-only schema, rolling back the still-empty results table and reapplying the upgrade without losing accounts or notes
 - rate limits and health checks
 
-`scripts/Test-IdentitySmoke.ps1` runs the same tests against freshly packed packages.
+`scripts/Test-IdentitySmoke.ps1` runs these tests against freshly packed packages. SQLite is the default; `-Provider sqlserver` and `-Provider postgres` select the server checks. The default lane also runs the OIDC sample tests.
 
 One behavior to be aware of: a queued job keeps the owner it was submitted with. If a user loses access while their job waits in the queue, the job still runs. If your app needs pending work canceled when access is withdrawn, build that in explicitly.

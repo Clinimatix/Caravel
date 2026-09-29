@@ -63,7 +63,7 @@ try {
     $env:CARAVEL_TEST_SQLSERVER = "Server=127.0.0.1,$(Get-Port $sqlserver '1433/tcp');User ID=sa;Password=$password;TrustServerCertificate=true"
     Invoke-Docker @('inspect', '--format', '{{.Name}} {{.Config.Image}} {{.Image}}', $postgres, $sqlserver) |
         Set-Content -LiteralPath (Join-Path $run 'images.txt')
-    & dotnet restore tests/Caravel.Provider.Tests --locked-mode
+    & dotnet restore Caravel.slnx --locked-mode
     if ($LASTEXITCODE -ne 0) { throw 'Provider test locked restore failed.' }
     & dotnet test tests/Caravel.Provider.Tests -c Release --no-restore --logger trx --results-directory $run
     if ($LASTEXITCODE -ne 0) { throw 'Provider contract tests failed.' }
@@ -74,7 +74,9 @@ try {
         throw 'Provider qualification requires executed passing tests with no skips.'
     }
     & (Join-Path $PSScriptRoot 'Test-ProviderMigrationSmoke.ps1')
-    Write-Output "Provider contracts and server migrations passed against disposable SQL Server, PostgreSQL and SQLite. Artifacts: $run"
+    & (Join-Path $PSScriptRoot 'Test-IdentitySmoke.ps1') -Provider sqlserver
+    & (Join-Path $PSScriptRoot 'Test-IdentitySmoke.ps1') -Provider postgres
+    Write-Output "Provider contracts, server migrations and packaged backends passed against disposable SQL Server, PostgreSQL and SQLite. Artifacts: $run"
 } finally {
     $env:CARAVEL_TEST_SQLSERVER = $previousSql
     $env:CARAVEL_TEST_POSTGRES = $previousPostgres

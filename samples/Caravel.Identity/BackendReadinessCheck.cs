@@ -6,13 +6,15 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 namespace Caravel.IdentitySample;
 
 /// <summary>Reads required tables and columns without creating or changing the configured database.</summary>
-public sealed class BackendReadinessCheck(string connection) : IHealthCheck
+public sealed class BackendReadinessCheck(string provider, string connection) : IHealthCheck
 {
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
-        var readOnly = new SqliteConnectionStringBuilder(connection)
-        { Mode = SqliteOpenMode.ReadOnly, Pooling = false, DefaultTimeout = 5 }.ToString();
-        await using var app = new IdentityContext(new DbContextOptionsBuilder<IdentityContext>().UseSqlite(readOnly).Options);
+        var readOnly = provider == "sqlite" ? new SqliteConnectionStringBuilder(connection)
+        { Mode = SqliteOpenMode.ReadOnly, Pooling = false, DefaultTimeout = 5 }.ToString() : connection;
+        var identityOptions = new DbContextOptionsBuilder<IdentityContext>();
+        SampleDatabase.Configure(identityOptions, provider, readOnly);
+        await using var app = new IdentityContext(identityOptions.Options);
         // Materialize at most one full row so missing columns fail even when the table is empty.
         await app.Users.AsNoTracking().Take(1).ToListAsync(cancellationToken);
         await app.Roles.AsNoTracking().Take(1).ToListAsync(cancellationToken);
@@ -23,7 +25,9 @@ public sealed class BackendReadinessCheck(string connection) : IHealthCheck
         await app.UserTokens.AsNoTracking().Take(1).ToListAsync(cancellationToken);
         await app.Notes.AsNoTracking().Take(1).ToListAsync(cancellationToken);
         await app.CounterResults.AsNoTracking().Take(1).ToListAsync(cancellationToken);
-        await using var queue = new QueueDbContext(new DbContextOptionsBuilder<QueueDbContext>().UseSqlite(readOnly).Options);
+        var queueOptions = new DbContextOptionsBuilder<QueueDbContext>();
+        SampleDatabase.Configure(queueOptions, provider, readOnly, queue: true);
+        await using var queue = new QueueDbContext(queueOptions.Options);
         await queue.Jobs.AsNoTracking().Take(1).ToListAsync(cancellationToken);
         return HealthCheckResult.Healthy();
     }

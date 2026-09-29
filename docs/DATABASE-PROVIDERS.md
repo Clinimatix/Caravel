@@ -28,6 +28,8 @@ All three run the same shared test suite, which covers:
 
 The migration checks preserve baseline rows; rolling back an added column deliberately discards its values. A schema rollback is not a general data-recovery operation.
 
+The [backend sample](BACKEND-SAMPLE.md) also exercises the packages together on all three providers: account security, durable acceptance, duplicate/conflicting requests, concurrent workers, reports and recovery after an application-host restart. Server runs generate native migrations in a disposable sample copy. This complements the Windows, Linux and macOS SQLite checks; it does not imply every operating-system/database combination or deployment topology has been tested.
+
 SQL Server tests run against SQL Server 2022. Azure SQL needs deployment verification, including its compatibility level and retry settings; sharing a provider does not establish that coverage.
 
 These tests show that Caravel behaves consistently across databases. They can't cover every schema or workload, so run your app's own tests against the database you'll deploy on.

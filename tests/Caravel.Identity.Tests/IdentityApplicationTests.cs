@@ -138,19 +138,19 @@ public sealed partial class IdentityApplicationTests
     private sealed record CsrfResponse(string Token, string HeaderName);
     private sealed record NoteResponse(Guid Id, string Text);
 
-    private sealed class IdentityFactory : WebApplicationFactory<Program>
+    private sealed class IdentityFactory(IdentityTestDatabase? sharedDatabase = null, TestClock? clock = null) : WebApplicationFactory<Program>
     {
-        private readonly DirectoryInfo directory = Directory.CreateTempSubdirectory("caravel-identity-");
-        public TestClock Clock { get; } = new();
+        public IdentityTestDatabase Database { get; } = sharedDatabase ?? new IdentityTestDatabase();
+        public TestClock Clock { get; } = clock ?? new();
         public List<Guid> Events { get; } = [];
         public Dictionary<string, string> Settings { get; } = [];
         public Action<IServiceCollection>? ExtraServices { get; set; }
-        public string DatabasePath => Path.Combine(directory.FullName, "synthetic.db");
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.UseEnvironment("Testing");
-            builder.UseSetting("Caravel:IdentityDatabase", DatabasePath);
+            builder.UseSetting("Caravel:IdentityDatabase", Database.ConfigurationValue);
+            builder.UseSetting("Caravel:DatabaseProvider", Database.Provider);
             builder.UseSetting("Caravel:RunWorker", "false");
             foreach (var setting in Settings) builder.UseSetting(setting.Key, setting.Value);
             builder.ConfigureLogging(logging => logging.ClearProviders());
@@ -170,8 +170,12 @@ public sealed partial class IdentityApplicationTests
 
         public async Task InitializeAsync(bool initializeQueue = true, string? identityMigration = null)
         {
+            await Database.CreateAsync();
             await using var scope = Services.CreateAsyncScope();
             var identityDb = scope.ServiceProvider.GetRequiredService<IdentityContext>();
+            Assert.False(identityDb.Database.HasPendingModelChanges(), "Generate migrations for the selected provider before running the packaged backend tests.");
+            if (identityMigration is not null)
+                identityMigration = identityDb.Database.GetMigrations().Single(migration => migration.EndsWith("_" + identityMigration, StringComparison.Ordinal));
             await identityDb.GetService<IMigrator>().MigrateAsync(identityMigration);
             if (initializeQueue)
             {
@@ -193,8 +197,7 @@ public sealed partial class IdentityApplicationTests
         public override async ValueTask DisposeAsync()
         {
             await base.DisposeAsync();
-            Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
-            directory.Delete(recursive: true);
+            if (sharedDatabase is null) await Database.DisposeAsync();
         }
     }
 

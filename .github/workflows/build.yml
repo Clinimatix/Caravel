@@ -68,7 +68,7 @@ jobs:
   providers:
     if: inputs.platform == 'all'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:18
@@ -97,12 +97,18 @@ jobs:
       - uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
-      - run: dotnet restore tests/Caravel.Provider.Tests --locked-mode
+      - run: dotnet restore Caravel.slnx --locked-mode
       - run: dotnet test tests/Caravel.Provider.Tests -c Release --no-restore
       - name: Verify server migration upgrades and rollback
         timeout-minutes: 10
         shell: pwsh
         run: ./scripts/Test-ProviderMigrationSmoke.ps1
+      - name: Verify packaged backends on server providers
+        timeout-minutes: 15
+        shell: pwsh
+        run: |
+          ./scripts/Test-IdentitySmoke.ps1 -Provider sqlserver
+          ./scripts/Test-IdentitySmoke.ps1 -Provider postgres
   experimental:
     if: inputs.experimental
     runs-on: ubuntu-latest
