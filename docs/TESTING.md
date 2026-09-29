@@ -61,6 +61,8 @@ Some Bosun tests start and stop child processes. When you run the suite inside a
 
 `.github/workflows/build.yml` defines the Windows, Linux and macOS matrix, including package checks and SQL Server/PostgreSQL service containers. It is configured for manual dispatch, with no automatic push or pull-request triggers. In your pull request, list the checks you ran locally and any platforms you couldn't test.
 
+The `platform` input defaults to `all`. Select a single OS to investigate that platform using the same build, test and package checks. A single-platform run skips the server-provider job and does not replace the complete release matrix.
+
 ## Changing dependencies
 
 Packages are pinned centrally with lock files. To change one, restore normally, review the lock-file changes, then confirm that `dotnet restore --locked-mode` passes. Don't disable NuGet vulnerability auditing to get a green build.
