@@ -6,6 +6,7 @@ using Caravel.Auth;
 using Caravel.Clarion;
 using Caravel.Events;
 using Caravel.Queues;
+using Caravel.Mail;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -58,6 +59,9 @@ public sealed class Program
         builder.Services.AddCaravelIdentity<IdentityUser>()
             .AddRoles<IdentityRole>()
             .AddEntityFrameworkStores<IdentityContext>();
+        // This sample never sends real mail. Replace capture with a configured transport in an application.
+        builder.Services.AddCaravelMailCapture(options => options.From = "noreply@example.invalid");
+        builder.Services.AddScoped<IEmailSender<IdentityUser>, AccountMailSender>();
         builder.Services.AddAuthorizationBuilder().AddPolicy("Administrator", policy => policy.RequireRole("Administrator"));
         builder.Services.AddValidation();
         builder.Services.AddCaravelEvents().AddEventListener<NoteCreated, LogNoteCreated>();
@@ -91,7 +95,9 @@ public sealed class Program
         {
             var result = await signIn.PasswordSignInAsync(request.UserName, request.Password,
                 isPersistent: false, lockoutOnFailure: true);
-            return result.Succeeded ? Results.NoContent() : Results.Unauthorized();
+            return result.Succeeded ? Results.NoContent() : result.RequiresTwoFactor
+                ? Results.Json(new { requiresTwoFactor = true }, statusCode: StatusCodes.Status202Accepted)
+                : Results.Unauthorized();
         }).AddEndpointFilter<RequireAntiforgery>().RequireRateLimiting("login");
         app.MapPost("/auth/logout", async (SignInManager<IdentityUser> signIn) =>
         {
@@ -130,6 +136,13 @@ public sealed class Program
 
         app.MapCounterEndpoints();
         app.MapAccountEndpoints();
+        app.MapCaravelAccountEndpoints<IdentityUser>("/auth", new AccountEndpointOptions
+        {
+            AllowRegistration = builder.Configuration.GetValue<bool>("Caravel:Accounts:AllowRegistration"),
+            ConfirmationPage = new Uri(builder.Configuration["Caravel:Accounts:ConfirmationPage"] ?? "https://localhost:7246/account/confirm"),
+            PasswordResetPage = new Uri(builder.Configuration["Caravel:Accounts:PasswordResetPage"] ?? "https://localhost:7246/account/reset-password"),
+            RateLimitPolicy = "login"
+        });
 
         if (await app.ExportCaravelRoutesAsync(args)) return;
         if (args.Contains("--seed-demo-user", StringComparer.Ordinal))

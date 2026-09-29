@@ -17,6 +17,9 @@ internal static class ProviderTestDatabase
                 var sql = new SqlConnectionStringBuilder(Environment.GetEnvironmentVariable("CARAVEL_TEST_SQLSERVER")
                     ?? "Server=localhost;Integrated Security=true;TrustServerCertificate=true");
                 RequireLoopback(sql.DataSource.Replace("tcp:", "", StringComparison.OrdinalIgnoreCase).Split(',')[0]);
+                if (!string.IsNullOrEmpty(sql.AttachDBFilename))
+                    throw new InvalidOperationException("Provider tests do not accept attached database files.");
+                sql.Pooling = false;
                 sql.InitialCatalog = database;
                 options.UseSqlServer(sql.ConnectionString);
                 break;
@@ -24,6 +27,7 @@ internal static class ProviderTestDatabase
                 var postgres = new NpgsqlConnectionStringBuilder(Environment.GetEnvironmentVariable("CARAVEL_TEST_POSTGRES")
                     ?? "Host=localhost;Username=postgres");
                 RequireLoopback(postgres.Host);
+                postgres.Pooling = false;
                 postgres.Database = database;
                 options.UseNpgsql(postgres.ConnectionString);
                 break;

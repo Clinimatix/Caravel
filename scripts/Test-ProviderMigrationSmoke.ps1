@@ -50,11 +50,13 @@ try {
                 [Environment]::SetEnvironmentVariable($variable, $originalConnection + ';Database=caravel_supplied_do_not_touch')
                 $project = Join-Path $directory 'MigrationFixture.csproj'
                 $clarion = [Security.SecurityElement]::Escape((Join-Path $root 'src/Caravel.Clarion/Caravel.Clarion.csproj'))
+                $queues = [Security.SecurityElement]::Escape((Join-Path $root 'src/Caravel.Queues/Caravel.Queues.csproj'))
                 @"
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><OutputType>Exe</OutputType><IsPackable>false</IsPackable></PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="$clarion" />
+    <ProjectReference Include="$queues" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
@@ -116,6 +118,7 @@ public sealed class FixtureFactory : IDesignTimeDbContextFactory<ActivityContext
 '@.Replace('__DATABASE__', $databaseName).Replace('__PROVIDER__', $provider) | Set-Content -LiteralPath (Join-Path $directory 'FixtureSettings.cs')
                 @'
 using System.Text.Json;
+using Caravel.Queues;
 using Caravel.Clarion;
 using Caravel.Data;
 using Microsoft.EntityFrameworkCore;
@@ -169,7 +172,47 @@ switch (args.Single())
         Console.WriteLine(JsonSerializer.Serialize(await db.Models<Activity>().AsNoTracking().OrderBy(row => row.EventKey)
             .Select(row => EF.Property<string?>(row, "Label")).ToListAsync()));
         break;
+    case "--stage-outbox":
+    {
+        // Stage through the public API against the migrated app database, without creating queue tables.
+        var services = new ServiceCollection();
+        services.AddDbContextFactory<ActivityContext>(FixtureSettings.Configure);
+        services.AddDbContextFactory<QueueDbContext>(FixtureSettings.Configure);
+        services.AddCaravelDatabaseQueue();
+        services.AddQueueJob<FixtureNotice, FixtureNoticeHandler>("migration.notice.v1");
+        services.AddCaravelOutbox<ActivityContext>();
+        await using var provider = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+        await using var dispatchScope = provider.CreateAsyncScope();
+        var stage = await dispatchScope.ServiceProvider.GetRequiredService<QueueOutbox<ActivityContext>>()
+            .StageAsync(new FixtureNotice(6), new("reports", "synthetic-tenant", "migration-outbox"));
+        await dispatchScope.ServiceProvider.GetRequiredService<ActivityContext>().SaveChangesAsync();
+        Console.WriteLine(JsonSerializer.Serialize(new { stage.OutboxId, stage.AlreadyStaged }));
+        break;
+    }
+    case "--outbox":
+        Console.WriteLine(JsonSerializer.Serialize(await db.Context.Set<OutboxMessage>().AsNoTracking()
+            .OrderBy(row => row.CreatedAt).Select(row => new
+            {
+                row.Id, row.Queue, row.TenantId, row.IdempotencyKey, row.JobType, row.Payload,
+                row.MaxAttempts, row.DispatchedAt, row.QueueJobId
+            }).ToListAsync()));
+        break;
+    case "--outbox-table-count":
+        await db.Context.Database.OpenConnectionAsync();
+        await using (var command = db.Context.Database.GetDbConnection().CreateCommand())
+        {
+            command.CommandText = "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'CaravelOutboxMessages'";
+            Console.WriteLine(JsonSerializer.Serialize(new { tables = Convert.ToInt32(await command.ExecuteScalarAsync()) }));
+        }
+        break;
     default: throw new ArgumentException("Unknown fixture operation.");
+}
+
+public sealed record FixtureNotice(int Quantity);
+public sealed class FixtureNoticeHandler : IJobHandler<FixtureNotice>
+{
+    public Task HandleAsync(FixtureNotice job, JobContext context, CancellationToken cancellationToken)
+        => throw new InvalidOperationException("The migration fixture stages dispatch intents only.");
 }
 '@ | Set-Content -LiteralPath (Join-Path $directory 'Program.cs')
                 Invoke-Checked @('build', $project)
@@ -184,8 +227,8 @@ switch (args.Single())
                 Invoke-Checked @($fixtureDll, '--create')
                 & dotnet $fixtureDll --create *> (Join-Path $directory 'refused-existing.log')
                 if ($LASTEXITCODE -eq 0) { throw 'Fixture accepted reuse of an existing database.' }
-                Invoke-Checked @($bosun, 'make:migration', 'InitialActivities', '--project', $project)
-                Invoke-Checked @($bosun, 'migrate', '--project', $project)
+                Invoke-Checked @($bosun, 'make:migration', 'InitialActivities', '--project', $project, '--context', 'ActivityContext')
+                Invoke-Checked @($bosun, 'migrate', '--project', $project, '--context', 'ActivityContext')
                 Invoke-Checked @($bosun, 'db:seed', '--project', $project)
                 Invoke-Checked @($bosun, 'db:seed', '--project', $project)
                 $initial = Read-Fixture '--report'
@@ -197,25 +240,61 @@ switch (args.Single())
                 $upgraded = $original.Replace('public int Quantity { get; set; }', 'public int Quantity { get; set; } public string? Label { get; set; }')
                 if ($upgraded -ceq $original) { throw 'Could not locate the synthetic sample upgrade insertion point.' }
                 Set-Content -LiteralPath $model -Value $upgraded
-                Invoke-Checked @($bosun, 'make:migration', 'AddActivityLabel', '--project', $project)
-                Invoke-Checked @($bosun, 'migrate', '--project', $project)
+                Invoke-Checked @($bosun, 'make:migration', 'AddActivityLabel', '--project', $project, '--context', 'ActivityContext')
+                Invoke-Checked @($bosun, 'migrate', '--project', $project, '--context', 'ActivityContext')
                 Assert-Rows (Read-Fixture '--report') $baseline 2 0
                 Invoke-Checked @($fixtureDll, '--write-label')
                 $labels = @(Read-Fixture '--labels')
                 if ($labels.Count -ne 3 -or $labels[0] -cne 'synthetic-upgrade' -or $null -ne $labels[1] -or $null -ne $labels[2]) { throw 'Additive column read/write failed.' }
-                & dotnet $bosun migrate:rollback InitialActivities --project $project *> (Join-Path $directory 'refused-rollback.log')
+                & dotnet $bosun migrate:rollback InitialActivities --project $project --context ActivityContext *> (Join-Path $directory 'refused-rollback.log')
                 if ($LASTEXITCODE -eq 0) { throw 'Rollback accepted missing --force.' }
                 Assert-Rows (Read-Fixture '--report') $baseline 2 0
-                Invoke-Checked @($bosun, 'migrate:rollback', 'InitialActivities', '--project', $project, '--force')
+                Invoke-Checked @($bosun, 'migrate:rollback', 'InitialActivities', '--project', $project, '--context', 'ActivityContext', '--force')
                 Assert-Rows (Read-Fixture '--report') $baseline 1 1
-                Invoke-Checked @($bosun, 'migrate', '--project', $project)
+                Invoke-Checked @($bosun, 'migrate', '--project', $project, '--context', 'ActivityContext')
                 Assert-Rows (Read-Fixture '--report') $baseline 2 0
                 $labels = @(Read-Fixture '--labels')
                 if ($labels.Count -ne 3 -or @($labels | Where-Object { $null -ne $_ }).Count -ne 0) { throw 'Reapplying the nullable column did not reflect the deliberate loss of its rolled-back values.' }
                 Invoke-Checked @($fixtureDll, '--write-label')
                 Assert-Rows (Read-Fixture '--report') $baseline 2 0
+                # Add the app-owned outbox with a native EF migration, not EnsureCreated.
+                $withOutbox = $upgraded.Replace('model.ApplyClarionConventions();', 'model.AddCaravelOutbox(); model.ApplyClarionConventions();')
+                if ($withOutbox -ceq $upgraded) { throw 'Could not locate the outbox model insertion point.' }
+                Set-Content -LiteralPath $model -Value ("using Caravel.Queues;`n" + $withOutbox)
+                Invoke-Checked @($bosun, 'make:migration', 'AddActivityOutbox', '--project', $project, '--context', 'ActivityContext')
+                Invoke-Checked @($bosun, 'migrate', '--project', $project, '--context', 'ActivityContext')
+                Assert-Rows (Read-Fixture '--report') $baseline 3 0
+                if ((Read-Fixture '--outbox-table-count').tables -ne 1 -or @(Read-Fixture '--outbox').Count -ne 0) {
+                    throw 'The additive outbox migration did not create an empty native table.'
+                }
+                $staged = Read-Fixture '--stage-outbox'
+                $duplicate = Read-Fixture '--stage-outbox'
+                $intents = @(Read-Fixture '--outbox')
+                if ($staged.AlreadyStaged -or -not $duplicate.AlreadyStaged -or $duplicate.OutboxId -cne $staged.OutboxId -or
+                    $intents.Count -ne 1 -or $intents[0].Id -cne $staged.OutboxId -or
+                    $intents[0].Queue -cne 'reports' -or $intents[0].TenantId -cne 'synthetic-tenant' -or
+                    $intents[0].IdempotencyKey -cne 'migration-outbox' -or $intents[0].JobType -cne 'migration.notice.v1' -or
+                    $intents[0].Payload -cne '{"quantity":6}' -or $intents[0].MaxAttempts -ne 3 -or
+                    $null -ne $intents[0].DispatchedAt -or $null -ne $intents[0].QueueJobId) {
+                    throw 'The migrated outbox did not preserve a single validated pending dispatch intent.'
+                }
+                Assert-Rows (Read-Fixture '--report') $baseline 3 0
+                # Deliberate rollback drops the synthetic pending intent. Application rows must remain unchanged.
+                Invoke-Checked @($bosun, 'migrate:rollback', 'AddActivityLabel', '--project', $project, '--context', 'ActivityContext', '--force')
+                Assert-Rows (Read-Fixture '--report') $baseline 2 1
+                if ((Read-Fixture '--outbox-table-count').tables -ne 0) { throw 'Outbox rollback did not remove its table.' }
+                Invoke-Checked @($bosun, 'migrate', '--project', $project, '--context', 'ActivityContext')
+                Assert-Rows (Read-Fixture '--report') $baseline 3 0
+                if ((Read-Fixture '--outbox-table-count').tables -ne 1 -or @(Read-Fixture '--outbox').Count -ne 0) {
+                    throw 'Reapplying the outbox migration did not reflect the deliberate loss of its rolled-back intents.'
+                }
+                $restaged = Read-Fixture '--stage-outbox'
+                if ($restaged.AlreadyStaged -or $restaged.OutboxId -ceq $staged.OutboxId -or @(Read-Fixture '--outbox').Count -ne 1) {
+                    throw 'A reapplied outbox did not accept a fresh synthetic intent.'
+                }
+                Assert-Rows (Read-Fixture '--report') $baseline 3 0
                 $baseline | Set-Content -LiteralPath (Join-Path $directory 'preserved-synthetic-rows.json')
-                Write-Output "$provider native migration/upgrade/rollback/reapply passed; baseline rows preserved, rolled-back Label values deliberately discarded."
+                Write-Output "$provider native migration/upgrade/rollback/reapply passed; baseline rows preserved, rolled-back Label values and outbox intents deliberately discarded."
             } finally {
                 try {
                     if ($created) {

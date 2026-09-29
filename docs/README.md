@@ -26,6 +26,8 @@ New here? Start with the [repository README](../README.md) and its quick start.
 
 - [Events](EVENTS.md): notify other parts of your app
 - [Queues](QUEUES.md): durable background jobs that survive restarts
+- [Mail](MAIL.md): transactional email, templates, attachments and queued sending
+- [Notifications](NOTIFICATIONS.md): replaceable mail and SMS delivery channels
 - [Scheduling](SCHEDULING.md): enqueue recurring work at fixed intervals
 - [Bosun service generators](BOSUN-SERVICES.md): generate jobs, events and listeners
 - [Local storage](STORAGE.md): stream files into named storage disks

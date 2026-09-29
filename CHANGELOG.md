@@ -11,6 +11,7 @@ This milestone is a fresh start. It replaces the earlier .NET 9 prototype with a
 - Configuration from JSON, `.env`, environment variables and the command line, with concise aliases for common settings.
 - Named and grouped routes that produce ordinary ASP.NET Core endpoints, plus route inspection.
 - HTTP defaults: ProblemDetails error responses, HSTS, antiforgery and authorization middleware.
+- Release builds normalize compiled source paths; package checks reject unmapped local debug paths.
 
 ### Clarion data layer
 
@@ -32,12 +33,16 @@ This milestone is a fresh start. It replaces the earlier .NET 9 prototype with a
 ### Authentication
 
 - `Clinimatix.Caravel.Auth`: ASP.NET Core Identity with secure cookie, lockout, password and security-stamp defaults.
+- Opt-in account endpoints for registration, email confirmation, password recovery, authenticator-app MFA and recovery codes. Pending MFA cookies are bound to the account security stamp; sensitive MFA changes require reauthentication.
 - `Clinimatix.Caravel.Auth.Windows`: Windows (Negotiate) authentication with an authenticated-by-default fallback policy.
 - Guides and samples for OpenID Connect sign-in and bearer-token APIs, including checking a caller's current access on each request.
 
 ### Application services
 
 - `Clinimatix.Caravel.Events`: ordered, scoped in-process events with a recording test fake.
+- `Clinimatix.Caravel.Mail`: SMTP with required TLS by default, text/HTML templates, attachments, development capture and queued delivery.
+- `Clinimatix.Caravel.Notifications`: replaceable mail and SMS channels, independent queued delivery, SMS capture and an optional Twilio HTTPS adapter.
+- Bounded automatic lease renewal and an application-context transactional outbox with idempotent relay to the database queue. Applications explicitly add and migrate the outbox model; existing queue tables do not change.
 - `Clinimatix.Caravel.Queues`: durable database jobs with idempotent enqueue, fenced leases, retries with backoff, dead letters, replay, scoped workers, and metrics and tracing through standard .NET diagnostics.
 - `Clinimatix.Caravel.Scheduling`: fixed-interval UTC schedules that enqueue queue jobs, with duplicate-free slots across multiple scheduler instances.
 - `Clinimatix.Caravel.Storage`: named local storage disks with streamed, create-only writes and path validation.

@@ -6,7 +6,7 @@ $null = New-Item -ItemType Directory -Path $packages
 $previousPackages = $env:NUGET_PACKAGES
 $previousCertificate = $env:DOTNET_GENERATE_ASPNET_CERTIFICATE
 $env:DOTNET_GENERATE_ASPNET_CERTIFICATE = 'false'
-$components = @('Clarion', 'Queues', 'Storage', 'Scheduling')
+$components = @('Clarion', 'Queues', 'Storage', 'Scheduling', 'Mail', 'Notifications')
 
 function Invoke-Checked([string[]]$Arguments) {
     & dotnet @Arguments

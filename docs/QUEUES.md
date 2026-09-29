@@ -117,7 +117,26 @@ Both need the exact tenant ID, including case. An unknown job or wrong tenant re
 
 **Retries.** Failed jobs retry with exponential backoff, from five seconds up to five minutes by default (`RetryDelay` and `MaxRetryDelay`). `MaxAttempts` sets the total number of attempts, from 1 to 100. Failures are recorded as a short category such as `HandlerFailed`, `InvalidPayload` (a stored job the worker couldn't read) or `UnknownJobType`. Exception messages and payloads are never copied into the queue's diagnostics.
 
-**Timeouts and cancellation.** Leases last from one second to one hour. The worker cancels the handler's token when the lease runs out and when the host shuts down. Cancellation is cooperative, so pass the token to everything your handler awaits. There's no automatic lease renewal: keep jobs short, or split long work into repeatable steps. An interrupted job becomes available again once its lease expires.
+**Timeouts and cancellation.** Leases last from one second to one hour. The worker cancels the handler's token when the lease runs out and when the host shuts down. Cancellation is cooperative, so pass the token to everything your handler awaits. Automatic renewal is opt-in; without it, keep jobs within the lease or split work into repeatable steps. An interrupted job becomes available again once its last lease expires.
+
+### Renew leases for longer work
+
+Enable periodic renewal when a handler can take longer than one lease:
+
+```csharp
+builder.Services.AddCaravelDatabaseQueue(options =>
+{
+    options.LeaseDuration = TimeSpan.FromMinutes(5);
+    options.LeaseRenewalInterval = TimeSpan.FromMinutes(1);
+    options.MaxLeaseLifetime = TimeSpan.FromHours(2);
+});
+```
+
+`LeaseRenewalInterval` must be at least 100 milliseconds and no more than half the lease duration. `MaxLeaseLifetime` limits one claim from its original start, including renewals; it defaults to one hour and can be set between the lease duration and seven days. A renewal does not count as another attempt.
+
+The worker renews only while running the handler. If it loses ownership or reaches the lifetime limit, it cancels the handler and does not acknowledge that job. A renewal database error also cancels the handler and propagates to host supervision. Cancellation remains cooperative: a handler that ignores its token can continue producing side effects after another worker takes over. Renewal does not make delivery exactly once.
+
+Infrastructure integrations that claim jobs directly can call `RenewAsync(lease)` and retain the returned lease. `null` means renewal was rejected. Expired, completed and superseded claims cannot be revived. There is no queue schema change for renewal.
 
 **Clocks.** Leases use the worker's UTC clock, so keep clocks in sync across machines.
 
@@ -127,11 +146,58 @@ Both need the exact tenant ID, including case. An unknown job or wrong tenant re
 
 The queue also publishes metrics and tracing through standard .NET diagnostics; see [observability](OBSERVABILITY.md).
 
-## What the queue doesn't do
+## Save application data and a job together
 
-The queue has its own `DbContext`, separate from your application's. Saving your data and then enqueueing a job are two separate transactions. If both must succeed or fail together, you'll need an outbox pattern in your app; the queue doesn't provide one.
+A direct `EnqueueAsync` uses the queue's own transaction. Use the transactional outbox when an application change and its dispatch intent must commit together, even if the queue database is temporarily unavailable.
 
-This first driver covers durable enqueue, delayed work, scoped execution, leases, retries and replay. In-memory and synchronous drivers, message-broker adapters, batches, chains, debouncing and lease renewal are on the [roadmap](ROADMAP.md).
+Include the outbox table in your application's EF model:
+
+```csharp
+protected override void OnModelCreating(ModelBuilder builder)
+{
+    base.OnModelCreating(builder);
+    // Configure application entities here.
+    builder.AddCaravelOutbox();
+}
+```
+
+Register the application context factory and the outbox alongside the database queue and its job registrations:
+
+```csharp
+builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
+    options.UseSqlite(applicationConnection));
+builder.Services.AddCaravelOutbox<ApplicationDbContext>();
+builder.Services.AddCaravelOutboxRelay<ApplicationDbContext>();
+```
+
+Generate and review a migration for `ApplicationDbContext`, then apply it deliberately. The outbox never creates or changes tables on startup. Use the native migration for your chosen provider, just as you do for the queue.
+
+In one DI scope, inject `ApplicationDbContext` and `QueueOutbox<ApplicationDbContext>`, then stage the job before saving:
+
+```csharp
+database.Reports.Add(report);
+var staged = await outbox.StageAsync(
+    new GenerateReport(report.Id),
+    new QueueDispatchOptions("reports", authorizedTenantId, requestId),
+    cancellationToken);
+await database.SaveChangesAsync(cancellationToken);
+```
+
+`StageAsync` validates and tracks an envelope; it does not save, commit, or contact the queue database. One relational `SaveChangesAsync` commits the report and envelope together. An explicit application transaction also works: its rollback rolls back both. Use the same scoped context for both operations, and only tell the caller the request was accepted after the transaction commits.
+
+The result contains `OutboxId` and `AlreadyStaged`. Repeating the same queue, tenant, key and payload returns the existing intent, including after it was dispatched; conflicting content throws `QueueIdempotencyConflictException`. A unique database index resolves competing staging transactions. If your save loses that race, discard that unit of work and retry the **whole application transaction** in a fresh scope; don't continue with a failed context or save only the business record.
+
+The relay reads committed intents, enqueues them with their original type, payload, queue, tenant, due time and attempt budget, then records `QueueJobId` and `DispatchedAt`. The application and queue may use separate databases. Multiple relays can run concurrently: queue deduplication ensures they resolve to one job. A crash after enqueue but before recording dispatch is recovered by sending that same intent again. The returned outbox ID is a staging receipt, not a promise that the queue job is already available.
+
+`AddCaravelOutboxRelay` polls once per second and processes up to 100 intents per pass by default. Configure `pollInterval` and `batchSize` (1 to 1,000), or omit the hosted relay and inject `OutboxRelay<ApplicationDbContext>` to call `RunOnceAsync` yourself. Infrastructure errors propagate and stop the hosted relay under the default .NET host policy; a supervised restart retries undispatched rows. Invalid or conflicting stored envelopes remain pending for deliberate repair rather than being silently dropped. Keep all their job registrations available to the relay.
+
+Outbox rows, queue rows and their keys are retained. Keep the corresponding queue deduplication history for as long as an outbox intent could be retried: removing queue history can allow a pending intent to create another delivery. Removing a pending outbox row loses that dispatch intent. Review pending work before pruning records or rolling back a migration that removes the outbox table. Payloads live in both databases, so apply appropriate access controls and retention to both.
+
+The outbox guarantees atomic **application change plus dispatch intent**, followed by at-least-once delivery. It cannot make an external email, payment or HTTP call part of the database transaction. Handlers still need repeat-safe behavior.
+
+## Further queue capabilities
+
+This driver covers durable enqueue, delayed work, scoped execution, renewable leases, retries, replay and transactional dispatch through an application outbox. In-memory and synchronous drivers, message-broker adapters, batches, chains and debouncing remain on the [roadmap](ROADMAP.md).
 
 ## Try the runnable worker sample
 

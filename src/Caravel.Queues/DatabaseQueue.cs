@@ -8,15 +8,20 @@ namespace Caravel.Queues;
 internal sealed class DatabaseQueue(IDbContextFactory<QueueDbContext> factory, JobRegistry registry,
     DatabaseQueueOptions options, TimeProvider clock) : IDatabaseQueue
 {
-    public async Task<EnqueueResult> EnqueueAsync<TJob>(TJob job, QueueDispatchOptions dispatch,
+    public Task<EnqueueResult> EnqueueAsync<TJob>(TJob job, QueueDispatchOptions dispatch,
         CancellationToken cancellationToken = default) where TJob : notnull
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return EnqueuePreparedAsync(Prepare(job, dispatch), cancellationToken);
+    }
+
+    internal QueueJob Prepare<TJob>(TJob job, QueueDispatchOptions dispatch) where TJob : notnull
     {
         ArgumentNullException.ThrowIfNull(job);
         ArgumentNullException.ThrowIfNull(dispatch);
         QueueValidation.Name(dispatch.Queue, 64, nameof(dispatch.Queue));
         QueueValidation.Text(dispatch.TenantId, 128, nameof(dispatch.TenantId));
         QueueValidation.Text(dispatch.IdempotencyKey, 128, nameof(dispatch.IdempotencyKey));
-        cancellationToken.ThrowIfCancellationRequested();
         var registration = registry.For<TJob>();
         using var payload = new BoundedPayloadStream(options.MaxPayloadBytes);
         JsonSerializer.Serialize(payload, job, JobRegistry.Json);
@@ -31,6 +36,22 @@ internal sealed class DatabaseQueue(IDbContextFactory<QueueDbContext> factory, J
             CreatedAt = now, AvailableAt = dispatch.NotBefore is { } due ? DueMillisecond(due) : now,
             MaxAttempts = options.MaxAttempts
         };
+        return row;
+    }
+
+    internal async Task<EnqueueResult> EnqueuePreparedAsync(QueueJob row, CancellationToken cancellationToken)
+    {
+        QueueValidation.Name(row.Queue, 64, nameof(row.Queue));
+        QueueValidation.Text(row.TenantId, 128, nameof(row.TenantId));
+        QueueValidation.Text(row.IdempotencyKey, 128, nameof(row.IdempotencyKey));
+        if (row.Id == Guid.Empty || row.MaxAttempts is < 1 or > 100 || row.DeduplicationKey !=
+            Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(
+                new[] { row.Queue, row.TenantId, row.IdempotencyKey }))))
+            throw new InvalidOperationException("The persisted dispatch envelope is invalid.");
+        if (registry.Find(row.JobType) is null) throw new InvalidOperationException("The outbox job type is not registered.");
+        if (Encoding.UTF8.GetByteCount(row.Payload) > options.MaxPayloadBytes)
+            throw new ArgumentException("The serialized queue payload exceeds the configured byte limit.");
+        using var document = JsonDocument.Parse(row.Payload, new JsonDocumentOptions { MaxDepth = 32 });
         await using var database = await factory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
         var existing = await database.Jobs.AsNoTracking().SingleOrDefaultAsync(
             x => x.DeduplicationKey == row.DeduplicationKey, cancellationToken).ConfigureAwait(false);
@@ -102,9 +123,23 @@ internal sealed class DatabaseQueue(IDbContextFactory<QueueDbContext> factory, J
             job.LeaseExpiresAt = expiry;
             job.Attempts++;
             QueueDiagnostics.Add(QueueDiagnostics.Claimed, queue);
-            return new(job);
+            return new(job, DateTimeOffset.FromUnixTimeMilliseconds(now));
         }
         return null;
+    }
+
+    public async Task<QueueLease?> RenewAsync(QueueLease lease, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(lease);
+        var now = clock.GetUtcNow().ToUnixTimeMilliseconds();
+        var expiry = Math.Min(checked(now + (long)options.LeaseDuration.TotalMilliseconds),
+            lease.StartedAt.Add(options.MaxLeaseLifetime).ToUnixTimeMilliseconds());
+        if (expiry <= now) return null;
+        await using var database = await factory.CreateDbContextAsync(cancellationToken).ConfigureAwait(false);
+        var renewed = await Owned(database, lease, now).Where(x => x.LeaseExpiresAt <= expiry)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(x => x.LeaseExpiresAt, expiry), cancellationToken)
+            .ConfigureAwait(false) == 1;
+        return renewed ? lease.WithExpiry(DateTimeOffset.FromUnixTimeMilliseconds(expiry)) : null;
     }
 
     public async Task<bool> CompleteAsync(QueueLease lease, CancellationToken cancellationToken = default)
@@ -169,7 +204,7 @@ internal sealed class DatabaseQueue(IDbContextFactory<QueueDbContext> factory, J
         database.Jobs.Where(x => x.Id == lease.Context.JobId && x.State == QueueJobState.Leased
             && x.LeaseToken == lease.Token && x.LeaseExpiresAt > now);
 
-    private static EnqueueResult Duplicate(QueueJob existing, QueueJob requested)
+    internal static EnqueueResult Duplicate(QueueJob existing, QueueJob requested)
     {
         if (existing.Queue != requested.Queue || existing.TenantId != requested.TenantId
             || existing.IdempotencyKey != requested.IdempotencyKey || existing.JobType != requested.JobType

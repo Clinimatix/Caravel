@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
+using System.Security.Claims;
 
 namespace Caravel.Auth;
 
@@ -56,6 +57,34 @@ public static class IdentityExtensions
         {
             options.ExpireTimeSpan = TimeSpan.FromHours(8);
             options.SlidingExpiration = false;
+        });
+        // Native pending-MFA cookies otherwise contain only a user id. Bind them to the
+        // current stamp so password changes and session revocation cancel unfinished logins too.
+        services.Configure<CookieAuthenticationOptions>(IdentityConstants.TwoFactorUserIdScheme, options =>
+        {
+            options.ExpireTimeSpan = TimeSpan.FromMinutes(5);
+            options.SlidingExpiration = false;
+            options.Events.OnSigningIn = async context =>
+            {
+                var id = context.Principal?.FindFirstValue(ClaimTypes.Name);
+                if (id is null) return;
+                var users = context.HttpContext.RequestServices.GetRequiredService<UserManager<TUser>>();
+                var user = await users.FindByIdAsync(id);
+                if (user is not null && users.SupportsUserSecurityStamp && context.Principal?.Identity is ClaimsIdentity identity)
+                    identity.AddClaim(new Claim(users.Options.ClaimsIdentity.SecurityStampClaimType, await users.GetSecurityStampAsync(user)));
+            };
+            options.Events.OnValidatePrincipal = async context =>
+            {
+                var id = context.Principal?.FindFirstValue(ClaimTypes.Name);
+                if (id is null) return;
+                var users = context.HttpContext.RequestServices.GetRequiredService<UserManager<TUser>>();
+                var signIn = context.HttpContext.RequestServices.GetRequiredService<SignInManager<TUser>>();
+                var user = await users.FindByIdAsync(id);
+                if (user is null || !await signIn.CanSignInAsync(user) || !await users.GetTwoFactorEnabledAsync(user) ||
+                    (users.SupportsUserLockout && await users.IsLockedOutAsync(user)) ||
+                    !await signIn.ValidateSecurityStampAsync(user, context.Principal?.FindFirstValue(users.Options.ClaimsIdentity.SecurityStampClaimType)))
+                    context.RejectPrincipal();
+            };
         });
         services.Configure<SecurityStampValidatorOptions>(options => options.ValidationInterval = TimeSpan.Zero);
         services.AddAuthorization();

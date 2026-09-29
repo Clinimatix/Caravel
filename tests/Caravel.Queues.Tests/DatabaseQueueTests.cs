@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Caravel.Queues.Tests;
 
-public sealed class DatabaseQueueTests
+public sealed partial class DatabaseQueueTests
 {
     [Theory]
     [InlineData("2026-09-28T00:00:00.0000001Z", "2026-09-28T00:00:00.001Z")]

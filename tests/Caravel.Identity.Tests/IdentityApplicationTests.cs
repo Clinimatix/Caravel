@@ -159,6 +159,7 @@ public sealed partial class IdentityApplicationTests
                 services.AddDataProtection().UseEphemeralDataProtectionProvider();
                 services.AddSingleton<TimeProvider>(Clock);
                 services.Configure<CookieAuthenticationOptions>(IdentityConstants.ApplicationScheme, options => options.TimeProvider = Clock);
+                services.Configure<CookieAuthenticationOptions>(IdentityConstants.TwoFactorUserIdScheme, options => options.TimeProvider = Clock);
                 services.Configure<SecurityStampValidatorOptions>(options => options.TimeProvider = Clock);
                 services.AddSingleton(Events);
                 services.AddEventListener<NoteCreated, ObserveNote>();

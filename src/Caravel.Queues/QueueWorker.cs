@@ -44,6 +44,43 @@ public sealed class QueueWorker
             }
             using var deadline = new CancellationTokenSource(remaining, clock);
             using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, deadline.Token);
+            using var renewalStop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            var leaseLost = false;
+            var renewal = options.LeaseRenewalInterval is { } interval
+                ? RenewUntilStoppedAsync(interval) : Task.CompletedTask;
+            async Task RenewUntilStoppedAsync(TimeSpan interval)
+            {
+                try
+                {
+                    while (true)
+                    {
+                        await Task.Delay(interval, clock, renewalStop.Token).ConfigureAwait(false);
+                        var renewed = await queue.RenewAsync(lease, renewalStop.Token).ConfigureAwait(false);
+                        if (renewed is null || deadline.IsCancellationRequested)
+                        {
+                            leaseLost = true;
+                            await deadline.CancelAsync().ConfigureAwait(false);
+                            return;
+                        }
+                        lease = renewed;
+                        var remainingLease = renewed.ExpiresAt - clock.GetUtcNow();
+                        if (remainingLease <= TimeSpan.Zero)
+                        {
+                            leaseLost = true;
+                            await deadline.CancelAsync().ConfigureAwait(false);
+                            return;
+                        }
+                        deadline.CancelAfter(remainingLease);
+                    }
+                }
+                catch (OperationCanceledException) when (renewalStop.IsCancellationRequested) { }
+                catch
+                {
+                    leaseLost = true;
+                    await deadline.CancelAsync().ConfigureAwait(false);
+                    throw;
+                }
+            }
             QueueFailure? failure = null;
             try
             {
@@ -59,6 +96,17 @@ public sealed class QueueWorker
             }
             catch (OperationCanceledException) when (deadline.IsCancellationRequested) { failure = QueueFailure.LeaseExpired; }
             catch (Exception) { failure = QueueFailure.HandlerFailed; }
+            finally
+            {
+                await renewalStop.CancelAsync().ConfigureAwait(false);
+                await renewal.ConfigureAwait(false);
+            }
+
+            if (leaseLost)
+            {
+                QueueDiagnostics.Finish(activity, "lease_lost", "LeaseLost");
+                return true;
+            }
 
             if (failure is { } reason)
                 await RecordFailureAsync(lease, reason, activity, cancellationToken).ConfigureAwait(false);

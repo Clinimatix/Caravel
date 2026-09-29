@@ -51,9 +51,16 @@ public sealed class QueueProviderContracts
 
             var claims = await Task.WhenAll(Enumerable.Range(0, 4).Select(_ => queue.TryClaimAsync("reports")));
             var stale = Assert.Single(claims, lease => lease is not null)!;
-            clock.Advance(TimeSpan.FromSeconds(11));
+            clock.Advance(TimeSpan.FromSeconds(6));
+            var renewed = Assert.IsType<QueueLease>(await queue.RenewAsync(stale));
+            Assert.True(renewed.ExpiresAt > stale.ExpiresAt);
+            clock.Advance(TimeSpan.FromSeconds(5));
+            Assert.Null(await queue.TryClaimAsync("reports"));
+            clock.Advance(TimeSpan.FromSeconds(6));
+            Assert.Null(await queue.RenewAsync(renewed));
             var recovered = Assert.IsType<QueueLease>(await queue.TryClaimAsync("reports"));
             Assert.Equal(2, recovered.Context.Attempt);
+            Assert.Null(await queue.RenewAsync(stale));
             Assert.False(await queue.CompleteAsync(stale));
             Assert.False(await queue.FailAsync(stale, QueueFailure.HandlerFailed));
             Assert.True(await queue.FailAsync(recovered, QueueFailure.HandlerFailed));

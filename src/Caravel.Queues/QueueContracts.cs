@@ -27,8 +27,9 @@ public sealed record QueueJobStatus(Guid JobId, string Queue, string TenantId, Q
 /// <summary>A capability held by a worker. Acknowledgement requires its current, unexpired lease token.</summary>
 public sealed class QueueLease
 {
-    internal QueueLease(QueueJob job)
+    internal QueueLease(QueueJob job, DateTimeOffset startedAt)
     {
+        StartedAt = startedAt;
         Context = new(job.Id, job.Queue, job.TenantId, job.Attempts);
         ExpiresAt = DateTimeOffset.FromUnixTimeMilliseconds(job.LeaseExpiresAt!.Value);
         Token = job.LeaseToken!.Value;
@@ -37,6 +38,19 @@ public sealed class QueueLease
         MaxAttempts = job.MaxAttempts;
     }
 
+    private QueueLease(QueueLease previous, DateTimeOffset expiry)
+    {
+        Context = previous.Context;
+        ExpiresAt = expiry;
+        StartedAt = previous.StartedAt;
+        Token = previous.Token;
+        JobType = previous.JobType;
+        Payload = previous.Payload;
+        MaxAttempts = previous.MaxAttempts;
+    }
+
+    internal QueueLease WithExpiry(DateTimeOffset expiry) => new(this, expiry);
+    internal DateTimeOffset StartedAt { get; }
     public JobContext Context { get; }
     public DateTimeOffset ExpiresAt { get; }
     internal Guid Token { get; }
@@ -53,6 +67,8 @@ public interface IDatabaseQueue
     Task<QueueJobStatus?> GetStatusAsync(Guid jobId, string queue, string tenantId,
         CancellationToken cancellationToken = default);
     Task<QueueLease?> TryClaimAsync(string queue, CancellationToken cancellationToken = default);
+    /// <summary>Extend a current unexpired lease, bounded by MaxLeaseLifetime from its original claim.</summary>
+    Task<QueueLease?> RenewAsync(QueueLease lease, CancellationToken cancellationToken = default);
     Task<bool> CompleteAsync(QueueLease lease, CancellationToken cancellationToken = default);
     Task<bool> FailAsync(QueueLease lease, QueueFailure failure, CancellationToken cancellationToken = default);
     Task<bool> ReplayAsync(Guid jobId, string queue, string tenantId, CancellationToken cancellationToken = default);
