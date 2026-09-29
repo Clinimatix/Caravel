@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>Clinimatix.Caravel.Scheduling</PackageId>
+    <Description>UTC interval schedules backed by Clinimatix Caravel database queues.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Caravel.Queues/Caravel.Queues.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+  </ItemGroup>
+</Project>

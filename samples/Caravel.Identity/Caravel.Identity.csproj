@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup><IsPackable>false</IsPackable></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Caravel.AspNetCore/Caravel.AspNetCore.csproj" Condition="'$(CaravelPackageVersion)' == ''" />
+    <ProjectReference Include="../../src/Caravel.Clarion/Caravel.Clarion.csproj" Condition="'$(CaravelPackageVersion)' == ''" />
+    <ProjectReference Include="../../src/Caravel.Auth/Caravel.Auth.csproj" Condition="'$(CaravelPackageVersion)' == ''" />
+    <ProjectReference Include="../../src/Caravel.Events/Caravel.Events.csproj" Condition="'$(CaravelPackageVersion)' == ''" />
+    <ProjectReference Include="../../src/Caravel.Queues/Caravel.Queues.csproj" Condition="'$(CaravelPackageVersion)' == ''" />
+    <PackageReference Include="Clinimatix.Caravel.AspNetCore" VersionOverride="$(CaravelPackageVersion)" Condition="'$(CaravelPackageVersion)' != ''" />
+    <PackageReference Include="Clinimatix.Caravel.Clarion" VersionOverride="$(CaravelPackageVersion)" Condition="'$(CaravelPackageVersion)' != ''" />
+    <PackageReference Include="Clinimatix.Caravel.Auth" VersionOverride="$(CaravelPackageVersion)" Condition="'$(CaravelPackageVersion)' != ''" />
+    <PackageReference Include="Clinimatix.Caravel.Events" VersionOverride="$(CaravelPackageVersion)" Condition="'$(CaravelPackageVersion)' != ''" />
+    <PackageReference Include="Clinimatix.Caravel.Queues" VersionOverride="$(CaravelPackageVersion)" Condition="'$(CaravelPackageVersion)' != ''" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+  </ItemGroup>
+</Project>

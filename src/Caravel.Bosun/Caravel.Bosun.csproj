@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>caravel</ToolCommandName>
+    <PackageId>Clinimatix.Caravel.Bosun</PackageId>
+    <Description>Bosun CLI for the Clinimatix Caravel framework.</Description>
+    <PackageTags>clinimatix;caravel;bosun;cli;dotnet-tool</PackageTags>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" />
+    <InternalsVisibleTo Include="Caravel.Bosun.Tests" />
+  </ItemGroup>
+</Project>

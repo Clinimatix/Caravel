@@ -1,0 +1,38 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Caravel.Core/Caravel.Core.csproj" />
+    <Project Path="src/Caravel.AspNetCore/Caravel.AspNetCore.csproj" />
+    <Project Path="src/Caravel.Bosun/Caravel.Bosun.csproj" />
+    <Project Path="src/Caravel.Clarion/Caravel.Clarion.csproj" />
+    <Project Path="src/Caravel.Auth/Caravel.Auth.csproj" />
+    <Project Path="src/Caravel.Auth.Windows/Caravel.Auth.Windows.csproj" />
+    <Project Path="src/Caravel.Events/Caravel.Events.csproj" />
+    <Project Path="src/Caravel.Queues/Caravel.Queues.csproj" />
+    <Project Path="src/Caravel.Storage/Caravel.Storage.csproj" />
+    <Project Path="src/Caravel.Scheduling/Caravel.Scheduling.csproj" />
+  </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/Caravel.App/Caravel.App.csproj" />
+    <Project Path="samples/Caravel.Data/Caravel.Data.csproj" />
+    <Project Path="samples/Caravel.Identity/Caravel.Identity.csproj" />
+    <Project Path="samples/Caravel.Oidc/Caravel.Oidc.csproj" />
+    <Project Path="samples/Caravel.Worker/Caravel.Worker.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Caravel.Core.Tests/Caravel.Core.Tests.csproj" />
+    <Project Path="tests/Caravel.Clarion.Tests/Caravel.Clarion.Tests.csproj" />
+    <Project Path="tests/Caravel.Provider.Tests/Caravel.Provider.Tests.csproj" />
+    <Project Path="tests/Caravel.AspNetCore.Tests/Caravel.AspNetCore.Tests.csproj" />
+    <Project Path="tests/Caravel.Bosun.Tests/Caravel.Bosun.Tests.csproj" />
+    <Project Path="tests/Caravel.App.Tests/Caravel.App.Tests.csproj" />
+    <Project Path="tests/Caravel.Auth.Tests/Caravel.Auth.Tests.csproj" />
+    <Project Path="tests/Caravel.Bearer.Tests/Caravel.Bearer.Tests.csproj" />
+    <Project Path="tests/Caravel.Auth.Windows.Tests/Caravel.Auth.Windows.Tests.csproj" />
+    <Project Path="tests/Caravel.Events.Tests/Caravel.Events.Tests.csproj" />
+    <Project Path="tests/Caravel.Identity.Tests/Caravel.Identity.Tests.csproj" />
+    <Project Path="tests/Caravel.Oidc.Tests/Caravel.Oidc.Tests.csproj" />
+    <Project Path="tests/Caravel.Queues.Tests/Caravel.Queues.Tests.csproj" />
+    <Project Path="tests/Caravel.Storage.Tests/Caravel.Storage.Tests.csproj" />
+    <Project Path="tests/Caravel.Scheduling.Tests/Caravel.Scheduling.Tests.csproj" />
+  </Folder>
+</Solution>

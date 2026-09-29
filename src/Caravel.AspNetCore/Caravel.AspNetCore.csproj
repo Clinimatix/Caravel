@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>Clinimatix.Caravel.AspNetCore</PackageId>
+    <Description>Native ASP.NET Core conventions for the Clinimatix Caravel framework.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="../Caravel.Core/Caravel.Core.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,78 @@
+# .NET / Visual Studio / Windows
+## Build outputs
+bin/
+obj/
+[Bb]uild/
+[Rr]elease/
+[Dd]ebug/
+artifacts/
+TestResults/
+
+## IDEs/editors
+.vs/
+.idea/
+*.sln.iml
+*.user
+*.userosscache
+*.suo
+*.userprefs
+*.csproj.user
+
+# VS Code (track only when you decide; default ignore)
+.vscode/
+
+## Packages
+*.nupkg
+*.snupkg
+*.nuspec
+packages/
+
+## Logs and diagnostics
+*.log
+*.etl
+*.dmp
+web.out.log
+web.err.log
+web.root.response.txt
+.caravel-web.pid
+
+## OS junk
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+
+## Temp/cache
+*.tmp
+*.temp
+*.pid
+*.seed
+*.orig
+~$*
+*.swp
+*.swn
+*.swo
+*.bak
+
+## Coverage/analysis
+coverage/
+*.coverage*
+*.codecoverage
+
+## Rider
+*.DotSettings.user
+
+## ASP.NET scaffolding
+ScaffoldingReadMe.txt
+
+## Node/yarn (if present for frontends)
+node_modules/
+*.tsbuildinfo
+
+# dotenv files
+**/.env
+**/.env.*
+!**/.env.sample
+
+## Maintainer-local notes (never committed)
+.private/

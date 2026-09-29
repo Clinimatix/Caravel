@@ -1,0 +1,122 @@
+name: Build Clinimatix Caravel
+on:
+  # Manual verification only; no automatic push or pull-request triggers.
+  workflow_dispatch:
+    inputs:
+      experimental:
+        description: Also run the optional preview/STS SDK lane
+        type: boolean
+        default: false
+concurrency:
+  group: caravel-verification-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  lts:
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+      - name: Check latest LTS policy
+        shell: pwsh
+        run: |
+          ./scripts/Test-LtsPolicy.Tests.ps1
+          ./scripts/Test-LtsPolicy.ps1
+      - run: dotnet restore Caravel.slnx --locked-mode
+      - run: dotnet build Caravel.slnx -c Release --no-restore
+      - run: dotnet test Caravel.slnx -c Release --no-build --no-restore
+      - name: Verify packaged CLI and generated apps
+        timeout-minutes: 10
+        shell: pwsh
+        run: ./scripts/Test-PackageSmoke.ps1
+      - name: Retain tested candidate packages
+        if: matrix.os == 'windows-latest'
+        uses: actions/upload-artifact@v7
+        with:
+          name: clinimatix-caravel-packages-${{ github.sha }}
+          path: artifacts/smoke */packages/*.nupkg
+          if-no-files-found: error
+          retention-days: 30
+      - name: Verify migration and seeding workflow
+        timeout-minutes: 10
+        shell: pwsh
+        run: ./scripts/Test-DataSmoke.ps1
+      - name: Verify packaged Identity, Events and OIDC samples
+        timeout-minutes: 10
+        shell: pwsh
+        run: ./scripts/Test-IdentitySmoke.ps1
+      - name: Verify packaged application services
+        timeout-minutes: 10
+        shell: pwsh
+        run: ./scripts/Test-ServicePackages.ps1
+      - name: Verify worker crash recovery
+        timeout-minutes: 10
+        shell: pwsh
+        run: ./scripts/Test-WorkerSmoke.ps1
+  providers:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_PASSWORD: caravel_disposable_ci_only
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s --health-timeout 5s --health-retries 12
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        env:
+          ACCEPT_EULA: Y
+          MSSQL_PID: Developer
+          MSSQL_SA_PASSWORD: Caravel_Disposable_CI_42!
+        ports: [1433:1433]
+        options: >-
+          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P Caravel_Disposable_CI_42! -C -Q 'SELECT 1'"
+          --health-interval 10s --health-timeout 5s --health-retries 18
+    # Synthetic credentials for disposable job-local services; never a deployment connection.
+    env:
+      CARAVEL_TEST_SQLSERVER: Server=localhost,1433;User ID=sa;Password=Caravel_Disposable_CI_42!;TrustServerCertificate=true
+      CARAVEL_TEST_POSTGRES: Host=localhost;Username=postgres;Password=caravel_disposable_ci_only
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+      - run: dotnet restore tests/Caravel.Provider.Tests --locked-mode
+      - run: dotnet test tests/Caravel.Provider.Tests -c Release --no-restore
+      - name: Verify server migration upgrades and rollback
+        timeout-minutes: 10
+        shell: pwsh
+        run: ./scripts/Test-ProviderMigrationSmoke.ps1
+  experimental:
+    if: inputs.experimental
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '11.0.x'
+          dotnet-quality: preview
+      - name: Select experimental SDK without changing the LTS target
+        shell: pwsh
+        run: |
+          $sdk = dotnet --list-sdks | Where-Object { $_ -match '^11\.0\.' } | Select-Object -Last 1
+          if (-not $sdk) { throw 'Experimental .NET 11 SDK is unavailable.' }
+          @{ sdk = @{ version = ($sdk -split ' ')[0]; rollForward = 'latestPatch'; allowPrerelease = $true } } | ConvertTo-Json | Set-Content global.json
+      - run: dotnet restore Caravel.slnx --locked-mode
+      - run: dotnet build Caravel.slnx -c Release --no-restore
+      - run: dotnet test Caravel.slnx -c Release --no-build --no-restore

@@ -1,0 +1,88 @@
+# Design and roadmap
+
+This page explains what Clinimatix Caravel is trying to be, how its packages fit together, what's available today and what's coming next.
+
+## What Caravel is for
+
+Caravel makes .NET application development more approachable through clear conventions, expressive APIs, integrated tooling and cohesive application services. It builds on ASP.NET Core, the Generic Host, Microsoft.Extensions, EF Core and ASP.NET Core Identity, so applications stay close to the platform and its ecosystem.
+
+Caravel targets Windows, Linux and macOS, with platform-specific packages where needed. Current execution coverage includes Windows and Linux; macOS verification is pending. IIS, Windows Service and Windows authentication guides explain native .NET integration, while deployment verification remains separate from the framework's local tests.
+
+## Design principles
+
+- **Thin over .NET.** Caravel composes platform features instead of replacing them. Your app is still an ordinary ASP.NET Core or Generic Host app, and plain .NET code mixes freely with Caravel's conveniences.
+- **Convention over ceremony.** Common tasks should have one obvious way to do them, and a new app should need much less setup than a typical ASP.NET Core project.
+- **Batteries included, batteries replaceable.** Every capability ships as an optional package. Take what you need and replace the rest.
+- **No surprise dependencies.** Caravel prefers permissively licensed dependencies and platform components. It doesn't require commercial license keys, MediatR or AI credentials.
+- **Safe by default.** Destructive commands require `--force`, `caravel doctor` only reads, secrets stay out of logs and generated files, and nothing creates databases or runs migrations behind your back.
+- **Latest .NET LTS.** Caravel targets the newest generally available long-term-support release of .NET (currently .NET 10 and C# 14). It moves to the next LTS when that version ships.
+
+## How the packages fit together
+
+Everything lives in this repository and shares one version number, but each package can be used independently.
+
+| Package | Depends on | Notes |
+| --- | --- | --- |
+| `Clinimatix.Caravel.Core` | Microsoft.Extensions | Configuration, `.env` and service providers. No web or EF dependency. |
+| `Clinimatix.Caravel.AspNetCore` | Core, ASP.NET Core | Routing syntax, HTTP defaults and route inspection. |
+| `Clinimatix.Caravel.Clarion` | EF Core | The data layer. Works in any .NET host and doesn't need the rest of Caravel. You choose the database provider. |
+| `Clinimatix.Caravel.Bosun` | — | The `caravel` command-line tool, installed as a .NET tool. |
+| `Clinimatix.Caravel.Auth` | ASP.NET Core Identity | Local accounts with secure defaults. You choose the store. |
+| `Clinimatix.Caravel.Auth.Windows` | ASP.NET Core Negotiate | Windows authentication for intranet apps. |
+| `Clinimatix.Caravel.Events` | Microsoft.Extensions.DependencyInjection | In-process events. |
+| `Clinimatix.Caravel.Queues` | EF Core | Durable database jobs and workers. |
+| `Clinimatix.Caravel.Scheduling` | Queues | Fixed-interval schedules that enqueue jobs. |
+| `Clinimatix.Caravel.Storage` | Microsoft.Extensions.DependencyInjection | Streaming local storage disks. |
+
+New packages are added when there's real integration work to do. Caching, for example, is a [recipe over .NET's own services](CACHING.md) until a Caravel package would add something useful.
+
+## Where things stand
+
+The current source candidate is **`26.1.0-m1`** and has not been published as a package release. Development is organized into milestones:
+
+| Milestone | Focus | Status |
+| --- | --- | --- |
+| **M0: Foundation** | Core, ASP.NET Core integration, routing, configuration, service providers, `caravel new`, `serve`, `route:list` and `doctor` | Done |
+| **M1: Clarion** | EF Core integration, models, queries, timestamps, soft deletes, factories, seeders, migrations and data commands | Done; broader provider coverage continues |
+| **M2: Application services** | Identity, Windows authentication, events, durable queues and workers, scheduling, storage and caching | Largely done; see below |
+| **M3: Developer experience** | `caravel dev`, starter kits, generators, testing helpers, Windows Service and IIS helpers, optional Aspire support | In progress |
+| **M4: AI-native Caravel** | Microsoft.Extensions.AI integration, embeddings, structured output, MCP server support, agent tooling and search | Planned |
+
+Architecture milestones (M0–M4) are separate from release version suffixes: `26.1.0-m1` identifies the first milestone candidate for the 26.1 family, not "milestone 1 only". See the [release policy](RELEASE-POLICY.md) for versioning.
+
+### Available today
+
+- Routing, configuration, service providers, validation defaults and route inspection
+- Clarion with SQL Server, PostgreSQL and SQLite
+- Bosun: Razor and API starters, development sessions, data commands, and job/event/listener generators
+- Local Identity accounts, Windows authentication, and documented recipes for OpenID Connect sign-in and bearer-token APIs
+- Events, durable queues with retries and replay, fixed-interval scheduling and local storage
+- Queue metrics and tracing through standard .NET diagnostics
+- Samples covering a data-only app, a worker, an authenticated backend and OIDC sign-in
+
+### Coming next
+
+- **Accounts:** email confirmation and password reset flows, passkeys and two-factor authentication
+- **Scheduling:** calendar and time-zone-aware schedules (cron-style)
+- **Storage:** cloud drivers such as Azure Blob Storage and S3
+- **Queues:** in-memory and synchronous drivers, batches, chains and lease renewal
+- **Mail and notifications**
+- **Starter kits:** Blazor and React, plus authentication scaffolding
+- **Deployment helpers:** Windows Service and IIS publishing, and optional Aspire integration
+- **Databases:** MariaDB/MySQL, once an EF Core 10–compatible provider is available (see [database providers](DATABASE-PROVIDERS.md))
+- **AI and MCP:** the M4 packages listed above
+
+### Before a release candidate
+
+The first release candidate will come once the supported APIs have settled and been verified together in the framework's own sample applications. That includes supported database and hosting combinations, upgrade and recovery behavior, and fresh cross-platform CI on Windows, Linux and macOS. Until then, expect some API changes between milestones. The [changelog](../CHANGELOG.md) will describe them.
+
+## Non-goals
+
+Caravel succeeds by making excellent .NET technology feel cohesive, not by rewriting it. It won't include its own:
+
+- web server, dependency injection container or logging framework
+- ORM engine or identity database
+- frontend framework or AI agent runtime
+- message broker, admin panel or CMS
+
+Where .NET already solves a problem well, Caravel's job is to make that solution easy to reach.
