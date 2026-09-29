@@ -3,6 +3,11 @@ on:
   # Manual verification only; no automatic push or pull-request triggers.
   workflow_dispatch:
     inputs:
+      platform:
+        description: Platform to verify (all includes server-provider checks)
+        type: choice
+        options: [all, windows-latest, ubuntu-latest, macos-latest]
+        default: all
       experimental:
         description: Also run the optional preview/STS SDK lane
         type: boolean
@@ -17,7 +22,7 @@ jobs:
     timeout-minutes: 20
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        os: ${{ fromJSON(inputs.platform == 'all' && '["windows-latest","ubuntu-latest","macos-latest"]' || format('["{0}"]', inputs.platform)) }}
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
@@ -61,6 +66,7 @@ jobs:
         shell: pwsh
         run: ./scripts/Test-WorkerSmoke.ps1
   providers:
+    if: inputs.platform == 'all'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     services:
