@@ -76,6 +76,18 @@ For each release, a maintainer:
 
 Ordinary pushes never create tags or releases. Publishing to nuget.org will be a separate, deliberate step.
 
+### NuGet publication
+
+The manual `publish-nuget.yml` workflow promotes an existing GitHub release's package ZIP to nuget.org. It does not rebuild packages or run on pushes or tags. Run it from `main` with the release version (without `v`) and the independently reviewed ZIP SHA-256. Confirm the release's exact-commit qualification before dispatching it.
+
+Before the first publication, configure the GitHub `nuget` environment with a required maintainer reviewer, no administrator bypass, and a deployment branch rule allowing only `main`. Set its `NUGET_USER` variable to the individual NuGet username that creates the policy. Configure a [NuGet Trusted Publishing policy](https://learn.microsoft.com/en-us/nuget/nuget-org/trusted-publishing) owned by the Clinimatix organization for repository `Clinimatix/Caravel`, workflow filename `publish-nuget.yml`, environment `nuget`, and package pattern `Clinimatix.Caravel.*`. Allow new packages and new versions; unlisting is unnecessary. The workflow exchanges GitHub identity for a short-lived key; no persistent NuGet API key is stored.
+
+The workflow checks the ZIP checksum, complete package inventory, versions, source commit against the release tag, repository URL, license, README, descriptions, first-party dependency versions and mapped binary paths before authenticating to NuGet. Artifact review must still inspect package contents for secrets and inappropriate material; these automated checks do not replace that review. Package IDs are read from the workflow revision's source projects; publishing an older release with a different package inventory requires deliberate review and a workflow update.
+
+Publication is not atomic across packages. A failed run may have published some packages. Inspect the feed before retrying with the same version and checksum. `--skip-duplicate` permits continuation but does not verify existing package contents. Never substitute new bytes for an already published version.
+
+After NuGet finishes validation and indexing, verify organization ownership and package pages, then restore a clean sample and install Bosun from nuget.org using the exact version. Update installation documentation only after those checks succeed. Package icons and separate symbol packages are optional improvements for a subsequent release; never rebuild an existing release solely to add them.
+
 ## Support
 
 Fixes go to the current prerelease or stable line. Older milestones aren't patched. Upgrade to the latest release and follow its migration notes. Report bugs and propose changes through [GitHub issues](https://github.com/Clinimatix/Caravel/issues) and pull requests.

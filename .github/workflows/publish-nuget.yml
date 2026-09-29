@@ -1,0 +1,69 @@
+name: Publish reviewed NuGet release
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Published GitHub release version (without v)
+        required: true
+        type: string
+      sha256:
+        description: Independently reviewed package ZIP SHA-256
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: caravel-nuget-publication
+  cancel-in-progress: false
+jobs:
+  publish:
+    if: github.repository == 'Clinimatix/Caravel' && github.ref == 'refs/heads/main'
+    environment: nuget
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@26b0ec14cb23fa6904739307f278c14f94c95bf1 # v5
+        with:
+          global-json-file: global.json
+      - name: Download and verify reviewed release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_SHA256: ${{ inputs.sha256 }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:RELEASE_VERSION -cnotmatch '^[0-9]{2}\.[0-9]+\.[0-9]+(?:-(?:rc|m)[0-9]+)?$') { throw 'Invalid version.' }
+          if ($env:RELEASE_SHA256 -notmatch '^[a-fA-F0-9]{64}$') { throw 'Invalid SHA-256.' }
+          $tag = "v$env:RELEASE_VERSION"
+          $release = gh release view $tag --repo $env:GITHUB_REPOSITORY --json isDraft,tagName | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $release.isDraft -or $release.tagName -cne $tag) { throw 'Published release required.' }
+          git fetch --no-tags origin "refs/tags/${tag}:refs/tags/${tag}"
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot fetch release tag.' }
+          $commit = git rev-parse "${tag}^{commit}"
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot resolve release commit.' }
+          $asset = "Clinimatix.Caravel.$env:RELEASE_VERSION.packages.zip"
+          gh release download $tag --repo $env:GITHUB_REPOSITORY --pattern $asset --dir release
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot download release ZIP.' }
+          ./scripts/Expand-NuGetRelease.ps1 -Archive "release/$asset" -Sha256 $env:RELEASE_SHA256 -Version $env:RELEASE_VERSION -Commit $commit -Destination "$PWD/packages"
+          ./scripts/Test-PackagePaths.ps1 -PackageDirectory packages
+      - name: Authenticate to NuGet
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1
+        id: login
+        with:
+          user: ${{ vars.NUGET_USER }}
+      - name: Publish verified packages
+        shell: pwsh
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+        run: |
+          foreach ($package in Get-ChildItem packages -Filter '*.nupkg' -File | Sort-Object Name) {
+            dotnet nuget push $package.FullName --source https://api.nuget.org/v3/index.json --api-key $env:NUGET_API_KEY --skip-duplicate
+            if ($LASTEXITCODE -ne 0) { throw "Publication failed: $($package.Name)." }
+          }
