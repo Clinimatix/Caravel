@@ -6,7 +6,7 @@ This page explains what Clinimatix Caravel is trying to be, how its packages fit
 
 Caravel makes .NET application development more approachable through clear conventions, expressive APIs, integrated tooling and cohesive application services. It builds on ASP.NET Core, the Generic Host, Microsoft.Extensions, EF Core and ASP.NET Core Identity, so applications stay close to the platform and its ecosystem.
 
-Caravel targets Windows, Linux and macOS, with platform-specific packages where needed. Current execution coverage includes Windows and Linux; macOS verification is pending. IIS, Windows Service and Windows authentication guides explain native .NET integration, while deployment verification remains separate from the framework's local tests.
+Caravel targets Windows, Linux and macOS, with platform-specific packages where needed. Current execution coverage includes Windows, Linux and macOS 26 on Apple silicon, including packaged applications and worker recovery. IIS, Windows Service and Windows authentication guides explain native .NET integration, while deployment verification remains separate from these framework checks.
 
 ## Design principles
 

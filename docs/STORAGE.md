@@ -49,4 +49,4 @@ A storage key is not an authorization decision. Check the authenticated caller's
 
 ## Testing
 
-The storage tests cover registration, streaming reads and writes, name conflicts, rejected paths, cancellation cleanup and symbolic links, plus a race in which two writers try to create the same file at once and exactly one succeeds. They run on Windows and Linux. On Windows, the symbolic-link tests are skipped if the account can't create symbolic links.
+The storage tests cover registration, streaming reads and writes, name conflicts, rejected paths, cancellation cleanup and symbolic links, plus a race in which two writers try to create the same file at once and exactly one succeeds. They run on Windows, Linux and macOS 26 on Apple silicon. On Windows, the symbolic-link tests are skipped if the account can't create symbolic links.
