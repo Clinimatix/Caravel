@@ -15,7 +15,7 @@ builder.Services.AddClarion<AppDbContext>(options =>
 | --- | --- | --- |
 | SQL Server | `Microsoft.EntityFrameworkCore.SqlServer` 10.0.x | SQL Server 2022 |
 | PostgreSQL | `Npgsql.EntityFrameworkCore.PostgreSQL` 10.0.x | PostgreSQL 18 |
-| SQLite | `Microsoft.EntityFrameworkCore.Sqlite` 10.0.x | Windows and Linux; macOS verification is pending |
+| SQLite | `Microsoft.EntityFrameworkCore.Sqlite` 10.0.x | Windows, Linux and macOS 26 on Apple silicon |
 
 All three run the same shared test suite, which covers:
 
