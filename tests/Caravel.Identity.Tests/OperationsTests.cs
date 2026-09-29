@@ -20,13 +20,13 @@ public sealed partial class IdentityApplicationTests
         var unavailable = await client.GetAsync("/health/ready");
         Assert.Equal(HttpStatusCode.ServiceUnavailable, unavailable.StatusCode);
         Assert.Equal("Unhealthy", await unavailable.Content.ReadAsStringAsync());
-        Assert.False(File.Exists(factory.DatabasePath));
+        Assert.False(await factory.Database.ExistsAsync());
         await factory.InitializeAsync(initializeQueue: false);
         Assert.Equal(HttpStatusCode.ServiceUnavailable, (await client.GetAsync("/health/ready")).StatusCode);
         await using var queue = await factory.Services.GetRequiredService<IDbContextFactory<QueueDbContext>>().CreateDbContextAsync();
         await queue.Database.MigrateAsync();
         Assert.Equal("Healthy", await client.GetStringAsync("/health/ready"));
-        await queue.Database.ExecuteSqlRawAsync("ALTER TABLE CaravelQueueJobs DROP COLUMN Payload");
+        await queue.Database.ExecuteSqlRawAsync("ALTER TABLE \"CaravelQueueJobs\" DROP COLUMN \"Payload\"");
         Assert.Equal(HttpStatusCode.ServiceUnavailable, (await client.GetAsync("/health/ready")).StatusCode);
         Assert.Equal("Healthy", await client.GetStringAsync("/health/live"));
     }
@@ -39,7 +39,7 @@ public sealed partial class IdentityApplicationTests
         using var client = factory.Client();
         Assert.Equal(HttpStatusCode.NoContent, (await Login(client, "alice", Password)).StatusCode);
         await using var scope = factory.Services.CreateAsyncScope();
-        await scope.ServiceProvider.GetRequiredService<IdentityContext>().Database.ExecuteSqlRawAsync("ALTER TABLE AspNetUsers DROP COLUMN PasswordHash");
+        await scope.ServiceProvider.GetRequiredService<IdentityContext>().Database.ExecuteSqlRawAsync("ALTER TABLE \"AspNetUsers\" DROP COLUMN \"PasswordHash\"");
         Assert.Equal("Healthy", await client.GetStringAsync("/health/live"));
         var ready = await client.GetAsync("/health/ready");
         Assert.Equal(HttpStatusCode.ServiceUnavailable, ready.StatusCode);

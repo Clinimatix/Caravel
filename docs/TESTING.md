@@ -41,7 +41,7 @@ The shared provider tests in `tests/Caravel.Provider.Tests` check that Clarion, 
 pwsh -File scripts/Test-ProviderContainers.ps1
 ```
 
-It starts fresh SQL Server and PostgreSQL containers with random credentials on loopback-only ports, runs the provider tests and a migration workflow (`Test-ProviderMigrationSmoke.ps1`) against both, then removes the containers and their volumes. It doesn't start Docker for you or connect to a remote engine.
+It starts fresh SQL Server and PostgreSQL containers with random credentials on loopback-only ports, runs the provider tests, a migration workflow (`Test-ProviderMigrationSmoke.ps1`) and the packaged backend sample against both, then removes the containers and their volumes. It doesn't start Docker for you or connect to a remote engine.
 
 **With your own servers.** Point the tests at disposable servers you control, using a loopback address (`localhost`, `127.0.0.1` or `::1`). The fixtures reject remote hosts:
 
@@ -52,6 +52,15 @@ dotnet test tests/Caravel.Provider.Tests
 ```
 
 Each test creates its own randomly named database and drops only that database afterward. Use throwaway servers, never a database that holds real data.
+
+To run the composed backend against either server, restore the solution first, then run:
+
+```powershell
+pwsh -File scripts/Test-IdentitySmoke.ps1 -Provider sqlserver
+pwsh -File scripts/Test-IdentitySmoke.ps1 -Provider postgres
+```
+
+Each command requires the corresponding connection variable above. It packs the framework into an isolated feed, copies the sample, generates migrations for that provider and runs the shared account/backend tests with no skips. Those tests include duplicate and conflicting submissions, concurrent processing, schema failures, application-host restart, lost-acknowledgement recovery, schema upgrade/rollback and real Kestrel request-limit checks. The default `sqlite` run also exercises OIDC.
 
 ## Linux containers and child processes
 

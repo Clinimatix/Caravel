@@ -4,6 +4,8 @@ using Caravel.IdentitySample;
 using Caravel.Queues;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
@@ -15,7 +17,7 @@ public sealed partial class IdentityApplicationTests
     public async Task Original_identity_schema_upgrade_preserves_accounts_and_notes_and_adds_durable_ingestion()
     {
         await using var factory = new IdentityFactory();
-        await factory.InitializeAsync(initializeQueue: false, identityMigration: "20260928062032_InitialIdentity");
+        await factory.InitializeAsync(initializeQueue: false, identityMigration: "InitialIdentity");
         var noteId = Guid.NewGuid();
         await using (var scope = factory.Services.CreateAsyncScope())
         {
@@ -26,6 +28,15 @@ public sealed partial class IdentityApplicationTests
             await db.Database.MigrateAsync();
             Assert.Equal(2, (await db.Database.GetAppliedMigrationsAsync()).Count());
             Assert.False(db.Database.HasPendingModelChanges());
+            // Roll back the new, still-empty result table before admitting work, then upgrade again.
+            var initial = db.Database.GetMigrations().Single(migration => migration.EndsWith("_InitialIdentity", StringComparison.Ordinal));
+            await db.GetService<IMigrator>().MigrateAsync(initial);
+            Assert.Single(await db.Database.GetAppliedMigrationsAsync());
+            db.ChangeTracker.Clear();
+            Assert.Equal("Preserved across the counter upgrade", (await db.Notes.SingleAsync()).Text);
+            Assert.Equal(4, await db.Users.CountAsync());
+            await db.Database.MigrateAsync();
+            Assert.Empty(await db.CounterResults.ToListAsync());
             await using var queueDb = await scope.ServiceProvider.GetRequiredService<IDbContextFactory<QueueDbContext>>().CreateDbContextAsync();
             await queueDb.Database.MigrateAsync();
             Assert.Single(await queueDb.Database.GetAppliedMigrationsAsync());
@@ -150,6 +161,65 @@ public sealed partial class IdentityApplicationTests
         var failed = await Submit(client, "missing-queue-schema", 1);
         Assert.Equal(HttpStatusCode.InternalServerError, failed.StatusCode);
         Assert.DoesNotContain("CaravelQueueJobs", await failed.Content.ReadAsStringAsync());
+        await using var queueDb = await factory.Services.GetRequiredService<IDbContextFactory<QueueDbContext>>().CreateDbContextAsync();
+        await queueDb.Database.MigrateAsync();
+        Assert.Equal(HttpStatusCode.Accepted, (await Submit(client, "missing-queue-schema", 1)).StatusCode);
+        Assert.True(await factory.Services.GetRequiredService<QueueWorker>().RunOnceAsync("counter"));
+        factory.Clock.Advance(TimeSpan.FromSeconds(1));
+        Assert.Equal(new CounterSummary(1, 1), await client.GetFromJsonAsync<CounterSummary>("/counter/summary"));
+    }
+
+    [Fact]
+    public async Task Host_restart_recovers_pending_work_and_lost_ack_after_sessions_are_revoked()
+    {
+        await using var database = new IdentityTestDatabase();
+        var clock = new TestClock();
+        Guid committedJob;
+        Guid pendingJob;
+        await using (var original = new IdentityFactory(database, clock))
+        {
+            await original.InitializeAsync();
+            using var client = original.Client();
+            Assert.Equal(HttpStatusCode.NoContent, (await Login(client, "alice", Password)).StatusCode);
+            await Csrf(client);
+            committedJob = (await (await Submit(client, "committed-before-stop", 4)).Content.ReadFromJsonAsync<CounterAccepted>())!.JobId;
+            var queue = original.Services.GetRequiredService<IDatabaseQueue>();
+            var lease = (await queue.TryClaimAsync("counter"))!;
+            Assert.Equal(committedJob, lease.Context.JobId);
+            await using (var scope = original.Services.CreateAsyncScope())
+                await scope.ServiceProvider.GetRequiredService<CounterEventHandler>()
+                    .HandleAsync(new CounterEvent(4), lease.Context, CancellationToken.None);
+            // The receipt is committed, but acknowledgement has not reached the queue.
+            pendingJob = (await (await Submit(client, "pending-before-stop", 6)).Content.ReadFromJsonAsync<CounterAccepted>())!.JobId;
+            Assert.Equal(HttpStatusCode.NoContent, (await client.PostAsync("/auth/logout-all", null)).StatusCode);
+            clock.Advance(TimeSpan.FromSeconds(1));
+            Assert.Equal(HttpStatusCode.Unauthorized, (await Submit(client, "after-revocation", 100)).StatusCode);
+            Assert.Equal(HttpStatusCode.Unauthorized, (await client.GetAsync("/counter/summary")).StatusCode);
+        }
+
+        // Dispose the whole host and construct a new service provider over the same owned database.
+        clock.Advance(TimeSpan.FromMinutes(6));
+        await using var restarted = new IdentityFactory(database, clock);
+        using var freshClient = restarted.Client();
+        Assert.Equal("Healthy", await freshClient.GetStringAsync("/health/ready"));
+        Assert.Equal(HttpStatusCode.NoContent, (await Login(freshClient, "alice", Password)).StatusCode);
+        var worker = restarted.Services.GetRequiredService<QueueWorker>();
+        Assert.True(await worker.RunOnceAsync("counter"));
+        Assert.True(await worker.RunOnceAsync("counter"));
+        Assert.False(await worker.RunOnceAsync("counter"));
+        clock.Advance(TimeSpan.FromSeconds(1));
+        Assert.Equal(new CounterSummary(2, 10), await freshClient.GetFromJsonAsync<CounterSummary>("/counter/summary"));
+        var results = (await freshClient.GetFromJsonAsync<CounterResponse[]>("/counter/results"))!;
+        Assert.Equal(new[] { committedJob, pendingJob }.Order(), results.Select(result => result.JobId).Order());
+        var recoveredQueue = restarted.Services.GetRequiredService<IDatabaseQueue>();
+        var committed = (await recoveredQueue.GetStatusAsync(committedJob, "counter", "alice"))!;
+        Assert.Equal(QueueJobState.Completed, committed.State);
+        Assert.Equal(2, committed.Attempts);
+        var pending = (await recoveredQueue.GetStatusAsync(pendingJob, "counter", "alice"))!;
+        Assert.Equal(QueueJobState.Completed, pending.State);
+        Assert.Equal(1, pending.Attempts);
+        await using var queueDb = await restarted.Services.GetRequiredService<IDbContextFactory<QueueDbContext>>().CreateDbContextAsync();
+        Assert.Equal(2, await queueDb.Jobs.CountAsync());
     }
 
     [Fact]
@@ -165,9 +235,9 @@ public sealed partial class IdentityApplicationTests
         var staleLease = (await queue.TryClaimAsync("counter"))!;
         Assert.Equal(accepted.JobId, staleLease.Context.JobId);
         var gate = new ReceiptInsertGate();
-        await using var staleDb = new IdentityContext(new DbContextOptionsBuilder<IdentityContext>()
-            .UseSqlite(new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder { DataSource = factory.DatabasePath }.ToString())
-            .AddInterceptors(gate).Options);
+        var staleOptions = new DbContextOptionsBuilder<IdentityContext>();
+        factory.Database.Configure(staleOptions);
+        await using var staleDb = new IdentityContext(staleOptions.AddInterceptors(gate).Options);
         using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(20));
         var staleHandler = new CounterEventHandler(staleDb, factory.Clock);
         var staleInsert = staleHandler.HandleAsync(new CounterEvent(4), staleLease.Context, deadline.Token);
