@@ -5,7 +5,7 @@
     <LangVersion>14.0</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Version>26.1.0-m1</Version>
+    <Version>26.1.0-rc1</Version>
     <Authors>Clinimatix, LLC;Rhett Waldock</Authors>
     <Company>Clinimatix, LLC</Company>
     <Product>Clinimatix Caravel</Product>

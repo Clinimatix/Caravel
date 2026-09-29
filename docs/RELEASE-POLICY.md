@@ -38,9 +38,9 @@ Every release requires a fresh, passing CI run on its exact commit.
 
 ## Using prerelease packages
 
-The current source candidate has not been published. You can build it from source using the [getting started guide](GETTING-STARTED.md). Published prereleases will provide packages through [GitHub releases](https://github.com/Clinimatix/Caravel/releases) before NuGet distribution is introduced. When a release is available:
+The 26.1 candidate version is **`26.1.0-rc1`**. Prereleases provide packages through [GitHub releases](https://github.com/Clinimatix/Caravel/releases), before nuget.org distribution is introduced. You can also build from source using the [getting started guide](GETTING-STARTED.md).
 
-1. Download the release's packages and extract them to a local folder, which becomes your package feed.
+1. Download the release's package ZIP and verify its SHA-256 against `SHA256SUMS.txt`. Extract the ZIP to a local folder, which becomes your package feed; keep the individual `.nupkg` files intact.
 2. Add the folder as a source in your application's `NuGet.Config`, alongside nuget.org for Caravel's dependencies. Merge these sources into an existing configuration rather than replacing other feeds your app needs:
 
    ```xml
@@ -56,8 +56,8 @@ The current source candidate has not been published. You can build it from sourc
 3. From that application's directory, install the selected version:
 
    ```powershell
-   dotnet add package Clinimatix.Caravel.AspNetCore --version 26.1.0-m1
-   dotnet tool install Clinimatix.Caravel.Bosun --tool-path <tools-folder> --version 26.1.0-m1
+   dotnet add package Clinimatix.Caravel.AspNetCore --version 26.1.0-rc1
+   dotnet tool install Clinimatix.Caravel.Bosun --tool-path <tools-folder> --version 26.1.0-rc1
    ```
 
 4. Commit your lock file, and upgrade deliberately by changing the selected version. Use locked restore in automation to enforce the recorded dependency graph.

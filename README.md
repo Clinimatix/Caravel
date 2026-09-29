@@ -6,7 +6,7 @@ Clinimatix Caravel is an open-source application framework that brings expressiv
 
 Use the whole framework, or pick just the packages you need.
 
-Caravel is in **prerelease development**. [Features](#what-you-can-build) · [Quick start](#quick-start) · [Documentation](https://github.com/Clinimatix/Caravel/blob/main/docs/README.md) · [Status](#project-status)
+Caravel **26.1 is a release candidate**. [Features](#what-you-can-build) · [Quick start](#quick-start) · [Documentation](https://github.com/Clinimatix/Caravel/blob/main/docs/README.md) · [Status](#project-status)
 
 ```csharp
 using Caravel.AspNetCore;
@@ -59,10 +59,10 @@ It is organized into optional packages, so you can take as much or as little as 
 
 You'll need the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0). Nothing else is required: no database server, Node, or Docker.
 
-The packages aren't on NuGet yet, so for now you run Caravel from a clone of this repository:
+For packaged use, download the **26.1.0-rc1** packages from [GitHub releases](https://github.com/Clinimatix/Caravel/releases) and follow the [local-feed installation instructions](https://github.com/Clinimatix/Caravel/blob/main/docs/RELEASE-POLICY.md#using-prerelease-packages). Packages aren't on nuget.org yet. You can also run Caravel directly from the release source:
 
 ```powershell
-git clone https://github.com/Clinimatix/Caravel.git
+git clone --branch v26.1.0-rc1 https://github.com/Clinimatix/Caravel.git
 cd Caravel
 
 # Create a new app that references this checkout, then run it
@@ -79,7 +79,7 @@ dotnet run --project src/Caravel.Bosun -- route:list --project MyApp   # list yo
 dotnet run --project src/Caravel.Bosun -- doctor                       # check your setup
 ```
 
-Once the packages are published, `caravel new MyApp` and `caravel serve` will do the same thing.
+With the packaged tool installed, `caravel new MyApp` and `caravel serve` do the same thing. Keep your local package feed available when restoring generated apps.
 
 ## Learn more
 
@@ -93,11 +93,11 @@ Once the packages are published, `caravel new MyApp` and `caravel serve` will do
 
 ## Project status
 
-The current source candidate is **`26.1.0-m1`**, a milestone that hasn't been published as a package release. The application foundation and Clarion data layer are in place, most application services have landed, and developer tooling is well underway. APIs may still change between milestones; the [changelog](https://github.com/Clinimatix/Caravel/blob/main/CHANGELOG.md) notes what changed.
+The current candidate is **`26.1.0-rc1`**. Its scope includes the application foundation, Clarion data layer, authentication, durable background work, mail and notifications, and Bosun tooling. The documented APIs are settled for release qualification; remaining work toward stable focuses on fixes, upgrade validation and real-application feedback. See the [changelog](https://github.com/Clinimatix/Caravel/blob/main/CHANGELOG.md).
 
 - **Databases:** SQL Server, PostgreSQL, and SQLite are supported and tested. MariaDB is planned once an EF Core 10–compatible provider is available. See [database providers](https://github.com/Clinimatix/Caravel/blob/main/docs/DATABASE-PROVIDERS.md).
 - **Coming next:** passkeys, calendar scheduling, cloud storage, more notification channels and starter kits, and AI tooling. See the [roadmap](https://github.com/Clinimatix/Caravel/blob/main/docs/ROADMAP.md).
-- **Production use:** not recommended yet. The first release candidate is the point to start planning production use; see [versions and releases](https://github.com/Clinimatix/Caravel/blob/main/docs/RELEASE-POLICY.md).
+- **Adoption:** ready for deliberate prerelease evaluation and integration, with exact version pins and a rollback plan. This is not yet a stable release or compatibility commitment; see [versions and releases](https://github.com/Clinimatix/Caravel/blob/main/docs/RELEASE-POLICY.md).
 
 This version is a fresh start that replaces an earlier prototype.
 
