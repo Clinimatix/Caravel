@@ -423,7 +423,7 @@
       "Clinimatix.Caravel.Scheduling": {
         "type": "Project",
         "dependencies": {
-          "Clinimatix.Caravel.Queues": "[0.2.0-m1, )",
+          "Clinimatix.Caravel.Queues": "[26.1.0-rc1, )",
           "Microsoft.Extensions.Hosting.Abstractions": "[10.0.12, )"
         }
       },

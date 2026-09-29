@@ -1,8 +1,8 @@
 # Changelog
 
-## 26.1.0-m1 (unreleased)
+## 26.1.0-rc1 — 2026-09-29
 
-This milestone is a fresh start. It replaces the earlier .NET 9 prototype with a modular framework built on .NET 10 and C# 14.
+The first release candidate brings together the 26.1 application foundation, data layer and services. It replaces the earlier .NET 9 prototype with a modular framework built on .NET 10 and C# 14. The documented scope and APIs are settled for release qualification; stable follows real-application feedback and upgrade validation.
 
 ### Application foundation
 
@@ -63,7 +63,8 @@ This milestone is a fresh start. It replaces the earlier .NET 9 prototype with a
 
 ### Known limitations
 
-- Packages aren't on NuGet yet; see the [quick start](README.md#quick-start).
-- Not yet included: email confirmation and password reset flows, passkeys, calendar/time-zone scheduling, cloud storage drivers, mail and notifications, a Caravel cache API, and the AI/MCP packages. See the [roadmap](docs/ROADMAP.md).
+- Prerelease packages are distributed as GitHub release assets, not through nuget.org; see [installation instructions](docs/RELEASE-POLICY.md#using-prerelease-packages).
+- Not yet included: passkeys, finished account-management screens, calendar/time-zone scheduling, cloud storage drivers, additional notification providers, a Caravel cache API, and the AI/MCP packages. See the [roadmap](docs/ROADMAP.md).
+- SMTP and SMS adapters have automated protocol tests; provider acceptance does not guarantee recipient delivery. Configure and verify your chosen delivery service before use. SMS delivery is not SMS MFA.
 - MariaDB is waiting on an EF Core 10–compatible provider.
 - Linux and macOS storage requires a filesystem that supports hard links.

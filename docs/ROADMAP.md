@@ -40,7 +40,7 @@ New packages are added when there's real integration work to do. Caching, for ex
 
 ## Where things stand
 
-The current source candidate is **`26.1.0-m1`** and has not been published as a package release. Development is organized into milestones:
+The current release candidate is **`26.1.0-rc1`**. Its scope is the available capability set below; broader development is organized into architecture milestones:
 
 | Milestone | Focus | Status |
 | --- | --- | --- |
@@ -54,7 +54,7 @@ Architecture milestones (M0–M4) are separate from release version suffixes: `2
 
 ### Available today
 
-These capabilities form the planned 26.1 release scope. The later work listed below can arrive in subsequent release families; it is not a prerequisite for the first release candidate.
+These capabilities form the 26.1 release scope. The later work listed below can arrive in subsequent release families; it is not a prerequisite for 26.1 stable.
 
 - Routing, configuration, service providers, validation defaults and route inspection
 - Clarion with SQL Server, PostgreSQL and SQLite
