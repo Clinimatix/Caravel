@@ -21,7 +21,7 @@ dotnet ef database update --project samples/Caravel.Identity --context QueueDbCo
 
 The sample also accepts `Caravel:DatabaseProvider` set to `sqlserver` or `postgres`. For those providers, `Caravel:IdentityDatabase` is a connection string instead of a file path. Generate and review provider-specific migrations for both contexts in your own application; do not apply the included SQLite migrations to a server database. The [packaged backend tests](TESTING.md#test-against-sql-server-and-postgresql) demonstrate this using disposable copies and databases.
 
-Follow [the authentication guide](AUTHENTICATION.md#try-the-sample) to create a demo user. There are no built-in credentials or public registration endpoint.
+Follow [the authentication guide](AUTHENTICATION.md#try-the-sample) to create a demo user. There are no built-in credentials, and registration is disabled by default. The same guide explains how to opt into registration, confirmation email and MFA.
 
 To run this demo with its queue worker enabled:
 

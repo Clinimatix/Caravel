@@ -9,6 +9,8 @@ public sealed class DatabaseQueueOptions
     public int MaxPayloadBytes { get; set; } = 64 * 1024;
     public int MaxAttempts { get; set; } = 3;
     public TimeSpan LeaseDuration { get; set; } = TimeSpan.FromMinutes(5);
+    public TimeSpan? LeaseRenewalInterval { get; set; }
+    public TimeSpan MaxLeaseLifetime { get; set; } = TimeSpan.FromHours(1);
     public TimeSpan RetryDelay { get; set; } = TimeSpan.FromSeconds(5);
     public TimeSpan MaxRetryDelay { get; set; } = TimeSpan.FromMinutes(5);
 
@@ -18,6 +20,11 @@ public sealed class DatabaseQueueOptions
         if (MaxAttempts is < 1 or > 100) throw new ArgumentOutOfRangeException(nameof(MaxAttempts));
         if (LeaseDuration < TimeSpan.FromSeconds(1) || LeaseDuration > TimeSpan.FromHours(1))
             throw new ArgumentOutOfRangeException(nameof(LeaseDuration));
+        if (MaxLeaseLifetime < LeaseDuration || MaxLeaseLifetime > TimeSpan.FromDays(7))
+            throw new ArgumentOutOfRangeException(nameof(MaxLeaseLifetime));
+        if (LeaseRenewalInterval is { } renewal &&
+            (renewal < TimeSpan.FromMilliseconds(100) || renewal > LeaseDuration / 2))
+            throw new ArgumentOutOfRangeException(nameof(LeaseRenewalInterval));
         if (RetryDelay < TimeSpan.FromMilliseconds(1) || MaxRetryDelay < RetryDelay || MaxRetryDelay > TimeSpan.FromDays(1))
             throw new ArgumentOutOfRangeException(nameof(RetryDelay));
         return (DatabaseQueueOptions)MemberwiseClone();
@@ -35,7 +42,8 @@ public static class QueueServiceExtensions
         services.AddSingleton(options.ValidatedCopy());
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddSingleton<JobRegistry>();
-        services.TryAddSingleton<IDatabaseQueue, DatabaseQueue>();
+        services.TryAddSingleton<DatabaseQueue>();
+        services.TryAddSingleton<IDatabaseQueue>(provider => provider.GetRequiredService<DatabaseQueue>());
         services.TryAddSingleton(provider => new QueueWorker(provider.GetRequiredService<IDatabaseQueue>(),
             provider.GetRequiredService<IServiceScopeFactory>(), provider.GetRequiredService<JobRegistry>(),
             provider.GetRequiredService<DatabaseQueueOptions>(), provider.GetRequiredService<TimeProvider>()));

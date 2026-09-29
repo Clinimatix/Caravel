@@ -1,6 +1,6 @@
 # Authentication
 
-Caravel Auth helps you set up ASP.NET Core Identity for a web app. It uses .NET's user manager, password hashing, cookies, roles and policies. Your app chooses the database and the screens or endpoints people use to sign in.
+Caravel Auth helps you set up ASP.NET Core Identity for a web app. It uses .NET's user manager, password hashing, cookies, roles and policies. Add the optional account endpoints for registration, email confirmation, password recovery and authenticator-app MFA. Your app chooses the database, mail transport and account screens.
 
 The optional package is `Clinimatix.Caravel.Auth`. It works in an ordinary ASP.NET Core app; it doesn't require Clarion or bundle a database provider.
 
@@ -23,6 +23,51 @@ Register `AppDbContext` with your EF Core provider first. It should inherit from
 In a Caravel app, `UseCaravel` adds authentication before authorization. In an ordinary ASP.NET Core app, add `UseAuthentication` and `UseAuthorization` in that order. Put HTTPS redirection before them.
 
 This registers services; it doesn't create users, change your database or expose registration endpoints. Apply reviewed EF migrations yourself.
+
+## Add registration, recovery and MFA
+
+Map the account routes explicitly after registering Identity, antiforgery and an ASP.NET Core rate limiting policy:
+
+```csharp
+app.MapCaravelAccountEndpoints<IdentityUser>("/auth", new AccountEndpointOptions
+{
+    AllowRegistration = true,
+    ConfirmationPage = new Uri("https://accounts.example.com/confirm"),
+    PasswordResetPage = new Uri("https://accounts.example.com/reset-password"),
+    RateLimitPolicy = "accounts"
+});
+```
+
+`AllowRegistration` defaults to `false`. Opt in only when the app should accept new accounts. The routes work with a user class that has a parameterless constructor, an Identity email store, security stamps, authenticator keys and recovery-code support. Identity's standard EF store supplies those capabilities. Register `IEmailSender<TUser>` to deliver native Identity messages; the sample's [adapter](../samples/Caravel.Identity/AccountMailSender.cs) connects it to [Caravel Mail](MAIL.md). Auth itself has no mail-transport dependency.
+
+The two configured URLs are trusted application pages, not API callbacks. They must be absolute HTTPS addresses without credentials, query strings or fragments. Caravel appends `email` and a URL-safe `token`; it never builds these links from the request's Host header. Each page reads those values, obtains an antiforgery token, and posts to the appropriate API route. Build those pages in your application's UI, avoid third-party assets on token-bearing pages, and don't record tokens in analytics or logs.
+
+All these routes are JSON POST endpoints. They validate antiforgery tokens, set `Cache-Control: no-store`, and use the configured rate policy. Supply a token endpoint such as the sample's `/auth/csrf`; fetch a new token after sign-in or sign-out. Add `UseRateLimiter` after authentication and before endpoints. Configure a request-body limit at the server or proxy too.
+
+| Route under the mapped prefix | JSON fields | Result |
+| --- | --- | --- |
+| `/register` | `email`, `password` | 202 with no account-existence disclosure; 404 when registration is disabled |
+| `/resend-confirmation` | `email` | 202; sends only for an existing unconfirmed account |
+| `/confirm-email` | `email`, `token` | 204 on confirmation; otherwise 400 |
+| `/forgot-password` | `email` | 202; sends only for an existing confirmed account |
+| `/reset-password` | `email`, `token`, `newPassword` | 204 on reset; otherwise 400 |
+| `/mfa/login` | Either `code` or `recoveryCode` | 204 after the password step; otherwise 401 |
+| `/mfa/setup` | `password` | Authenticated; returns `sharedKey` for an unenrolled account |
+| `/mfa/enable` | `password`, `code` | Authenticated; enables MFA and returns ten `recoveryCodes` |
+| `/mfa/recovery-codes` | `password`, either `code` or `recoveryCode` | Authenticated; replaces all recovery codes |
+| `/mfa/disable` | `password`, either `code` or `recoveryCode` | Authenticated; disables MFA, rotates the key and removes recovery codes |
+
+Registration failures, including duplicate accounts and passwords that do not satisfy policy, return the same 202 response. Show the password policy before submission and direct users to check their email or use recovery. Delivery failures are logged without the recipient, token or transport exception and retain that generic response; configure mail-service monitoring and offer resend. These responses reduce account enumeration, but do not promise identical response timing. Invalid input shapes return 400. Apply network/account-aware abuse controls appropriate to your deployment.
+
+Confirmation and reset tokens come from native Identity token providers. A successful password reset changes the security stamp, invalidates the reset token and revokes existing application and pending-MFA cookies. Resetting a password does not disable MFA. Configure native token lifetimes and persistent Data Protection keys for your application.
+
+### Authenticator apps and recovery
+
+Password login must return a distinct pending result when `PasswordSignInAsync` reports `RequiresTwoFactor`; the sample returns 202 with `{ "requiresTwoFactor": true }`. Identity issues a five-minute continuation cookie, which does not authorize application requests. Submit a TOTP authenticator code or a single-use recovery code to `/mfa/login` using that browser's cookies. Both invalid-code paths enforce account lockout. Caravel binds the continuation cookie to the security stamp, so revoking sessions also invalidates unfinished logins.
+
+Enrollment requires an authenticated account and its current password. Show `sharedKey` only to that user, let them add it to their authenticator, then submit a current code to enable MFA. The framework delegates key generation and TOTP verification to Identity. There is no SMS fallback or custom cryptography.
+
+Save the recovery codes when they are first returned. Enabling MFA, replacing recovery codes and disabling MFA sign the caller out and revoke other sessions. Replacing codes or disabling MFA requires both the current password and an authenticator code or an unused recovery code. To rotate an authenticator key, disable and enroll again; MFA is off between those steps. Each recovery code is consumed once: recovering a lost authenticator requires one code for sign-in and another for disabling MFA or replacing the remaining codes. Losing both the authenticator and the recovery codes needs an application-owned, verified account-recovery process; this package does not supply an administrative bypass.
 
 ## What the defaults do
 
@@ -85,7 +130,7 @@ HTTPS requires your usual .NET development certificate. Demo-user provisioning w
 | Endpoint | Purpose |
 | --- | --- |
 | `GET /auth/csrf` | Gets the token and header name to send with mutations; keep the returned cookie too |
-| `POST /auth/login` | Signs in with a JSON `userName` and `password` |
+| `POST /auth/login` | Signs in with a JSON `userName` and `password`; returns 202 when MFA is required |
 | `POST /auth/logout` | Signs out the current browser |
 | `POST /auth/password` | Changes the signed-in account's password using JSON `currentPassword` and `newPassword`, then signs out all its sessions |
 | `POST /auth/logout-all` | Revokes the signed-in account's sessions and signs out this browser; no body is needed |
@@ -96,7 +141,9 @@ HTTPS requires your usual .NET development certificate. Demo-user provisioning w
 
 The same sample also demonstrates [authenticated ingestion and reporting](BACKEND-SAMPLE.md): accept a counter event, save a durable job, process it safely after a retry, and query only your own results. Its queue uses a separate migration history in the same SQLite file, which is why you apply both migrations above.
 
-The sample's tests in `tests/Caravel.Identity.Tests` exercise every endpoint against throwaway SQLite databases, and make good reading if you want to see each behavior in action.
+The sample uses an in-memory mail capture transport and never sends real messages. Registration remains disabled unless `Caravel__Accounts__AllowRegistration=true`. Configure `Caravel__Accounts__ConfirmationPage` and `Caravel__Accounts__PasswordResetPage` for your own UI; their localhost defaults are placeholders, and the sample does not implement account screens. Captured mail is available through the `MailCapture` service to tests, not through a public HTTP inbox.
+
+The sample's tests in `tests/Caravel.Identity.Tests` exercise registration, confirmation, recovery, TOTP enrollment, pending sign-in, lockout and session revocation against disposable databases.
 
 ## Change a password or revoke sessions
 
@@ -121,7 +168,7 @@ With the sample's default stamp checks, other sessions and copied old cookies ar
 
 ## What's not included yet
 
-Caravel Auth sets up local accounts. It doesn't yet include email confirmation or password reset screens, passkeys, or two-factor sign-in flows; those are on the [roadmap](ROADMAP.md). For other ways to sign in, see:
+Caravel Auth supplies account APIs, not finished account screens. Passkeys, SMS authentication, external account linking and an administrator-assisted recovery workflow remain outside this implementation. For other ways to sign in, see:
 
 - [OpenID Connect](OIDC-AUTHENTICATION.md), for signing in with an external identity provider such as Microsoft Entra ID
 - [Service authentication](SERVICE-AUTHENTICATION.md), for APIs called with bearer tokens

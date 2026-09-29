@@ -19,6 +19,8 @@
     <NuGetAuditMode>all</NuGetAuditMode>
     <WarningsAsErrors>$(WarningsAsErrors);NU1901;NU1902;NU1903;NU1904</WarningsAsErrors>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <!-- Release binaries and symbols must not disclose the build machine's source path. -->
+    <PathMap Condition="'$(Configuration)' == 'Release' and '$(PathMap)' == ''">$(MSBuildThisFileDirectory)=/_/</PathMap>
   </PropertyGroup>
   <ItemGroup Condition="Exists('$(MSBuildThisFileDirectory)README.md')">
     <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="/" Visible="false" />

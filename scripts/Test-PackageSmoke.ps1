@@ -17,9 +17,10 @@ function Invoke-Checked([string]$Executable, [string[]]$Arguments) {
 
 Push-Location $root
 try {
-    foreach ($name in @('Core', 'AspNetCore', 'Bosun', 'Clarion', 'Auth', 'Auth.Windows', 'Events', 'Queues', 'Storage', 'Scheduling')) {
+    foreach ($name in @('Core', 'AspNetCore', 'Bosun', 'Clarion', 'Auth', 'Auth.Windows', 'Events', 'Queues', 'Storage', 'Scheduling', 'Mail', 'Notifications')) {
         Invoke-Checked dotnet @('pack', "src/Caravel.$name/Caravel.$name.csproj", '-c', 'Release', '--no-restore', '-o', $packages)
     }
+    & (Join-Path $PSScriptRoot 'Test-PackagePaths.ps1') -PackageDirectory $packages
     # Never reuse an earlier package with the same pre-alpha version from a global cache.
     $env:NUGET_PACKAGES = Join-Path $run 'package-cache'
     $toolPackages = @(Get-ChildItem -LiteralPath $packages -Filter 'Clinimatix.Caravel.Bosun.*.nupkg')

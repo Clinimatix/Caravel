@@ -12,6 +12,23 @@ namespace Caravel.Auth.Tests;
 
 public sealed class IdentityTests
 {
+    [Theory]
+    [InlineData("http://accounts.example.invalid/confirm")]
+    [InlineData("https://user:password@accounts.example.invalid/confirm")]
+    [InlineData("https://accounts.example.invalid/confirm?redirect=elsewhere")]
+    [InlineData("https://accounts.example.invalid/confirm#fragment")]
+    public async Task Account_mapping_rejects_untrusted_callback_shapes(string callback)
+    {
+        var builder = WebApplication.CreateBuilder();
+        await using var app = builder.Build();
+        Assert.Throws<ArgumentException>(() => app.MapCaravelAccountEndpoints<IdentityUser>("/auth", new AccountEndpointOptions
+        {
+            ConfirmationPage = new Uri(callback),
+            PasswordResetPage = new Uri("https://accounts.example.invalid/reset"),
+            RateLimitPolicy = "accounts"
+        }));
+    }
+
     [Fact]
     public async Task IdentityUsesNativeSchemesAndSecureDefaultsWithoutChoosingAStore()
     {

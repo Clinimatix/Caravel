@@ -33,6 +33,8 @@ Everything lives in this repository and shares one version number, but each pack
 | `Clinimatix.Caravel.Queues` | EF Core | Durable database jobs and workers. |
 | `Clinimatix.Caravel.Scheduling` | Queues | Fixed-interval schedules that enqueue jobs. |
 | `Clinimatix.Caravel.Storage` | Microsoft.Extensions.DependencyInjection | Streaming local storage disks. |
+| `Clinimatix.Caravel.Mail` | MailKit, Queues | SMTP, message templates, attachments, development capture and queued delivery. |
+| `Clinimatix.Caravel.Notifications` | Mail, Microsoft.Extensions.Http | Replaceable mail/SMS channels, capture and an optional Twilio HTTP adapter. |
 
 New packages are added when there's real integration work to do. Caching, for example, is a [recipe over .NET's own services](CACHING.md) until a Caravel package would add something useful.
 
@@ -52,21 +54,24 @@ Architecture milestones (M0–M4) are separate from release version suffixes: `2
 
 ### Available today
 
+These capabilities form the planned 26.1 release scope. The later work listed below can arrive in subsequent release families; it is not a prerequisite for the first release candidate.
+
 - Routing, configuration, service providers, validation defaults and route inspection
 - Clarion with SQL Server, PostgreSQL and SQLite
 - Bosun: Razor and API starters, development sessions, data commands, and job/event/listener generators
-- Local Identity accounts, Windows authentication, and documented recipes for OpenID Connect sign-in and bearer-token APIs
-- Events, durable queues with retries and replay, fixed-interval scheduling and local storage
+- Local Identity accounts with opt-in registration, confirmation/password recovery and TOTP MFA/recovery codes; Windows authentication; and recipes for OpenID Connect sign-in and bearer-token APIs
+- Events, durable queues with retries, replay and bounded lease renewal, transactional outbox dispatch, fixed-interval scheduling and local storage
+- Transactional mail with templates, attachments and SMTP; replaceable mail/SMS notification channels with development capture and a Twilio adapter
 - Queue metrics and tracing through standard .NET diagnostics
 - Samples covering a data-only app, a worker, an authenticated backend and OIDC sign-in
 
 ### Coming next
 
-- **Accounts:** email confirmation and password reset flows, passkeys and two-factor authentication
+- **Accounts:** passkeys and finished account-management screens built on the native account endpoints
 - **Scheduling:** calendar and time-zone-aware schedules (cron-style)
 - **Storage:** cloud drivers such as Azure Blob Storage and S3
-- **Queues:** in-memory and synchronous drivers, batches, chains and lease renewal
-- **Mail and notifications**
+- **Queues:** in-memory and synchronous drivers, batches and chains
+- **Mail and notifications:** additional mail/SMS providers, in-app inboxes, browser/mobile push, chat channels, delivery receipts and recipient preferences; see [channel plans and current limits](NOTIFICATIONS.md#later-channel-work)
 - **Starter kits:** Blazor and React, plus authentication scaffolding
 - **Deployment helpers:** Windows Service and IIS publishing, and optional Aspire integration
 - **Databases:** MariaDB/MySQL, once an EF Core 10–compatible provider is available (see [database providers](DATABASE-PROVIDERS.md))

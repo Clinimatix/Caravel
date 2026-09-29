@@ -22,14 +22,16 @@ The `scripts/` folder has PowerShell 7 scripts that pack the framework, install 
 
 | Script | What it checks | Run it when you change… |
 | --- | --- | --- |
-| `Test-PackageSmoke.ps1` | Packs every package, installs the `caravel` tool locally, then generates, builds and runs Razor and API starters | Bosun, the starters or packaging |
+| `Test-PackageSmoke.ps1` | Packs every package, checks compiled debug paths, installs the `caravel` tool locally, then generates, builds and runs Razor and API starters | Bosun, the starters or packaging |
 | `Test-DataSmoke.ps1` | Migrates, seeds, upgrades and rolls back a throwaway SQLite database using the packaged tool and Clarion | Clarion or the data commands |
-| `Test-ServicePackages.ps1` | Runs the Clarion, Queues, Storage and Scheduling tests against packed packages | Those packages or their packaging |
+| `Test-ServicePackages.ps1` | Runs the Clarion, Queues, Storage, Scheduling, Mail and Notifications tests against packed packages | Those packages or their packaging |
 | `Test-IdentitySmoke.ps1` | Runs the Identity, backend and OIDC sample tests against packed packages | Auth or the Identity/OIDC samples |
 | `Test-WorkerSmoke.ps1` | Runs the worker sample end to end, including a crash after a result is saved, recovery and duplicate-free totals | Queues, hosting or the worker sample |
 | `Test-LtsPolicy.ps1` and `Test-LtsPolicy.Tests.ps1` | Confirms the repository targets the latest .NET LTS | The target framework or SDK pin |
 
 Run them with `pwsh -File scripts/<name>.ps1`. `Test-ServicePackages.ps1` expects the solution to be restored first.
+
+Release builds map the source root to `/_/` so compiled debug metadata does not disclose the build machine's checkout path. Debug builds retain local paths for normal debugging. To inspect an existing package directory separately, run `pwsh -File scripts/Test-PackagePaths.ps1 -PackageDirectory <directory>`.
 
 ## Test against SQL Server and PostgreSQL
 

@@ -22,7 +22,7 @@ public sealed partial class IdentityApplicationTests
 
         using var client = factory.Client();
         var response = await Login(client, "alice", Password);
-        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        Assert.Equal(HttpStatusCode.Accepted, response.StatusCode);
         var cookies = response.Headers.GetValues("Set-Cookie").ToArray();
         // A native continuation cookie proves the correct password reached the two-factor branch.
         Assert.Contains(cookies, cookie => cookie.StartsWith(IdentityConstants.TwoFactorUserIdScheme + "=", StringComparison.Ordinal));

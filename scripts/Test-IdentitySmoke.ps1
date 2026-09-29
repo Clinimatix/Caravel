@@ -27,7 +27,7 @@ function Invoke-Checked([string]$Executable, [string[]]$Arguments) {
 
 Push-Location $root
 try {
-    foreach ($name in @('Core', 'AspNetCore', 'Clarion', 'Auth', 'Events', 'Queues')) {
+    foreach ($name in @('Core', 'AspNetCore', 'Clarion', 'Auth', 'Events', 'Queues', 'Mail')) {
         Invoke-Checked dotnet @('pack', "src/Caravel.$name/Caravel.$name.csproj", '-c', 'Release', '--no-restore', '-o', $packages)
     }
     $version = (Get-ChildItem -LiteralPath $packages -Filter 'Clinimatix.Caravel.Auth.*.nupkg').BaseName.Substring('Clinimatix.Caravel.Auth.'.Length)

@@ -29,7 +29,7 @@ Use concise `.env` aliases for common settings. Each maps to a structured .NET k
 
 If both forms appear in the same source, the structured key wins. The standard `__` separator (`Database__Host`) also works.
 
-These keys only map settings. Caravel doesn't yet include cache, queue, storage, or mail drivers that read them.
+These aliases map settings; they do not select or register a service automatically. Configure cache, queue, storage and mail explicitly through their service-registration APIs, as shown in each package's guide.
 
 ## The `.env` file
 

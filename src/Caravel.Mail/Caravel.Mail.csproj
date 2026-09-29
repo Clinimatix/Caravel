@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>Clinimatix.Caravel.Mail</PackageId>
+    <Description>Transactional mail, SMTP delivery, capture and durable sending for the Clinimatix Caravel framework.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Caravel.Queues/Caravel.Queues.csproj" />
+    <PackageReference Include="MailKit" />
+  </ItemGroup>
+</Project>

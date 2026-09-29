@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>Clinimatix.Caravel.Notifications</PackageId>
+    <Description>Optional mail and SMS notification channels for the Clinimatix Caravel framework.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Caravel.Mail/Caravel.Mail.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+  </ItemGroup>
+</Project>

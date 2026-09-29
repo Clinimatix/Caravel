@@ -30,9 +30,10 @@ await app.RunAsync();
 - **Expressive routing.** Typed handlers, named routes, and route groups, with ASP.NET Core authorization and metadata at hand.
 - **Clarion data access.** Query plain C# models with LINQ, and add timestamps, soft deletes, factories, and seeders. EF Core's relationships, transactions, and concurrency controls are still there when you need them. [Meet Clarion](https://github.com/Clinimatix/Caravel/blob/main/docs/CLARION.md).
 - **Bosun tooling.** The `caravel` command creates Razor or API apps, runs development sessions, lists routes, generates models, jobs and listeners, and manages migrations. [Data commands](https://github.com/Clinimatix/Caravel/blob/main/docs/BOSUN-DATA.md) · [Development sessions](https://github.com/Clinimatix/Caravel/blob/main/docs/DEVELOPMENT.md).
-- **Authentication that fits .NET.** Local Identity accounts with secure cookie defaults, Windows authentication for intranets, and recipes for OpenID Connect sign-in and bearer-token APIs. [Set up authentication](https://github.com/Clinimatix/Caravel/blob/main/docs/AUTHENTICATION.md).
+- **Authentication that fits .NET.** Local Identity accounts with opt-in registration, email confirmation, password recovery and authenticator-app MFA, Windows authentication for intranets, and recipes for OpenID Connect sign-in and bearer-token APIs. [Set up authentication](https://github.com/Clinimatix/Caravel/blob/main/docs/AUTHENTICATION.md).
 - **Simple events.** Dispatch events to ordered, scoped listeners and test them with a recording fake. [Use events](https://github.com/Clinimatix/Caravel/blob/main/docs/EVENTS.md).
-- **Durable background work.** Save typed jobs in your database, retry failures, replay dead letters, and enqueue recurring work on fixed intervals. [Queues](https://github.com/Clinimatix/Caravel/blob/main/docs/QUEUES.md) · [Scheduling](https://github.com/Clinimatix/Caravel/blob/main/docs/SCHEDULING.md).
+- **Durable background work.** Save typed jobs in your database, renew leases for longer work, retry failures, replay dead letters, and enqueue recurring work on fixed intervals. An application outbox commits dispatch intent alongside business data. [Queues](https://github.com/Clinimatix/Caravel/blob/main/docs/QUEUES.md) · [Scheduling](https://github.com/Clinimatix/Caravel/blob/main/docs/SCHEDULING.md).
+- **Mail and notifications.** Compose transactional email with templates and attachments, queue delivery, and choose replaceable mail or SMS channels. Development captures make messages easy to test. [Mail](https://github.com/Clinimatix/Caravel/blob/main/docs/MAIL.md) · [Notifications](https://github.com/Clinimatix/Caravel/blob/main/docs/NOTIFICATIONS.md).
 - **Local storage disks.** Stream files into named, application-owned directories with safe, create-only writes. [Use storage](https://github.com/Clinimatix/Caravel/blob/main/docs/STORAGE.md).
 - **A cohesive foundation.** Service providers, async startup, `.env` configuration, built-in validation, consistent HTTP errors, and queue metrics through standard .NET diagnostics.
 - **Practical starting points.** A Razor starter, an API starter with OpenAPI, data and worker samples, and an [authenticated backend sample](https://github.com/Clinimatix/Caravel/blob/main/docs/BACKEND-SAMPLE.md) that takes you from sign-in to durable processing to reporting.
@@ -51,6 +52,8 @@ It is organized into optional packages, so you can take as much or as little as 
 | `Clinimatix.Caravel.Queues` | Durable database jobs and workers |
 | `Clinimatix.Caravel.Scheduling` | Fixed-interval schedules that enqueue jobs |
 | `Clinimatix.Caravel.Storage` | Streaming local storage disks |
+| `Clinimatix.Caravel.Mail` | SMTP email, templates, attachments, capture and queued delivery |
+| `Clinimatix.Caravel.Notifications` | Mail/SMS channels, capture and an optional Twilio adapter |
 
 ## Quick start
 
@@ -93,7 +96,7 @@ Once the packages are published, `caravel new MyApp` and `caravel serve` will do
 The current source candidate is **`26.1.0-m1`**, a milestone that hasn't been published as a package release. The application foundation and Clarion data layer are in place, most application services have landed, and developer tooling is well underway. APIs may still change between milestones; the [changelog](https://github.com/Clinimatix/Caravel/blob/main/CHANGELOG.md) notes what changed.
 
 - **Databases:** SQL Server, PostgreSQL, and SQLite are supported and tested. MariaDB is planned once an EF Core 10–compatible provider is available. See [database providers](https://github.com/Clinimatix/Caravel/blob/main/docs/DATABASE-PROVIDERS.md).
-- **Coming next:** account flows such as email confirmation and password reset, calendar scheduling, cloud storage, mail, more starter kits, and AI tooling. See the [roadmap](https://github.com/Clinimatix/Caravel/blob/main/docs/ROADMAP.md).
+- **Coming next:** passkeys, calendar scheduling, cloud storage, more notification channels and starter kits, and AI tooling. See the [roadmap](https://github.com/Clinimatix/Caravel/blob/main/docs/ROADMAP.md).
 - **Production use:** not recommended yet. The first release candidate is the point to start planning production use; see [versions and releases](https://github.com/Clinimatix/Caravel/blob/main/docs/RELEASE-POLICY.md).
 
 This version is a fresh start that replaces an earlier prototype.
