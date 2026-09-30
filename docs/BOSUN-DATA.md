@@ -14,7 +14,7 @@ The `caravel` command-line tool can generate models, seeders, factories, and mig
 | `migrate:rollback <target> --force` | Rolls back to an earlier migration | **Yes, can delete data** |
 | `migrate:fresh --force` | Drops the database and rebuilds it from migrations | **Yes, deletes all data** |
 
-Until the packages are published, run these with `dotnet run --project src/Caravel.Bosun -- <command>` from a clone of this repository.
+Install Bosun from [NuGet](RELEASE-POLICY.md#using-prerelease-packages), then run these commands as `caravel <command>` from your application directory. For source development, you can also use `dotnet run --project <framework-checkout>/src/Caravel.Bosun -- <command>`.
 
 ## Setup
 
