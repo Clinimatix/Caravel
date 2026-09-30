@@ -86,6 +86,8 @@ For each release, a maintainer:
 4. Drafts a GitHub release with the packages, checksums, tested platforms, upgrade notes and known issues.
 5. Publishes it: as a prerelease for `-mN` and `-rcN` versions, and as a regular release otherwise.
 
+After publication, check the README, getting-started guide, roadmap, changelog, release policy and versioned website against the published version and package feeds. Update completed milestones from future to past tense, verify exact-version installation commands, and keep planned capabilities distinct from implemented behavior. Correct installation/status prose without changing historical API contracts or package payloads.
+
 Ordinary pushes never create tags or releases. Publishing to nuget.org is a separate, deliberate step.
 
 ### NuGet publication

@@ -40,7 +40,7 @@ New packages are added when there's real integration work to do. Caching, for ex
 
 ## Where things stand
 
-The current release candidate is **`26.1.0-rc1`**. Its scope is the available capability set below; broader development is organized into architecture milestones:
+**`26.1.0-rc1` is published as Public Preview 1**, the first release candidate. All twelve packages are available on [nuget.org](https://www.nuget.org/profiles/Clinimatix), with [GitHub release assets](https://github.com/Clinimatix/Caravel/releases/tag/v26.1.0-rc1) retained for local-feed installation. Its scope is the available capability set below; broader development is organized into architecture milestones:
 
 | Milestone | Focus | Status |
 | --- | --- | --- |
@@ -77,9 +77,11 @@ These capabilities form the 26.1 release scope. The later work listed below can 
 - **Databases:** MariaDB/MySQL, once an EF Core 10–compatible provider is available (see [database providers](DATABASE-PROVIDERS.md))
 - **AI and MCP:** the M4 packages listed above
 
-### Before a release candidate
+### Toward stable 26.1
 
-The first release candidate will come once the supported APIs have settled and been verified together in the framework's own sample applications. That includes supported database and hosting combinations, upgrade and recovery behavior, and fresh cross-platform CI on Windows, Linux and macOS. Until then, expect some API changes between milestones. The [changelog](../CHANGELOG.md) will describe them.
+Public Preview 1 has passed release-candidate qualification, including cross-platform checks on Windows, Linux and macOS and the supported database/provider paths. Deployment and application-specific verification remain separate.
+
+Work toward stable 26.1 focuses on integration feedback, fixes, documentation and upgrade validation. RCs remain public previews, not stable releases or a compatibility commitment. See the [release policy](RELEASE-POLICY.md) and [changelog](../CHANGELOG.md) for status and changes.
 
 ## Non-goals
 
