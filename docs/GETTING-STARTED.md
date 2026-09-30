@@ -4,7 +4,7 @@ This guide covers what happens inside a Caravel web app: how it starts up, how t
 
 ## Creating and running an app
 
-Install the candidate from [GitHub release packages](RELEASE-POLICY.md#using-prerelease-packages), or run the `caravel` tool from a clone of this repository with `dotnet run --project src/Caravel.Bosun -- <command>`. The table below uses source references; with the installed tool, omit `--framework-source .` to use packages from your configured feed.
+Install the candidate [from NuGet](RELEASE-POLICY.md#using-prerelease-packages), or run the `caravel` tool from a clone of this repository with `dotnet run --project src/Caravel.Bosun -- <command>`. The table below uses source references; with the installed tool, omit `--framework-source .` to use packages from nuget.org or your configured feed.
 
 | Command | What it does |
 | --- | --- |
