@@ -59,7 +59,15 @@ It is organized into optional packages, so you can take as much or as little as 
 
 You'll need the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0). Nothing else is required: no database server, Node, or Docker.
 
-For packaged use, download the **26.1.0-rc1** packages from [GitHub releases](https://github.com/Clinimatix/Caravel/releases) and follow the [local-feed installation instructions](https://github.com/Clinimatix/Caravel/blob/main/docs/RELEASE-POLICY.md#using-prerelease-packages). Packages aren't on nuget.org yet. You can also run Caravel directly from the release source:
+Install Bosun from [NuGet](https://www.nuget.org/packages/Clinimatix.Caravel.Bosun/26.1.0-rc1), then create and run an app. Generated apps restore their Caravel packages from nuget.org; no repository clone or local feed is needed.
+
+```powershell
+dotnet tool install --global Clinimatix.Caravel.Bosun --version 26.1.0-rc1
+caravel new MyApp
+caravel serve --project MyApp
+```
+
+You can also run Caravel directly from the release source:
 
 ```powershell
 git clone --branch v26.1.0-rc1 https://github.com/Clinimatix/Caravel.git
@@ -75,11 +83,11 @@ Building a backend? Add `--stack api` to `new` for a starter with request valida
 Other handy commands:
 
 ```powershell
-dotnet run --project src/Caravel.Bosun -- route:list --project MyApp   # list your routes
-dotnet run --project src/Caravel.Bosun -- doctor                       # check your setup
+caravel route:list --project MyApp   # list your routes
+caravel doctor                       # check your setup
 ```
 
-With the packaged tool installed, `caravel new MyApp` and `caravel serve` do the same thing. Keep your local package feed available when restoring generated apps.
+To add Caravel to an existing application, install only the [packages you need](https://www.nuget.org/profiles/Clinimatix) with an exact version, for example `dotnet add package Clinimatix.Caravel.AspNetCore --version 26.1.0-rc1`. [GitHub release ZIPs](https://github.com/Clinimatix/Caravel/releases) remain available for [local-feed installation](https://github.com/Clinimatix/Caravel/blob/main/docs/RELEASE-POLICY.md#using-a-release-zip).
 
 ## Learn more
 

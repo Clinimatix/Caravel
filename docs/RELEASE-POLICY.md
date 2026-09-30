@@ -38,7 +38,19 @@ Every release requires a fresh, passing CI run on its exact commit.
 
 ## Using prerelease packages
 
-The 26.1 candidate version is **`26.1.0-rc1`**. Prereleases provide packages through [GitHub releases](https://github.com/Clinimatix/Caravel/releases), before nuget.org distribution is introduced. You can also build from source using the [getting started guide](GETTING-STARTED.md).
+The 26.1 candidate version is **`26.1.0-rc1`**, available from [nuget.org](https://www.nuget.org/profiles/Clinimatix). Install libraries into an existing project or install Bosun to create an application:
+
+```powershell
+dotnet add package Clinimatix.Caravel.AspNetCore --version 26.1.0-rc1
+dotnet tool install --global Clinimatix.Caravel.Bosun --version 26.1.0-rc1
+caravel new MyApp
+```
+
+Enable **Include prerelease** when browsing packages in Visual Studio. Pin exact versions and use locked restore in automation. You can also build from source using the [getting started guide](GETTING-STARTED.md).
+
+### Using a release ZIP
+
+[GitHub releases](https://github.com/Clinimatix/Caravel/releases) retain the same package payloads for local-feed use:
 
 1. Download the release's package ZIP and verify its SHA-256 against `SHA256SUMS.txt`. Extract the ZIP to a local folder, which becomes your package feed; keep the individual `.nupkg` files intact.
 2. Add the folder as a source in your application's `NuGet.Config`, alongside nuget.org for Caravel's dependencies. Merge these sources into an existing configuration rather than replacing other feeds your app needs:
@@ -74,7 +86,7 @@ For each release, a maintainer:
 4. Drafts a GitHub release with the packages, checksums, tested platforms, upgrade notes and known issues.
 5. Publishes it: as a prerelease for `-mN` and `-rcN` versions, and as a regular release otherwise.
 
-Ordinary pushes never create tags or releases. Publishing to nuget.org will be a separate, deliberate step.
+Ordinary pushes never create tags or releases. Publishing to nuget.org is a separate, deliberate step.
 
 ### NuGet publication
 
