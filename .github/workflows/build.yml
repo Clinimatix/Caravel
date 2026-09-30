@@ -26,7 +26,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
       - name: Check latest LTS policy
@@ -94,7 +94,7 @@ jobs:
       CARAVEL_TEST_POSTGRES: Host=localhost;Username=postgres;Password=caravel_disposable_ci_only
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
       - run: dotnet restore Caravel.slnx --locked-mode
@@ -116,10 +116,10 @@ jobs:
     continue-on-error: true
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '11.0.x'
           dotnet-quality: preview
