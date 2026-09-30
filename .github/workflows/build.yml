@@ -25,7 +25,7 @@ jobs:
         os: ${{ fromJSON(inputs.platform == 'all' && '["windows-latest","ubuntu-latest","macos-latest"]' || format('["{0}"]', inputs.platform)) }}
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
@@ -93,7 +93,7 @@ jobs:
       CARAVEL_TEST_SQLSERVER: Server=localhost,1433;User ID=sa;Password=Caravel_Disposable_CI_42!;TrustServerCertificate=true
       CARAVEL_TEST_POSTGRES: Host=localhost;Username=postgres;Password=caravel_disposable_ci_only
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
@@ -115,7 +115,7 @@ jobs:
     timeout-minutes: 10
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
       - uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
