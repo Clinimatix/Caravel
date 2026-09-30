@@ -63,7 +63,7 @@ The first release candidate brings together the 26.1 application foundation, dat
 
 ### Known limitations
 
-- Prerelease packages are distributed as GitHub release assets, not through nuget.org; see [installation instructions](docs/RELEASE-POLICY.md#using-prerelease-packages).
+- All 12 RC1 packages are available on [nuget.org](https://www.nuget.org/profiles/Clinimatix), with GitHub release ZIPs retained for local-feed use; see [installation instructions](docs/RELEASE-POLICY.md#using-prerelease-packages).
 - Not yet included: passkeys, finished account-management screens, calendar/time-zone scheduling, cloud storage drivers, additional notification providers, a Caravel cache API, and the AI/MCP packages. See the [roadmap](docs/ROADMAP.md).
 - SMTP and SMS adapters have automated protocol tests; provider acceptance does not guarantee recipient delivery. Configure and verify your chosen delivery service before use. SMS delivery is not SMS MFA.
 - MariaDB is waiting on an EF Core 10–compatible provider.
