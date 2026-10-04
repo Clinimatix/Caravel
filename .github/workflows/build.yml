@@ -21,6 +21,7 @@ jobs:
   lts:
     timeout-minutes: 40
     strategy:
+      fail-fast: false
       matrix:
         os: ${{ fromJSON(inputs.platform == 'all' && '["windows-latest","ubuntu-latest","macos-latest"]' || format('["{0}"]', inputs.platform)) }}
     runs-on: ${{ matrix.os }}

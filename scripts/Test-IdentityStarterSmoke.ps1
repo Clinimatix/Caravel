@@ -3,6 +3,17 @@ param([ValidateSet('sqlite', 'sqlserver', 'postgres')][string]$Provider = 'sqlit
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot
 $run = Join-Path ([IO.Path]::GetTempPath()) ('caravel identity starter ' + [guid]::NewGuid().ToString('N'))
+$null = New-Item -ItemType Directory -Path $run
+if (-not $IsWindows) {
+    # NuGet project graphs must use one physical path, including through macOS /var symlinks.
+    Push-Location -LiteralPath $run
+    try {
+        $physicalPath = & /bin/pwd -P
+        if ($LASTEXITCODE -ne 0 -or $physicalPath -isnot [string] -or
+            -not [IO.Path]::IsPathFullyQualified($physicalPath)) { throw 'Cannot resolve the test directory physical path.' }
+        $run = $physicalPath.Trim()
+    } finally { Pop-Location }
+}
 $packages = Join-Path $run 'packages'
 $tool = Join-Path $run 'tool'
 $tests = Join-Path $run 'Tests'
