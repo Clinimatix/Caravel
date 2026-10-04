@@ -22,6 +22,7 @@ public sealed class IdentityContext(DbContextOptions<IdentityContext> options)
         builder.Entity<CounterResult>().HasOne<IdentityUser>().WithMany().HasForeignKey(result => result.OwnerId)
             .OnDelete(DeleteBehavior.Restrict);
         builder.Entity<CounterResult>().HasIndex(result => new { result.OwnerId, result.RecordedAt, result.JobId });
+        builder.AddWorkItems();
         builder.ApplyClarionConventions();
     }
 }

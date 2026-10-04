@@ -1,3 +1,4 @@
+param([switch]$Browser)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot
 $run = Join-Path $root ('artifacts/smoke ' + [guid]::NewGuid().ToString('N'))
@@ -17,9 +18,15 @@ function Invoke-Checked([string]$Executable, [string[]]$Arguments) {
 
 Push-Location $root
 try {
-    foreach ($name in @('Core', 'AspNetCore', 'Bosun', 'Clarion', 'Auth', 'Auth.Windows', 'Events', 'Queues', 'Storage', 'Scheduling', 'Mail', 'Notifications')) {
-        Invoke-Checked dotnet @('pack', "src/Caravel.$name/Caravel.$name.csproj", '-c', 'Release', '--no-restore', '-o', $packages)
+    # Use the same source package inventory as release promotion, including optional adapters.
+    $projects = @(Get-ChildItem -LiteralPath (Join-Path $root 'src') -Filter '*.csproj' -Recurse | Where-Object {
+        ([xml](Get-Content -LiteralPath $_.FullName -Raw)).Project.PropertyGroup.PackageId
+    } | Sort-Object FullName)
+    if ($projects.Count -eq 0) { throw 'No source packages found.' }
+    foreach ($project in $projects) {
+        Invoke-Checked dotnet @('pack', $project.FullName, '-c', 'Release', '--no-restore', '-o', $packages)
     }
+    if (@(Get-ChildItem -LiteralPath $packages -Filter '*.nupkg').Count -ne $projects.Count) { throw 'Packaged inventory differs from source.' }
     & (Join-Path $PSScriptRoot 'Test-PackagePaths.ps1') -PackageDirectory $packages
     # Never reuse an earlier package with the same pre-alpha version from a global cache.
     $env:NUGET_PACKAGES = Join-Path $run 'package-cache'
@@ -202,4 +209,5 @@ return 37;
         }
         Write-Output "Package smoke passed: installed CLI, service generators, Razor/API starters, routes, validation, liveness, Development-only OpenAPI and supervised watcher/worker cleanup. Artifacts: $run"
     } finally { Pop-Location }
+    & (Join-Path $PSScriptRoot 'Test-IdentityStarterSmoke.ps1') -Browser:$Browser
 } finally { $env:NUGET_PACKAGES = $previousPackages; Pop-Location }

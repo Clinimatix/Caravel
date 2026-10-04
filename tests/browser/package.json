@@ -1,0 +1,6 @@
+{
+  "name": "caravel-browser-tests",
+  "private": true,
+  "scripts": { "test": "node --test work-items.browser.test.cjs" },
+  "devDependencies": { "playwright": "1.63.0" }
+}

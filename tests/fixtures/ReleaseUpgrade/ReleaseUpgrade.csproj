@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Clinimatix.Caravel.AspNetCore" Version="$(CaravelPackageVersion)" />
+    <PackageReference Include="Clinimatix.Caravel.Auth" Version="$(CaravelPackageVersion)" />
+    <PackageReference Include="Clinimatix.Caravel.Clarion" Version="$(CaravelPackageVersion)" />
+    <PackageReference Include="Clinimatix.Caravel.Queues" Version="$(CaravelPackageVersion)" />
+    <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="$(PlatformPackageVersion)" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="$(PlatformPackageVersion)" />
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" Version="$(PlatformPackageVersion)" />
+  </ItemGroup>
+</Project>

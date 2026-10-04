@@ -11,4 +11,9 @@
     <PackageReference Include="System.CommandLine" />
     <InternalsVisibleTo Include="Caravel.Bosun.Tests" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Templates/Identity/**/*.template" LogicalName="Identity/%(RecursiveDir)%(Filename)" WithCulture="false" />
+    <EmbeddedResource Include="../../samples/Caravel.Identity/WorkItems.cs;../../samples/Caravel.Identity/WorkItemEndpoints.cs;../../samples/Caravel.Identity/SessionEndpoints.cs;../../samples/Caravel.Identity/DemoSetup.cs;../../samples/Caravel.Identity/AccountEndpoints.cs;../../samples/Caravel.Identity/AccountMailSender.cs;../../samples/Caravel.Identity/SampleDatabase.cs" LogicalName="Identity/%(Filename)%(Extension)" />
+    <EmbeddedResource Include="../../samples/Caravel.Identity/wwwroot/*" LogicalName="Identity/wwwroot/%(Filename)%(Extension)" />
+  </ItemGroup>
 </Project>

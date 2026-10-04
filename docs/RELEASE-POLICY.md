@@ -38,15 +38,17 @@ Every release requires a fresh, passing CI run on its exact commit.
 
 ## Using prerelease packages
 
-The 26.1 candidate version is **`26.1.0-rc1`**, available from [nuget.org](https://www.nuget.org/profiles/Clinimatix). Install libraries into an existing project or install Bosun to create an application:
+This guide targets **`26.1.0-rc2`**. [GitHub releases](https://github.com/Clinimatix/Caravel/releases) and [nuget.org](https://www.nuget.org/profiles/Clinimatix) are the canonical distribution locations. Use a configured feed containing the exact version you select. RC1's immutable packages omit the RC2 Identity starter and Azure adapter.
+
+With a configured feed containing RC2, install libraries into an existing project or install Bosun to create an application:
 
 ```powershell
-dotnet add package Clinimatix.Caravel.AspNetCore --version 26.1.0-rc1
-dotnet tool install --global Clinimatix.Caravel.Bosun --version 26.1.0-rc1
+dotnet add package Clinimatix.Caravel.AspNetCore --version 26.1.0-rc2
+dotnet tool install --global Clinimatix.Caravel.Bosun --version 26.1.0-rc2
 caravel new MyApp
 ```
 
-Enable **Include prerelease** when browsing packages in Visual Studio. Pin exact versions and use locked restore in automation. You can also build from source using the [getting started guide](GETTING-STARTED.md).
+Enable **Include prerelease** when browsing packages in Visual Studio. Pin exact versions and use locked restore in automation. Follow [upgrading from RC1](UPGRADING.md) when updating an existing application. You can also build from source using the [getting started guide](GETTING-STARTED.md).
 
 ### Using a release ZIP
 
@@ -68,8 +70,8 @@ Enable **Include prerelease** when browsing packages in Visual Studio. Pin exact
 3. From that application's directory, install the selected version:
 
    ```powershell
-   dotnet add package Clinimatix.Caravel.AspNetCore --version 26.1.0-rc1
-   dotnet tool install Clinimatix.Caravel.Bosun --tool-path <tools-folder> --version 26.1.0-rc1
+   dotnet add package Clinimatix.Caravel.AspNetCore --version 26.1.0-rc2
+   dotnet tool install Clinimatix.Caravel.Bosun --tool-path <tools-folder> --version 26.1.0-rc2
    ```
 
 4. Commit your lock file, and upgrade deliberately by changing the selected version. Use locked restore in automation to enforce the recorded dependency graph.

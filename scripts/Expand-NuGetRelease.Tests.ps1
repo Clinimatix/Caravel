@@ -3,14 +3,14 @@ $root = Join-Path ([IO.Path]::GetTempPath()) ('caravel-release-' + [guid]::NewGu
 [IO.Directory]::CreateDirectory($root) | Out-Null
 $version = '26.1.0-rc1'
 $commit = 'a' * 40
-function New-Candidate([string]$Name, [string]$Repository = 'https://github.com/Clinimatix/Caravel', [switch]$Extra) {
+function New-Candidate([string]$Name, [string]$Repository = 'https://github.com/Clinimatix/Caravel', [switch]$Extra, [switch]$MissingPackage) {
     $path = Join-Path $root "$Name.zip"
     $zip = [IO.Compression.ZipFile]::Open($path, [IO.Compression.ZipArchiveMode]::Create)
     try {
         foreach ($project in Get-ChildItem "$PSScriptRoot/../src" -Filter '*.csproj' -Recurse) {
             [xml]$xml = Get-Content -LiteralPath $project.FullName -Raw
             $id = [string]$xml.Project.PropertyGroup.PackageId
-            if (-not $id) { continue }
+            if (-not $id -or ($MissingPackage -and $id -eq 'Clinimatix.Caravel.Storage.Azure')) { continue }
             $stream = $zip.CreateEntry("$id.$version.nupkg").Open()
             $package = [IO.Compression.ZipArchive]::new($stream, [IO.Compression.ZipArchiveMode]::Create)
             try {
@@ -51,7 +51,10 @@ try {
     $parameters.Archive = New-Candidate 'extra' -Extra
     $parameters.Sha256 = (Get-FileHash $parameters.Archive).Hash
     Assert-Rejected $parameters 'Release ZIP package inventory mismatch.'
-    Write-Output 'Release validation self-check passed: valid candidate and five rejected candidates.'
+    $parameters.Archive = New-Candidate 'missing-package' -MissingPackage
+    $parameters.Sha256 = (Get-FileHash $parameters.Archive).Hash
+    Assert-Rejected $parameters 'Release ZIP package inventory mismatch.'
+    Write-Output 'Release validation self-check passed: valid candidate and six rejected candidates.'
 } finally {
     $resolved = [IO.Path]::GetFullPath($root)
     if (-not $resolved.StartsWith([IO.Path]::GetFullPath([IO.Path]::GetTempPath()), [StringComparison]::OrdinalIgnoreCase) -or
