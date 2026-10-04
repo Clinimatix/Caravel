@@ -25,6 +25,12 @@ public sealed class BackendReadinessCheck(string provider, string connection) : 
         await app.UserTokens.AsNoTracking().Take(1).ToListAsync(cancellationToken);
         await app.Notes.AsNoTracking().Take(1).ToListAsync(cancellationToken);
         await app.CounterResults.AsNoTracking().Take(1).ToListAsync(cancellationToken);
+        await app.Set<Workspace>().AsNoTracking().Take(1).ToListAsync(cancellationToken);
+        await app.Set<WorkspaceMember>().AsNoTracking().Take(1).ToListAsync(cancellationToken);
+        await app.Set<WorkItem>().AsNoTracking().Take(1).ToListAsync(cancellationToken);
+        await app.Set<WorkItemReceipt>().AsNoTracking().Take(1).ToListAsync(cancellationToken);
+        await app.Set<WorkItemChange>().AsNoTracking().Take(1).ToListAsync(cancellationToken);
+        await app.Set<OutboxMessage>().AsNoTracking().Take(1).ToListAsync(cancellationToken);
         var queueOptions = new DbContextOptionsBuilder<QueueDbContext>();
         SampleDatabase.Configure(queueOptions, provider, readOnly, queue: true);
         await using var queue = new QueueDbContext(queueOptions.Options);

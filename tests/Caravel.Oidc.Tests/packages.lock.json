@@ -365,14 +365,14 @@
       "caravel.oidc": {
         "type": "Project",
         "dependencies": {
-          "Clinimatix.Caravel.AspNetCore": "[26.1.0-rc1, )",
+          "Clinimatix.Caravel.AspNetCore": "[26.1.0-rc2, )",
           "Microsoft.AspNetCore.Authentication.OpenIdConnect": "[10.0.12, )"
         }
       },
       "Clinimatix.Caravel.AspNetCore": {
         "type": "Project",
         "dependencies": {
-          "Clinimatix.Caravel.Core": "[26.1.0-rc1, )"
+          "Clinimatix.Caravel.Core": "[26.1.0-rc2, )"
         }
       },
       "Clinimatix.Caravel.Core": {

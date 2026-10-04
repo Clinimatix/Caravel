@@ -455,7 +455,7 @@
       "Clinimatix.Caravel.AspNetCore": {
         "type": "Project",
         "dependencies": {
-          "Clinimatix.Caravel.Core": "[26.1.0-rc1, )"
+          "Clinimatix.Caravel.Core": "[26.1.0-rc2, )"
         }
       },
       "Clinimatix.Caravel.Auth": {
@@ -476,7 +476,7 @@
       "Clinimatix.Caravel.Mail": {
         "type": "Project",
         "dependencies": {
-          "Clinimatix.Caravel.Queues": "[26.1.0-rc1, )",
+          "Clinimatix.Caravel.Queues": "[26.1.0-rc2, )",
           "MailKit": "[4.18.1, )"
         }
       },

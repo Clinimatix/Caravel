@@ -26,7 +26,7 @@ public sealed partial class IdentityApplicationTests
             await db.SaveChangesAsync();
             Assert.Single(await db.Database.GetAppliedMigrationsAsync());
             await db.Database.MigrateAsync();
-            Assert.Equal(2, (await db.Database.GetAppliedMigrationsAsync()).Count());
+            Assert.Equal(3, (await db.Database.GetAppliedMigrationsAsync()).Count());
             Assert.False(db.Database.HasPendingModelChanges());
             // Roll back the new, still-empty result table before admitting work, then upgrade again.
             var initial = db.Database.GetMigrations().Single(migration => migration.EndsWith("_InitialIdentity", StringComparison.Ordinal));

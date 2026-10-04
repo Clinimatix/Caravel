@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Work items · Clinimatix Caravel</title>
+  <link rel="stylesheet" href="/work-items.css">
+  <script type="module" src="/work-items.js"></script>
+</head>
+<body>
+  <main>
+    <header><p>Clinimatix Caravel · Sample application</p><h1>Work items</h1></header>
+    <p id="message" role="status" aria-live="polite"></p>
+    <button id="retry-logout" type="button" hidden>Retry sign-out</button>
+    <form id="login">
+      <h2>Sign in</h2><p>Use an account created for this sample.</p>
+      <label>Email <input name="userName" type="email" autocomplete="username" required maxlength="256"></label>
+      <label>Password <input name="password" type="password" autocomplete="current-password" required maxlength="1024"></label>
+      <button>Sign in</button>
+    </form>
+    <section id="workspace-view" hidden>
+      <div class="toolbar"><label>Workspace <select id="workspace"></select></label><button id="logout" type="button">Sign out</button></div>
+      <p id="empty" hidden>No work items are available. Complete the sample setup to add one.</p>
+      <ul id="items"></ul>
+      <form id="complete" hidden>
+        <h2 id="item-title"></h2>
+        <p id="item-state"></p>
+        <label>Completion note <textarea name="comment" rows="3" required maxlength="160" aria-describedby="comment-error"></textarea></label>
+        <p id="comment-error" class="error"></p>
+        <button id="submit">Complete item</button>
+        <button id="reload" type="button">Reload item and start a new edit</button>
+      </form>
+      <p id="notice"></p>
+    </section>
+    <footer>This sample captures notices locally. A submitted notice does not establish recipient delivery.</footer>
+  </main>
+</body>
+</html>

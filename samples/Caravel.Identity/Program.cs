@@ -53,9 +53,16 @@ public sealed class Program
         builder.Services.AddClarion<IdentityContext>(options => SampleDatabase.Configure(options, provider, connection));
         builder.Services.AddDbContextFactory<QueueDbContext>(options => SampleDatabase.Configure(options, provider, connection, queue: true));
         builder.Services.AddCaravelDatabaseQueue();
+        builder.Services.AddSingleton<IDbContextFactory<IdentityContext>>(new IdentityContextFactory(provider, connection));
+        builder.Services.AddCaravelOutbox<IdentityContext>();
+        builder.Services.AddQueueJob<WorkItemNotice, WorkItemNoticeHandler>("work-item.notice.v1");
         builder.Services.AddQueueJob<CounterEvent, CounterEventHandler>("counter.record.v1");
         if (builder.Configuration.GetValue<bool>("Caravel:RunWorker"))
+        {
             builder.Services.AddCaravelQueueWorker("counter");
+            builder.Services.AddCaravelOutboxRelay<IdentityContext>();
+            builder.Services.AddCaravelQueueWorker("work-items");
+        }
         builder.Services.AddCaravelIdentity<IdentityUser>()
             .AddRoles<IdentityRole>()
             .AddEntityFrameworkStores<IdentityContext>();
@@ -70,6 +77,8 @@ public sealed class Program
         app.UseHttpsRedirection();
         app.Use(async (context, next) =>
         {
+            if (context.Request.Path.StartsWithSegments("/workspaces") || context.Request.Path.StartsWithSegments("/work-items"))
+                context.Response.Headers.CacheControl = "no-store";
             if (context.Request.ContentLength > 16 * 1024)
             {
                 context.Response.StatusCode = StatusCodes.Status413PayloadTooLarge;
@@ -84,28 +93,7 @@ public sealed class Program
         app.UseRateLimiter();
 
         app.MapGet("/", () => Results.Ok(new { sample = "Clinimatix Caravel Identity", guide = "docs/AUTHENTICATION.md" }));
-        app.MapGet("/auth/csrf", (HttpContext context, IAntiforgery antiforgery) =>
-        {
-            context.Response.Headers.CacheControl = "no-store";
-            var tokens = antiforgery.GetAndStoreTokens(context);
-            return Results.Ok(new { token = tokens.RequestToken, headerName = tokens.HeaderName });
-        });
-        // JSON bodies need an explicit antiforgery check before any cookie-based mutation.
-        app.MapPost("/auth/login", async (LoginRequest request, SignInManager<IdentityUser> signIn) =>
-        {
-            var result = await signIn.PasswordSignInAsync(request.UserName, request.Password,
-                isPersistent: false, lockoutOnFailure: true);
-            return result.Succeeded ? Results.NoContent() : result.RequiresTwoFactor
-                ? Results.Json(new { requiresTwoFactor = true }, statusCode: StatusCodes.Status202Accepted)
-                : Results.Unauthorized();
-        }).AddEndpointFilter<RequireAntiforgery>().RequireRateLimiting("login");
-        app.MapPost("/auth/logout", async (SignInManager<IdentityUser> signIn) =>
-        {
-            await signIn.SignOutAsync();
-            return TypedResults.NoContent();
-        }).RequireAuthorization().AddEndpointFilter<RequireAntiforgery>();
-        app.MapGet("/auth/me", (ClaimsPrincipal user) => TypedResults.Ok(new { id = user.FindFirstValue(ClaimTypes.NameIdentifier) }))
-            .RequireAuthorization();
+        app.MapSessionEndpoints();
         app.MapGet("/admin", () => TypedResults.Ok(new { message = "Administrator access" })).RequireAuthorization("Administrator");
 
         var notes = app.MapGroup("/notes").RequireAuthorization();
@@ -135,6 +123,14 @@ public sealed class Program
         }).AddEndpointFilter<RequireAntiforgery>();
 
         app.MapCounterEndpoints();
+        app.MapWorkItemEndpoints();
+        app.MapGet("/work-items", (HttpContext context) =>
+        {
+            context.Response.Headers.ContentSecurityPolicy = "default-src 'self'; script-src 'self'; style-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'";
+            return Results.File(Path.Combine(app.Environment.WebRootPath, "work-items.html"), "text/html");
+        });
+        app.MapGet("/work-items.js", () => Results.File(Path.Combine(app.Environment.WebRootPath, "work-items.js"), "text/javascript"));
+        app.MapGet("/work-items.css", () => Results.File(Path.Combine(app.Environment.WebRootPath, "work-items.css"), "text/css"));
         app.MapAccountEndpoints();
         app.MapCaravelAccountEndpoints<IdentityUser>("/auth", new AccountEndpointOptions
         {
@@ -145,28 +141,11 @@ public sealed class Program
         });
 
         if (await app.ExportCaravelRoutesAsync(args)) return;
-        if (args.Contains("--seed-demo-user", StringComparer.Ordinal))
-        {
-            if (!app.Environment.IsDevelopment())
-                throw new InvalidOperationException("Demo-user provisioning is available only in Development.");
-            var userName = Environment.GetEnvironmentVariable("CARAVEL_DEMO_USER")
-                ?? throw new InvalidOperationException("Set CARAVEL_DEMO_USER for the synthetic account.");
-            var password = Environment.GetEnvironmentVariable("CARAVEL_DEMO_PASSWORD")
-                ?? throw new InvalidOperationException("Set CARAVEL_DEMO_PASSWORD for the synthetic account.");
-            await using var scope = app.Services.CreateAsyncScope();
-            var users = scope.ServiceProvider.GetRequiredService<UserManager<IdentityUser>>();
-            var result = await users.CreateAsync(new IdentityUser { UserName = userName, Email = userName, EmailConfirmed = true }, password);
-            if (!result.Succeeded)
-                throw new InvalidOperationException("Demo-user creation failed: " + string.Join(", ", result.Errors.Select(error => error.Code)));
-            Console.WriteLine("Synthetic demo user created. This sample does not send verification email.");
-            return;
-        }
+        if (await app.SeedDemoAsync(args)) return;
         await app.RunAsync();
     }
 }
 
-public sealed record LoginRequest([property: Required, StringLength(256)] string UserName,
-    [property: Required, StringLength(1024)] string Password);
 public sealed record NoteRequest([property: Required, StringLength(500, MinimumLength = 1)] string Text);
 public sealed record NoteResponse(Guid Id, string Text);
 public sealed record NoteCreated(Guid NoteId);
@@ -176,15 +155,5 @@ public sealed class LogNoteCreated(ILogger<LogNoteCreated> logger) : IEventListe
     {
         logger.LogInformation("Synthetic note {NoteId} created", message.NoteId);
         return Task.CompletedTask;
-    }
-}
-
-public sealed class RequireAntiforgery(IAntiforgery antiforgery) : IEndpointFilter
-{
-    public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
-    {
-        try { await antiforgery.ValidateRequestAsync(context.HttpContext); }
-        catch (AntiforgeryValidationException) { return Results.Problem(statusCode: 400, title: "Invalid antiforgery token."); }
-        return await next(context);
     }
 }

@@ -1,5 +1,16 @@
 # Changelog
 
+## 26.1.0-rc2
+
+This release candidate extends RC1 with a composed application path while preserving native ASP.NET Core and EF Core integration. See [upgrading from RC1](docs/UPGRADING.md) for exact package pins, explicit schema setup and optional adoption. [GitHub releases](https://github.com/Clinimatix/Caravel/releases) and [NuGet](https://www.nuget.org/profiles/Clinimatix) are the canonical distribution locations.
+
+- Added optional Azure Blob storage with application-supplied clients, create-only streaming, conditional reads/deletes, range support and a revision-pinned download recipe. Core and local storage remain Azure-independent; cloud deployment and version retention are separate qualifications.
+
+- Added an optional Bosun Identity application profile with explicit migration/account setup, native provider selection, current workspace access, durable commands and a browser form. Generated application code remains editable; existing Razor/API defaults are preserved.
+- Fixed obsolete browser loader errors clearing newer sessions/drafts, and current access failures being ignored during initial workspace loading.
+
+- Extended the authenticated backend sample with workspace-scoped work items, versioned commands, durable retry receipts, transactional history/outbox, reference-only notices and a browser form for errors and uncertain retries. Includes an explicit additive migration and setup guide; Bosun's basic starters remain unchanged.
+
 ## 26.1.0-rc1 — 2026-09-29
 
 The first release candidate brings together the 26.1 application foundation, data layer and services. It replaces the earlier .NET 9 prototype with a modular framework built on .NET 10 and C# 14. The documented scope and APIs are settled for release qualification; stable follows real-application feedback and upgrade validation.

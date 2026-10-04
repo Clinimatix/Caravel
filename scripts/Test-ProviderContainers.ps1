@@ -1,3 +1,5 @@
+param([switch]$IdentityStarterOnly)
+
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot
 $runId = [guid]::NewGuid().ToString('N')
@@ -65,6 +67,12 @@ try {
         Set-Content -LiteralPath (Join-Path $run 'images.txt')
     & dotnet restore Caravel.slnx --locked-mode
     if ($LASTEXITCODE -ne 0) { throw 'Provider test locked restore failed.' }
+    if ($IdentityStarterOnly) {
+        & (Join-Path $PSScriptRoot 'Test-IdentityStarterSmoke.ps1') -Provider sqlserver
+        & (Join-Path $PSScriptRoot 'Test-IdentityStarterSmoke.ps1') -Provider postgres
+        Write-Output "Installed Identity starters passed against disposable SQL Server and PostgreSQL. Artifacts: $run"
+        return
+    }
     & dotnet test tests/Caravel.Provider.Tests -c Release --no-restore --logger trx --results-directory $run
     if ($LASTEXITCODE -ne 0) { throw 'Provider contract tests failed.' }
     $results = @(Get-ChildItem -LiteralPath $run -Filter '*.trx' | ForEach-Object {
@@ -76,6 +84,8 @@ try {
     & (Join-Path $PSScriptRoot 'Test-ProviderMigrationSmoke.ps1')
     & (Join-Path $PSScriptRoot 'Test-IdentitySmoke.ps1') -Provider sqlserver
     & (Join-Path $PSScriptRoot 'Test-IdentitySmoke.ps1') -Provider postgres
+    & (Join-Path $PSScriptRoot 'Test-IdentityStarterSmoke.ps1') -Provider sqlserver
+    & (Join-Path $PSScriptRoot 'Test-IdentityStarterSmoke.ps1') -Provider postgres
     Write-Output "Provider contracts, server migrations and packaged backends passed against disposable SQL Server, PostgreSQL and SQLite. Artifacts: $run"
 } finally {
     $env:CARAVEL_TEST_SQLSERVER = $previousSql

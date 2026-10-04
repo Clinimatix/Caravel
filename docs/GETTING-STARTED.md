@@ -4,12 +4,13 @@ This guide covers what happens inside a Caravel web app: how it starts up, how t
 
 ## Creating and running an app
 
-Install the candidate [from NuGet](RELEASE-POLICY.md#using-prerelease-packages), or run the `caravel` tool from a clone of this repository with `dotnet run --project src/Caravel.Bosun -- <command>`. The table below uses source references; with the installed tool, omit `--framework-source .` to use packages from nuget.org or your configured feed.
+This guide targets `26.1.0-rc2`. Install Bosun using a [configured package feed](RELEASE-POLICY.md#using-prerelease-packages) containing that exact version, or run the `caravel` tool from your selected source checkout with `dotnet run --project src/Caravel.Bosun -- <command>`. The table below uses source references; with the installed tool, omit `--framework-source .` to use packages from your configured feed.
 
 | Command | What it does |
 | --- | --- |
 | `new MyApp --framework-source .` | Creates a Razor starter app in a new `MyApp` folder. It never overwrites an existing folder. `--framework-source` points the app at your local checkout instead of NuGet packages. |
 | `new MyApi --stack api --framework-source .` | Creates an API starter with request validation, OpenAPI in Development, and a health endpoint. No Razor or frontend toolchain. |
+| `new MyWorkspace --stack identity --framework-source .` | Creates an editable local Identity/workspace application with browser forms, versioned commands, receipts and background notices. Follow its README for explicit schema/account setup. |
 | `serve --project MyApp` | Runs the app. Add `--watch` to restart when files change. |
 | `dev --project MyApp` | Runs the app with file watching. Add `--worker <project>` to run a background worker alongside it. See [development sessions](DEVELOPMENT.md). |
 | `route:list --project MyApp` | Lists every route, including ones mapped with plain ASP.NET Core (`MapPost`, Razor pages). Add `--json` for machine-readable output. |
@@ -18,9 +19,11 @@ Install the candidate [from NuGet](RELEASE-POLICY.md#using-prerelease-packages),
 
 For scripts and tools, `schema --json` describes each argument and option: its .NET `type`, whether it's `required`, and its `arity` (how many values it takes). Each command also lists its `effects`, such as whether it runs your app's code or changes a database, so check those before automating it.
 
-Generated starters listen on `https://localhost:7043` and `http://localhost:5043`; change `Properties/launchSettings.json` if you run several projects at once. The repository's own sample app uses ports 7284 and 5284. HTTPS needs a .NET development certificate; if you don't have one, run `dotnet dev-certs https --trust`. Caravel never creates certificates for you.
+Razor/API starters listen on `https://localhost:7043` and `http://localhost:5043`; the Identity profile uses `https://localhost:7246`. Change `Properties/launchSettings.json` if you run several projects at once. The repository's basic sample app uses ports 7284 and 5284. HTTPS needs a .NET development certificate; if you don't have one, run `dotnet dev-certs https --trust`. Caravel never creates certificates for you.
 
 The API starter comes with `GET /hello`, `POST /api/greetings` (with a validated `name`) and `GET /health/live`, plus an OpenAPI document at `/openapi/v1.json` in Development. These demo endpoints are public and store nothing. When you're ready to add accounts, ownership checks, request limits and a database, the [backend sample](BACKEND-SAMPLE.md) shows how the pieces fit together.
+
+The optional `identity` stack is included in the `26.1.0-rc2` Bosun candidate; published RC1 does not include it. It bundles SQLite migrations, native provider configuration, current workspace authorization and the [authorized-command browser flow](AUTHORIZED-COMMANDS.md). Installed-tool generation works without a checkout. Its small UI supports password sign-in/sign-out; finished account/MFA screens and external identity remain separate integrations. No database, account, credential or cloud resource is created by `caravel new`.
 
 ## A typical `Program.cs`
 

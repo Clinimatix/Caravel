@@ -28,14 +28,14 @@ public static class Program
     {
         var root = new RootCommand("Bosun — CLI for the Clinimatix Caravel framework");
         var name = new Argument<string>("name") { Description = "Application directory name (letters, digits, underscore; starts with a letter)." };
-        var stack = new Option<string>("--stack") { Description = "Starter stack (razor or api).", DefaultValueFactory = _ => "razor" };
-        var source = new Option<string?>("--framework-source") { Description = "Framework checkout root; use project references before package publication." };
-        var create = new Command("new", "Create a Razor or API application in a new directory; does not restore packages.") { name, stack, source };
+        var stack = new Option<string>("--stack") { Description = "Starter stack (razor, api or identity).", DefaultValueFactory = _ => "razor" };
+        var source = new Option<string?>("--framework-source") { Description = "Framework checkout root; use project references for local development." };
+        var create = new Command("new", "Create a Razor, API or local Identity application; does not restore packages or create a database.") { name, stack, source };
         create.SetAction(result =>
         {
             var path = CreateApplication(Directory.GetCurrentDirectory(), result.GetValue(name)!, result.GetValue(source), result.GetValue(stack)!);
-            Console.WriteLine($"Created {path}\nNext: cd {result.GetValue(name)}\n      caravel serve");
-            if (result.GetValue(source) is null) Console.WriteLine("The prerelease packages may not yet be published. Before publication, generate with --framework-source <framework-checkout> for buildable project references.");
+            Console.WriteLine($"Created {path}\nNext: cd {result.GetValue(name)}\n      {(result.GetValue(stack) == "identity" ? "Read README.md for explicit database and synthetic account setup." : "caravel serve")}");
+            if (result.GetValue(source) is null) Console.WriteLine("Dependencies are pinned to this tool's version. For an unpublished development build, use --framework-source <framework-checkout> or a local package feed.");
         });
         root.Add(create);
 
@@ -116,7 +116,7 @@ public static class Program
 
     internal static string CreateApplication(string parent, string name, string? frameworkSource, string stack = "razor")
     {
-        if (stack is not ("razor" or "api")) throw new ArgumentException("Use --stack razor or --stack api.");
+        if (stack is not ("razor" or "api" or "identity")) throw new ArgumentException("Use --stack razor, --stack api or --stack identity.");
         if (!Regex.IsMatch(name, "^[A-Za-z][A-Za-z0-9_]{0,99}\\z", RegexOptions.CultureInvariant)
             || Regex.IsMatch(name, "^(CON|PRN|AUX|NUL|COM[0-9]|LPT[0-9])\\z", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
             throw new ArgumentException("Use 1–100 letters, digits, or underscores, starting with a letter; reserved Windows names are not allowed.");
@@ -136,6 +136,12 @@ public static class Program
         Directory.CreateDirectory(staging);
         try
         {
+            if (stack == "identity")
+            {
+                IdentityStarter.Write(staging, name, frameworkSource);
+                Directory.Move(staging, target);
+                return target;
+            }
             if (stack == "razor") Directory.CreateDirectory(Path.Combine(staging, "Pages"));
             Directory.CreateDirectory(Path.Combine(staging, "Properties"));
             File.WriteAllText(Path.Combine(staging, $"{name}.csproj"), $$"""

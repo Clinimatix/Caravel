@@ -31,16 +31,19 @@ New here? Start with the [repository README](../README.md) and its quick start.
 - [Scheduling](SCHEDULING.md): enqueue recurring work at fixed intervals
 - [Bosun service generators](BOSUN-SERVICES.md): generate jobs, events and listeners
 - [Local storage](STORAGE.md): stream files into named storage disks
+- [Azure Blob storage](AZURE-STORAGE.md): optional Azure SDK adapter, conditional transfers and authorized downloads
 - [Caching](CACHING.md): use .NET's memory and SQL Server caches
 - [Observability](OBSERVABILITY.md): queue metrics, tracing and health checks
 
 ## Putting it together
 
 - [Backend sample](BACKEND-SAMPLE.md): sign-in, durable ingestion and reporting working together
+- [Authorized commands](AUTHORIZED-COMMANDS.md): workspace access, edit conflicts, retry receipts and background notices in a small browser application
 
 ## About the project
 
 - [Design and roadmap](ROADMAP.md): principles, package layout, current status and what's next
+- [Upgrading from RC1](UPGRADING.md): exact versions, dependency locks and explicit schema changes
 - [Versions and releases](RELEASE-POLICY.md): what milestone, release candidate and stable mean
 - [Testing Caravel](TESTING.md): build, test and verify changes as a contributor
 - [Changelog](../CHANGELOG.md)

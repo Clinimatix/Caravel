@@ -44,6 +44,7 @@ try {
 </configuration>
 "@ | Set-Content -LiteralPath $feed
     Get-ChildItem (Join-Path $root 'samples/Caravel.Identity') -File | Where-Object Extension -In @('.cs', '.csproj') | Copy-Item -Destination $sample
+    Copy-Item -LiteralPath (Join-Path $root 'samples/Caravel.Identity/wwwroot') -Destination $sample -Recurse
     if ($Provider -eq 'sqlite') {
         Copy-Item -LiteralPath (Join-Path $root 'samples/Caravel.Identity/Database') -Destination $sample -Recurse
     }
@@ -60,11 +61,14 @@ try {
         $modelPath = Join-Path $sample 'IdentityContext.cs'
         $model = Get-Content -LiteralPath $modelPath -Raw
         if (-not $model.Contains('builder.ApplyClarionConventions();')) { throw 'Identity model migration insertion point is missing.' }
+        $baseModel = $model.Replace('builder.AddWorkItems();', '')
         try {
-            $model.Replace('builder.ApplyClarionConventions();', "builder.Ignore<CounterResult>();`n        builder.ApplyClarionConventions();") | Set-Content -LiteralPath $modelPath
+            $baseModel.Replace('builder.ApplyClarionConventions();', "builder.Ignore<CounterResult>();`n        builder.ApplyClarionConventions();") | Set-Content -LiteralPath $modelPath
             Invoke-Checked dotnet @('ef', 'migrations', 'add', 'InitialIdentity', '--project', $sampleProject, '--context', 'IdentityContext', '--output-dir', 'Database/Identity')
+            Set-Content -LiteralPath $modelPath -Value $baseModel
+            Invoke-Checked dotnet @('ef', 'migrations', 'add', 'AddCounterResults', '--project', $sampleProject, '--context', 'IdentityContext', '--output-dir', 'Database/Identity')
         } finally { Set-Content -LiteralPath $modelPath -Value $model }
-        Invoke-Checked dotnet @('ef', 'migrations', 'add', 'AddCounterResults', '--project', $sampleProject, '--context', 'IdentityContext', '--output-dir', 'Database/Identity')
+        Invoke-Checked dotnet @('ef', 'migrations', 'add', 'AddWorkItems', '--project', $sampleProject, '--context', 'IdentityContext', '--output-dir', 'Database/Identity')
         Invoke-Checked dotnet @('ef', 'migrations', 'add', 'InitialQueue', '--project', $sampleProject, '--context', 'QueueDbContext', '--output-dir', 'Database/Queue')
         $resultsPath = Join-Path $run 'results'
         Invoke-Checked dotnet @('test', $project, '-c', 'Release', '--no-restore', '--filter', 'FullyQualifiedName~IdentityApplicationTests', '--logger', 'trx', '--results-directory', $resultsPath)

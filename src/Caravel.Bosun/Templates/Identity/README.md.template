@@ -1,0 +1,46 @@
+# {{APP_NAME}}
+
+An editable local Identity application built with Clinimatix Caravel. Workspace access, versioned commands, durable receipts and a reference-only notice job demonstrate an application flow you can adapt. Authentication and data remain native ASP.NET Core and EF Core; permissions and business rules are application code.
+
+## Explicit local setup
+
+Generation does not restore packages, create accounts or touch a database. Use .NET 10 and a disposable database while exploring. From this directory:
+
+```powershell
+dotnet restore
+dotnet tool restore
+$env:DOTNET_ENVIRONMENT = 'Development'
+$env:Caravel__IdentityDatabase = Join-Path $PWD 'app.db'
+dotnet ef database update --context IdentityContext
+dotnet ef database update --context QueueDbContext
+```
+
+The included migrations are for SQLite. Both contexts share the file and have separate migration-history tables. To select SQL Server or PostgreSQL in a newly generated application before any migration has been applied, move the bundled `Database` directory outside the project first. Set `Caravel__DatabaseProvider` to `sqlserver` or `postgres` and `Caravel__IdentityDatabase` to your explicitly supplied disposable connection string, then generate native migrations:
+
+```powershell
+dotnet ef migrations add InitialIdentity --context IdentityContext --output-dir Database/Identity
+dotnet ef migrations add InitialQueue --context QueueDbContext --output-dir Database/Queue
+```
+
+Review them and apply each context explicitly with `dotnet ef database update`. Merely excluding the old snapshot from compilation is insufficient: EF's source-file discovery can still find and rewrite it. Do not apply SQLite migrations to a server, or move/discard an existing application's applied migration history.
+
+Supply a synthetic email and password using `CARAVEL_DEMO_USER` and `CARAVEL_DEMO_PASSWORD` in the current process. No credential is supplied by the generator or written to configuration. Then run these explicit Development-only commands:
+
+```powershell
+dotnet run -- --seed-demo-user
+dotnet run -- --seed-demo-workspace
+$env:Caravel__RunWorker = 'true'
+dotnet run
+```
+
+HTTPS uses an existing development certificate; provision/trust it explicitly with the .NET SDK if needed. Open `https://localhost:7246/work-items`, sign in and complete an item. The workers relay committed intent and capture a generic notice locally; no real email is sent. Leave `Caravel__RunWorker` false/unset to inspect pending intent. Startup never applies migrations or creates users.
+
+`caravel route:list`, `caravel serve`, and `caravel dev` use this project and the same database setting. Liveness is `/health/live`; `/health/ready` checks required schema without creating it.
+
+## Customize the application
+
+The project namespace is `{{APP_NAME}}Application`. Edit `WorkItems.cs`, `WorkItemEndpoints.cs` and `wwwroot` to change the models, policies and UI. Keep version checks, current permission checks and receipt/outbox transactions together when adapting commands. Persist only references in work that must resolve current recipients. Submitted mail is not proof of delivery, and external sends remain at-least-once.
+
+This small UI supports password sign-in/sign-out and work items. It does not provide complete registration/recovery/MFA screens, team management, OIDC or bearer sign-in. Existing account endpoints are available; registration is disabled by default. Confirmation/reset URL settings must point to pages you implement. Choose and qualify external identity and transport integrations deliberately.
+
+See the [authorized-command guide](https://github.com/Clinimatix/Caravel/blob/main/docs/AUTHORIZED-COMMANDS.md) for retry scope, status codes, retention and browser-memory limits, and [hosting guidance](https://github.com/Clinimatix/Caravel/blob/main/docs/HOSTING.md) before deployment. No cloud services or production configuration are generated.

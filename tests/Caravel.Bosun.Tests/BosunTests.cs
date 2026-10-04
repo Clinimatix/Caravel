@@ -146,6 +146,34 @@ public sealed class BosunTests
     }
 
     [Fact]
+    public void IdentityStarterBundlesEditableSourcesAndRefusesPartialFrameworkReferences()
+    {
+        var parent = Directory.CreateTempSubdirectory("caravel-identity-starter-");
+        try
+        {
+            // A C# keyword is a valid directory/project name; the generated namespace must still compile.
+            var target = Program.CreateApplication(parent.FullName, "class", null, "identity");
+            Assert.Contains("namespace classApplication;", File.ReadAllText(Path.Combine(target, "Program.cs")));
+            Assert.Contains("Clinimatix.Caravel.Auth", File.ReadAllText(Path.Combine(target, "class.csproj")));
+            Assert.True(File.Exists(Path.Combine(target, "SessionEndpoints.cs")));
+            Assert.True(File.Exists(Path.Combine(target, "WorkItemEndpoints.cs")));
+            Assert.True(File.Exists(Path.Combine(target, "wwwroot", "work-items.js")));
+            Assert.True(File.Exists(Path.Combine(target, ".config", "dotnet-tools.json")));
+            Assert.True(File.Exists(Path.Combine(target, ".gitignore")));
+            Assert.False(File.Exists(Path.Combine(target, "CounterEndpoints.cs")));
+            Assert.DoesNotContain(Directory.EnumerateFiles(target, "*", SearchOption.AllDirectories), file => file.EndsWith(".db") || file.EndsWith(".env"));
+            Assert.Throws<IOException>(() => Program.CreateApplication(parent.FullName, "class", null, "identity"));
+            var incomplete = Path.Combine(parent.FullName, "incomplete");
+            var web = Path.Combine(incomplete, "src", "Caravel.AspNetCore"); Directory.CreateDirectory(web);
+            File.WriteAllText(Path.Combine(web, "Caravel.AspNetCore.csproj"), "<Project />");
+            Assert.Throws<ArgumentException>(() => Program.CreateApplication(parent.FullName, "Missing", incomplete, "identity"));
+            Assert.False(Directory.Exists(Path.Combine(parent.FullName, "Missing")));
+            Assert.Empty(Directory.EnumerateDirectories(parent.FullName, ".caravel-*"));
+        }
+        finally { parent.Delete(recursive: true); }
+    }
+
+    [Fact]
     public async Task ProcessRunnerCapturesOutputAndPropagatesExitCode()
     {
         var success = await Program.RunAsync("dotnet", ["--version"], true, CancellationToken.None);

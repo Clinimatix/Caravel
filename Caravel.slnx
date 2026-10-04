@@ -9,6 +9,7 @@
     <Project Path="src/Caravel.Events/Caravel.Events.csproj" />
     <Project Path="src/Caravel.Queues/Caravel.Queues.csproj" />
     <Project Path="src/Caravel.Storage/Caravel.Storage.csproj" />
+    <Project Path="src/Caravel.Storage.Azure/Caravel.Storage.Azure.csproj" />
     <Project Path="src/Caravel.Scheduling/Caravel.Scheduling.csproj" />
     <Project Path="src/Caravel.Mail/Caravel.Mail.csproj" />
     <Project Path="src/Caravel.Notifications/Caravel.Notifications.csproj" />
@@ -35,6 +36,7 @@
     <Project Path="tests/Caravel.Oidc.Tests/Caravel.Oidc.Tests.csproj" />
     <Project Path="tests/Caravel.Queues.Tests/Caravel.Queues.Tests.csproj" />
     <Project Path="tests/Caravel.Storage.Tests/Caravel.Storage.Tests.csproj" />
+    <Project Path="tests/Caravel.Storage.Azure.Tests/Caravel.Storage.Azure.Tests.csproj" />
     <Project Path="tests/Caravel.Scheduling.Tests/Caravel.Scheduling.Tests.csproj" />
     <Project Path="tests/Caravel.Mail.Tests/Caravel.Mail.Tests.csproj" />
     <Project Path="tests/Caravel.Notifications.Tests/Caravel.Notifications.Tests.csproj" />

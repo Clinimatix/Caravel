@@ -4,6 +4,8 @@ The Identity sample shows the main pieces of a Caravel backend working together:
 
 The sample lives in `samples/Caravel.Identity`, alongside the notes and account endpoints described in the [authentication guide](AUTHENTICATION.md). It uses local Identity cookies; each signed-in user owns their own events.
 
+It also includes [a workspace-scoped command application](AUTHORIZED-COMMANDS.md) with a browser form, current membership checks, version conflicts, retry receipts and reference-only background notices.
+
 ## Prepare the two database contexts
 
 Choose a disposable SQLite file and apply both sets of migrations:
@@ -17,7 +19,7 @@ dotnet ef database update --project samples/Caravel.Identity --context IdentityC
 dotnet ef database update --project samples/Caravel.Identity --context QueueDbContext
 ```
 
-`IdentityContext` holds users, notes and counter results. `QueueDbContext` holds the queue in the same file, with its own `__CaravelQueueMigrations` history table. Neither creates its schema when the app starts. The included migrations are for SQLite; other databases need their own.
+`IdentityContext` holds users, notes, counter results and the work-item application's membership, history, receipts and outbox. `QueueDbContext` holds the queue in the same file, with its own `__CaravelQueueMigrations` history table. Neither creates its schema when the app starts. The included migrations are for SQLite; other databases need their own.
 
 The sample also accepts `Caravel:DatabaseProvider` set to `sqlserver` or `postgres`. For those providers, `Caravel:IdentityDatabase` is a connection string instead of a file path. Generate and review provider-specific migrations for both contexts in your own application; do not apply the included SQLite migrations to a server database. The [packaged backend tests](TESTING.md#test-against-sql-server-and-postgresql) demonstrate this using disposable copies and databases.
 
@@ -30,7 +32,7 @@ $env:Caravel__RunWorker = 'true'
 dotnet run --project samples/Caravel.Identity -- --urls https://localhost:7246
 ```
 
-The worker is off unless that setting is true. It processes the `counter` queue through the normal Caravel queue worker. Tests leave it off and drive individual work attempts with `QueueWorker.RunOnceAsync`.
+The workers are off unless that setting is true. It enables the `counter` and `work-items` workers plus the application outbox relay. Tests leave them off and drive individual attempts with `QueueWorker.RunOnceAsync` and `OutboxRelay.RunOnceAsync`.
 
 ## Submit an event
 

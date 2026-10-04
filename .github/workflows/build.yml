@@ -19,7 +19,7 @@ permissions:
   contents: read
 jobs:
   lts:
-    timeout-minutes: 20
+    timeout-minutes: 40
     strategy:
       matrix:
         os: ${{ fromJSON(inputs.platform == 'all' && '["windows-latest","ubuntu-latest","macos-latest"]' || format('["{0}"]', inputs.platform)) }}
@@ -29,18 +29,37 @@ jobs:
       - uses: actions/setup-dotnet@v5
         with:
           global-json-file: global.json
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '24'
+      - name: Install browser test dependencies
+        working-directory: tests/browser
+        shell: pwsh
+        run: |
+          npm ci
+          if ($LASTEXITCODE -ne 0) { throw 'Browser dependency installation failed.' }
+          npx playwright install --with-deps chromium
+          if ($LASTEXITCODE -ne 0) { throw 'Browser installation failed.' }
       - name: Check latest LTS policy
         shell: pwsh
         run: |
           ./scripts/Test-LtsPolicy.Tests.ps1
           ./scripts/Test-LtsPolicy.ps1
+          ./scripts/Expand-NuGetRelease.Tests.ps1
       - run: dotnet restore Caravel.slnx --locked-mode
       - run: dotnet build Caravel.slnx -c Release --no-restore
       - run: dotnet test Caravel.slnx -c Release --no-build --no-restore
+      - name: Verify browser session and retry behavior
+        working-directory: tests/browser
+        run: npm test
       - name: Verify packaged CLI and generated apps
         timeout-minutes: 10
         shell: pwsh
-        run: ./scripts/Test-PackageSmoke.ps1
+        run: ./scripts/Test-PackageSmoke.ps1 -Browser
+      - name: Verify upgrade from published RC1
+        timeout-minutes: 10
+        shell: pwsh
+        run: ./scripts/Test-ReleaseUpgrade.ps1
       - name: Retain tested candidate packages
         if: matrix.os == 'windows-latest'
         uses: actions/upload-artifact@v7
@@ -68,7 +87,7 @@ jobs:
   providers:
     if: inputs.platform == 'all'
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
     services:
       postgres:
         image: postgres:18
@@ -109,6 +128,24 @@ jobs:
         run: |
           ./scripts/Test-IdentitySmoke.ps1 -Provider sqlserver
           ./scripts/Test-IdentitySmoke.ps1 -Provider postgres
+      - name: Verify generated Identity applications on server providers
+        timeout-minutes: 15
+        shell: pwsh
+        run: |
+          ./scripts/Test-IdentityStarterSmoke.ps1 -Provider sqlserver
+          ./scripts/Test-IdentityStarterSmoke.ps1 -Provider postgres
+  azure:
+    if: inputs.platform == 'all' || inputs.platform == 'ubuntu-latest'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-dotnet@v5
+        with:
+          global-json-file: global.json
+      - name: Verify Azure storage source and installed packages against Azurite
+        shell: pwsh
+        run: ./scripts/Test-AzureStorage.ps1
   experimental:
     if: inputs.experimental
     runs-on: ubuntu-latest

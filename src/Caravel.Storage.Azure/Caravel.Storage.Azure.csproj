@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <PackageId>Clinimatix.Caravel.Storage.Azure</PackageId>
+    <Description>Optional Azure Blob storage disks for Clinimatix Caravel.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../Caravel.Storage/Caravel.Storage.csproj" />
+    <PackageReference Include="Azure.Storage.Blobs" />
+  </ItemGroup>
+</Project>

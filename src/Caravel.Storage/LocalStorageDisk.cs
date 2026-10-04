@@ -77,20 +77,7 @@ public sealed class LocalStorageDisk : IStorageDisk
 
     private string Resolve(string path)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(path);
-        // Portable ASCII names exclude device paths, alternate streams and OS-dependent normalization.
-        var parts = path.Replace('\\', '/').Split('/');
-        foreach (var part in parts)
-        {
-            var stem = part.Split('.')[0].TrimEnd(' ');
-            if (part.Length == 0 || part is "." or ".." || part.EndsWith('.') || part.EndsWith(' ') ||
-                part.Any(character => !char.IsAsciiLetterOrDigit(character) && character is not ('.' or '-' or '_' or ' ')) ||
-                stem.Equals("CON", StringComparison.OrdinalIgnoreCase) || stem.Equals("PRN", StringComparison.OrdinalIgnoreCase) ||
-                stem.Equals("AUX", StringComparison.OrdinalIgnoreCase) || stem.Equals("NUL", StringComparison.OrdinalIgnoreCase) ||
-                (stem.Length == 4 && (stem.StartsWith("COM", StringComparison.OrdinalIgnoreCase) ||
-                    stem.StartsWith("LPT", StringComparison.OrdinalIgnoreCase)) && stem[3] is >= '0' and <= '9'))
-                throw new ArgumentException("Use relative file paths with portable names; traversal, rooted paths and device names are not allowed.", nameof(path));
-        }
+        var parts = StorageKey.Normalize(path).Split('/');
         var file = Path.GetFullPath(Path.Combine(root, Path.Combine(parts)));
         var relative = Path.GetRelativePath(root, file);
         if (Path.IsPathRooted(relative) || relative == ".." || relative.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal))

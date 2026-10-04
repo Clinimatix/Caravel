@@ -1,0 +1,114 @@
+using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
+using System.Threading.RateLimiting;
+using Caravel.AspNetCore;
+using Caravel.Auth;
+using Caravel.Clarion;
+using Caravel.Queues;
+using Caravel.Mail;
+using Microsoft.AspNetCore.Antiforgery;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+
+namespace Caravel.IdentitySample;
+
+public sealed class Program
+{
+    public static async Task Main(string[] args)
+    {
+        var builder = WebApplication.CreateBuilder(args);
+        builder.WebHost.ConfigureKestrel(options => options.Limits.MaxRequestBodySize = 16 * 1024);
+        builder.AddCaravel();
+        var database = builder.Configuration["Caravel:IdentityDatabase"];
+        var provider = builder.Configuration["Caravel:DatabaseProvider"] ?? "sqlite";
+        if (string.IsNullOrWhiteSpace(database))
+            throw new InvalidOperationException("Set Caravel__IdentityDatabase to a SQLite file path or the selected provider's connection string.");
+        var connection = provider == "sqlite"
+            ? new SqliteConnectionStringBuilder { DataSource = Path.GetFullPath(database) }.ToString()
+            : database;
+        builder.Services.AddHealthChecks().AddCheck("required-schema", new BackendReadinessCheck(provider, connection), timeout: TimeSpan.FromSeconds(5));
+        var concurrency = builder.Configuration.GetValue("Caravel:Limits:Concurrency", 32);
+        var loginPermits = builder.Configuration.GetValue("Caravel:Limits:LoginPermitLimit", 10);
+        var loginWindow = builder.Configuration.GetValue("Caravel:Limits:LoginWindowSeconds", 60);
+        if (concurrency is < 1 or > 1024 || loginPermits is < 1 or > 1000 || loginWindow is < 1 or > 3600)
+            throw new InvalidOperationException("Use concurrency 1-1024, login permits 1-1000 and login window 1-3600 seconds.");
+        builder.Services.AddRateLimiter(options =>
+        {
+            options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+            options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(_ =>
+                RateLimitPartition.GetConcurrencyLimiter("application", _ => new ConcurrencyLimiterOptions
+                { PermitLimit = concurrency, QueueLimit = 0 }));
+            options.AddFixedWindowLimiter("login", options =>
+            {
+                options.PermitLimit = loginPermits;
+                options.Window = TimeSpan.FromSeconds(loginWindow);
+                options.QueueLimit = 0;
+            });
+        });
+        builder.Services.AddClarion<IdentityContext>(options => SampleDatabase.Configure(options, provider, connection));
+        builder.Services.AddDbContextFactory<QueueDbContext>(options => SampleDatabase.Configure(options, provider, connection, queue: true));
+        builder.Services.AddCaravelDatabaseQueue();
+        builder.Services.AddSingleton<IDbContextFactory<IdentityContext>>(new IdentityContextFactory(provider, connection));
+        builder.Services.AddCaravelOutbox<IdentityContext>();
+        builder.Services.AddQueueJob<WorkItemNotice, WorkItemNoticeHandler>("work-item.notice.v1");
+        if (builder.Configuration.GetValue<bool>("Caravel:RunWorker"))
+        {
+            builder.Services.AddCaravelOutboxRelay<IdentityContext>();
+            builder.Services.AddCaravelQueueWorker("work-items");
+        }
+        builder.Services.AddCaravelIdentity<IdentityUser>()
+            .AddRoles<IdentityRole>()
+            .AddEntityFrameworkStores<IdentityContext>();
+        // This sample never sends real mail. Replace capture with a configured transport in an application.
+        builder.Services.AddCaravelMailCapture(options => options.From = "noreply@example.invalid");
+        builder.Services.AddScoped<IEmailSender<IdentityUser>, AccountMailSender>();
+        builder.Services.AddAuthorizationBuilder().AddPolicy("Administrator", policy => policy.RequireRole("Administrator"));
+        builder.Services.AddValidation();
+
+        var app = builder.Build();
+        app.UseHttpsRedirection();
+        app.Use(async (context, next) =>
+        {
+            if (context.Request.Path.StartsWithSegments("/workspaces") || context.Request.Path.StartsWithSegments("/work-items"))
+                context.Response.Headers.CacheControl = "no-store";
+            if (context.Request.ContentLength > 16 * 1024)
+            {
+                context.Response.StatusCode = StatusCodes.Status413PayloadTooLarge;
+                return;
+            }
+            await next(context);
+        });
+        // Exact probe paths bypass cookie validation, so liveness never depends on the user database.
+        app.UseHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false });
+        app.UseHealthChecks("/health/ready", new HealthCheckOptions());
+        app.UseCaravel();
+        app.UseRateLimiter();
+
+        app.MapGet("/", () => Results.Redirect("/work-items"));
+        app.MapSessionEndpoints();
+        app.MapWorkItemEndpoints();
+        app.MapGet("/work-items", (HttpContext context) =>
+        {
+            context.Response.Headers.ContentSecurityPolicy = "default-src 'self'; script-src 'self'; style-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'";
+            return Results.File(Path.Combine(app.Environment.WebRootPath, "work-items.html"), "text/html");
+        });
+        app.MapGet("/work-items.js", () => Results.File(Path.Combine(app.Environment.WebRootPath, "work-items.js"), "text/javascript"));
+        app.MapGet("/work-items.css", () => Results.File(Path.Combine(app.Environment.WebRootPath, "work-items.css"), "text/css"));
+        app.MapAccountEndpoints();
+        app.MapCaravelAccountEndpoints<IdentityUser>("/auth", new AccountEndpointOptions
+        {
+            AllowRegistration = builder.Configuration.GetValue<bool>("Caravel:Accounts:AllowRegistration"),
+            ConfirmationPage = new Uri(builder.Configuration["Caravel:Accounts:ConfirmationPage"] ?? "https://localhost:7246/account/confirm"),
+            PasswordResetPage = new Uri(builder.Configuration["Caravel:Accounts:PasswordResetPage"] ?? "https://localhost:7246/account/reset-password"),
+            RateLimitPolicy = "login"
+        });
+
+        if (await app.ExportCaravelRoutesAsync(args)) return;
+        if (await app.SeedDemoAsync(args)) return;
+        await app.RunAsync();
+    }
+}

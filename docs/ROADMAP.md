@@ -33,6 +33,7 @@ Everything lives in this repository and shares one version number, but each pack
 | `Clinimatix.Caravel.Queues` | EF Core | Durable database jobs and workers. |
 | `Clinimatix.Caravel.Scheduling` | Queues | Fixed-interval schedules that enqueue jobs. |
 | `Clinimatix.Caravel.Storage` | Microsoft.Extensions.DependencyInjection | Streaming local storage disks. |
+| `Clinimatix.Caravel.Storage.Azure` | Storage, Azure.Storage.Blobs | Optional Azure objects with conditional create/read/delete. |
 | `Clinimatix.Caravel.Mail` | MailKit, Queues | SMTP, message templates, attachments, development capture and queued delivery. |
 | `Clinimatix.Caravel.Notifications` | Mail, Microsoft.Extensions.Http | Replaceable mail/SMS channels, capture and an optional Twilio HTTP adapter. |
 
@@ -40,7 +41,7 @@ New packages are added when there's real integration work to do. Caching, for ex
 
 ## Where things stand
 
-**`26.1.0-rc1` is published as Public Preview 1**, the first release candidate. All twelve packages are available on [nuget.org](https://www.nuget.org/profiles/Clinimatix), with [GitHub release assets](https://github.com/Clinimatix/Caravel/releases/tag/v26.1.0-rc1) retained for local-feed installation. Its scope is the available capability set below; broader development is organized into architecture milestones:
+This guide targets **`26.1.0-rc2`**, extending the RC1 foundation with the composed application path described below. [GitHub releases](https://github.com/Clinimatix/Caravel/releases) and [NuGet](https://www.nuget.org/profiles/Clinimatix) are the canonical distribution locations. Broader development is organized into architecture milestones:
 
 | Milestone | Focus | Status |
 | --- | --- | --- |
@@ -65,21 +66,27 @@ These capabilities form the 26.1 release scope. The later work listed below can 
 - Queue metrics and tracing through standard .NET diagnostics
 - Samples covering a data-only app, a worker, an authenticated backend and OIDC sign-in
 
+### RC2 additions
+
+The RC2 candidate includes an optional Bosun `--stack identity` profile: editable local Identity, workspace-scoped commands, durable receipts/outbox and the browser form. It extends the existing samples and is not part of the immutable RC1 tool. Complete account screens and other identity/frontend integrations remain planned.
+
+An optional [Azure Blob adapter](AZURE-STORAGE.md) supplies create-only streaming, native ETag/range/version parameters and a download authorization recipe. Local emulator and transport checks do not qualify cloud identity, scanning or retention. This package is also separate from published RC1.
+
 ### Coming next
 
 - **Accounts:** passkeys and finished account-management screens built on the native account endpoints
 - **Scheduling:** calendar and time-zone-aware schedules (cron-style)
-- **Storage:** cloud drivers such as Azure Blob Storage and S3
+- **Storage:** S3 and separately qualified cloud deployment/retention recipes
 - **Queues:** in-memory and synchronous drivers, batches and chains
 - **Mail and notifications:** additional mail/SMS providers, in-app inboxes, browser/mobile push, chat channels, delivery receipts and recipient preferences; see [channel plans and current limits](NOTIFICATIONS.md#later-channel-work)
-- **Starter kits:** Blazor and React, plus authentication scaffolding
+- **Starter kits:** Blazor and React, richer account screens and external-identity profiles
 - **Deployment helpers:** Windows Service and IIS publishing, and optional Aspire integration
 - **Databases:** MariaDB/MySQL, once an EF Core 10–compatible provider is available (see [database providers](DATABASE-PROVIDERS.md))
 - **AI and MCP:** the M4 packages listed above
 
 ### Toward stable 26.1
 
-Public Preview 1 has passed release-candidate qualification, including cross-platform checks on Windows, Linux and macOS and the supported database/provider paths. Deployment and application-specific verification remain separate.
+Release qualification covers the exact release commit, supported platforms and database/provider paths. Deployment and application-specific verification remain separate; see [versions and releases](RELEASE-POLICY.md).
 
 Work toward stable 26.1 focuses on integration feedback, fixes, documentation and upgrade validation. RCs remain public previews, not stable releases or a compatibility commitment. See the [release policy](RELEASE-POLICY.md) and [changelog](../CHANGELOG.md) for status and changes.
 
