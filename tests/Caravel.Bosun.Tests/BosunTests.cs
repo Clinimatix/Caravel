@@ -159,6 +159,11 @@ public sealed class BosunTests
             Assert.True(File.Exists(Path.Combine(target, "WorkItemEndpoints.cs")));
             Assert.True(File.Exists(Path.Combine(target, "wwwroot", "work-items.js")));
             Assert.True(File.Exists(Path.Combine(target, ".config", "dotnet-tools.json")));
+            Assert.True(File.Exists(Path.Combine(target, "Properties", "launchSettings.json")));
+            Assert.True(File.Exists(Path.Combine(target, "Database", "Identity", "IdentityContextModelSnapshot.cs")));
+            Assert.True(File.Exists(Path.Combine(target, "Database", "Queue", "QueueDbContextModelSnapshot.cs")));
+            if (!OperatingSystem.IsWindows())
+                Assert.DoesNotContain(Directory.EnumerateFiles(target, "*", SearchOption.AllDirectories), file => Path.GetFileName(file).Contains('\\'));
             Assert.True(File.Exists(Path.Combine(target, ".gitignore")));
             Assert.False(File.Exists(Path.Combine(target, "CounterEndpoints.cs")));
             Assert.DoesNotContain(Directory.EnumerateFiles(target, "*", SearchOption.AllDirectories), file => file.EndsWith(".db") || file.EndsWith(".env"));

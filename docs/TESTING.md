@@ -72,6 +72,8 @@ Each command requires the corresponding connection variable above. It packs the 
 
 `pwsh scripts/Test-IdentityStarterSmoke.ps1` packs and installs Bosun, generates the Identity profile outside the checkout with isolated package resolution, and exercises commands, session revocation, readiness and explicit migrations. Add `-Browser` after installing the browser test dependencies below to run the generated browser regressions too. `Test-PackageSmoke.ps1 -Browser` also includes generated Identity checks. `Test-ProviderContainers.ps1` checks generated SQL Server/PostgreSQL migrations; pass `-IdentityStarterOnly` for just those generated-provider checks. These use disposable synthetic data and remove owned containers.
 
+Pass `-CandidatePackageDirectory <downloaded-artifact>` to consume existing candidate packages without repacking the framework. This mode accepts the downloaded artifact's nested package directories, uses fresh mapped caches, and checks that the installed package hashes match the supplied bytes. It also verifies nested generated files before compiling and exercising the application.
+
 `tests/browser` uses Node.js 20 or later and a pinned Playwright development dependency. Run `npm ci`, `npx playwright install chromium`, then `npm test` in that directory. Set `PLAYWRIGHT_CHANNEL=msedge` to use an installed Edge browser instead. These tests load the real sample HTML/JavaScript with synthetic HTTP responses to reproduce delayed success/error races, current access loss and preserved retry commands. They do not replace the backend's authorization and transaction tests.
 
 To check a generated application's same browser contract, set `CARAVEL_BROWSER_APP_ROOT` to its root directory. Browser tooling is a test dependency, not an application runtime requirement.
@@ -87,6 +89,8 @@ Some Bosun tests start and stop child processes. When you run the suite inside a
 ## Continuous integration
 
 `.github/workflows/build.yml` defines the Windows, Linux and macOS matrix, including source/generated browser regressions, package checks and the published-RC1 upgrade gate. The server-provider job checks provider contracts, packaged backends and generated Identity applications on SQL Server/PostgreSQL. A separate Ubuntu job runs source and installed Azure packages against disposable Azurite; it uses no cloud resource. The workflow is configured for manual dispatch, with no automatic push or pull-request triggers. In your pull request, list the checks you ran locally and any platforms you couldn't test.
+
+The complete run also downloads the Windows package artifact into Linux and macOS jobs and exercises its installed Identity starter and browser without rebuilding the framework packages. Release packages must work on supported consumer platforms regardless of the build host.
 
 The `platform` input defaults to `all`. Select a single OS to investigate that platform using the same build, test and package checks. A single-platform run skips the server-provider job and does not replace the complete release matrix.
 

@@ -83,7 +83,7 @@ Avoid floating version ranges for prereleases. Keep a known working version on h
 For each release, a maintainer:
 
 1. Chooses the version and commit, then updates the changelog, known limitations and any migration notes.
-2. Confirms that CI passed on that commit and builds the packages from it, recording SHA-256 checksums.
+2. Confirms that complete CI passed on that commit, including consumption of the Windows-built starter packages on Linux and macOS, and retains the tested package artifacts without rebuilding them, recording SHA-256 checksums.
 3. Creates an annotated `v<version>` tag on that commit.
 4. Drafts a GitHub release with the packages, checksums, tested platforms, upgrade notes and known issues.
 5. Publishes it: as a prerelease for `-mN` and `-rcN` versions, and as a regular release otherwise.
