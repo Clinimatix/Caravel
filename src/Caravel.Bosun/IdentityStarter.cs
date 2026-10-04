@@ -21,7 +21,7 @@ internal static class IdentityStarter
         foreach (var resource in assembly.GetManifestResourceNames().Where(x => x.StartsWith("Identity/", StringComparison.Ordinal)))
         {
             var relative = resource["Identity/".Length..];
-            var destination = Path.Combine(directory, relative.Replace('/', Path.DirectorySeparatorChar));
+            var destination = Path.Combine(directory, relative.Replace('\\', '/').Replace('/', Path.DirectorySeparatorChar));
             Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
             using var reader = new StreamReader(assembly.GetManifestResourceStream(resource)!);
             var content = reader.ReadToEnd().Replace("Caravel.IdentitySample", name + "Application", StringComparison.Ordinal)

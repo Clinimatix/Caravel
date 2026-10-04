@@ -1,4 +1,8 @@
-param([ValidateSet('sqlite', 'sqlserver', 'postgres')][string]$Provider = 'sqlite', [switch]$Browser)
+param(
+    [ValidateSet('sqlite', 'sqlserver', 'postgres')][string]$Provider = 'sqlite',
+    [switch]$Browser,
+    [string]$CandidatePackageDirectory
+)
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot
@@ -20,6 +24,7 @@ $tests = Join-Path $run 'Tests'
 $app = Join-Path $run 'Workbench'
 $null = New-Item -ItemType Directory -Path $packages, $tool, $tests
 $variables = @('NUGET_PACKAGES', 'DOTNET_GENERATE_ASPNET_CERTIFICATE', 'Caravel__DatabaseProvider', 'Caravel__IdentityDatabase', 'CARAVEL_IDENTITY_TEST_PROVIDER')
+if ($CandidatePackageDirectory) { $CandidatePackageDirectory = (Resolve-Path -LiteralPath $CandidatePackageDirectory).Path }
 $previous = @{}
 foreach ($variable in $variables) { $previous[$variable] = [Environment]::GetEnvironmentVariable($variable) }
 function Invoke-Checked([string]$Executable, [string[]]$Arguments) {
@@ -30,8 +35,26 @@ function Invoke-Checked([string]$Executable, [string[]]$Arguments) {
 Push-Location $root
 try {
     $env:DOTNET_GENERATE_ASPNET_CERTIFICATE = 'false'
-    foreach ($name in @('Core', 'AspNetCore', 'Clarion', 'Auth', 'Queues', 'Mail', 'Bosun')) {
-        Invoke-Checked dotnet @('pack', "src/Caravel.$name/Caravel.$name.csproj", '-c', 'Release', '--no-restore', '-o', $packages)
+    $components = @('Core', 'AspNetCore', 'Clarion', 'Auth', 'Queues', 'Mail', 'Bosun')
+    $candidateHashes = @{}
+    if ($CandidatePackageDirectory) {
+        [xml]$properties = Get-Content -LiteralPath (Join-Path $root 'Directory.Build.props') -Raw
+        $candidateVersion = [string]$properties.Project.PropertyGroup.Version
+        $supplied = @(Get-ChildItem -LiteralPath $CandidatePackageDirectory -Filter '*.nupkg' -File -Recurse)
+        foreach ($name in $components) {
+            $fileName = "Clinimatix.Caravel.$name.$candidateVersion.nupkg"
+            $matches = @($supplied | Where-Object Name -CEQ $fileName)
+            if ($matches.Count -ne 1) { throw "Expected one supplied candidate package: $fileName" }
+            Copy-Item -LiteralPath $matches[0].FullName -Destination $packages
+            $candidateHashes[$name] = (Get-FileHash -LiteralPath $matches[0].FullName -Algorithm SHA256).Hash
+            if ((Get-FileHash -LiteralPath (Join-Path $packages $fileName) -Algorithm SHA256).Hash -ne $candidateHashes[$name]) {
+                throw "Copied candidate bytes differ: $fileName"
+            }
+        }
+    } else {
+        foreach ($name in $components) {
+            Invoke-Checked dotnet @('pack', "src/Caravel.$name/Caravel.$name.csproj", '-c', 'Release', '--no-restore', '-o', $packages)
+        }
     }
     & (Join-Path $PSScriptRoot 'Test-PackagePaths.ps1') -PackageDirectory $packages
     $version = (Get-ChildItem -LiteralPath $packages -Filter 'Clinimatix.Caravel.Bosun.*.nupkg').BaseName.Substring('Clinimatix.Caravel.Bosun.'.Length)
@@ -45,6 +68,13 @@ try {
     $cli = Join-Path $tool $(if ($IsWindows) { 'caravel.exe' } else { 'caravel' })
     Set-Location -LiteralPath $run
     Invoke-Checked $cli @('new', 'Workbench', '--stack', 'identity')
+    foreach ($relative in @('.config/dotnet-tools.json', 'Properties/launchSettings.json',
+        'Database/Identity/IdentityContextModelSnapshot.cs', 'Database/Queue/QueueDbContextModelSnapshot.cs')) {
+        if (-not (Test-Path -LiteralPath (Join-Path $app $relative) -PathType Leaf)) { throw "Generated nested file is missing: $relative" }
+    }
+    if (-not $IsWindows -and @(Get-ChildItem -LiteralPath $app -File -Recurse | Where-Object { $_.Name.Contains('\') }).Count) {
+        throw 'Generated filenames contain a Windows directory separator.'
+    }
     $env:Caravel__DatabaseProvider = $Provider
     $env:CARAVEL_IDENTITY_TEST_PROVIDER = $Provider
     $env:Caravel__IdentityDatabase = if ($Provider -eq 'sqlite') { Join-Path $run 'must-not-exist.db' } else {
@@ -67,6 +97,17 @@ try {
     Invoke-Checked dotnet @('restore', '--configfile', $feed)
     Invoke-Checked dotnet @('restore', '--locked-mode', '--configfile', $feed)
     Invoke-Checked dotnet @('tool', 'restore', '--configfile', $feed)
+    if ($CandidatePackageDirectory) {
+        foreach ($name in $components) {
+            $id = "clinimatix.caravel.$name".ToLowerInvariant()
+            $consumed = if ($name -eq 'Bosun') { Join-Path $tool ".store/$id/$version/$id/$version/$id.$version.nupkg" }
+                else { Join-Path $env:NUGET_PACKAGES "$id/$version/$id.$version.nupkg" }
+            if ((Get-FileHash -LiteralPath $consumed -Algorithm SHA256).Hash -ne $candidateHashes[$name]) {
+                throw "Installed package differs from supplied candidate: $id"
+            }
+        }
+        $candidateHashes | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $run 'consumed-candidate-sha256.json')
+    }
     if ($Provider -ne 'sqlite') {
         Invoke-Checked dotnet @('ef', 'migrations', 'add', 'InitialIdentity', '--context', 'IdentityContext', '--output-dir', 'Database/Identity')
         Invoke-Checked dotnet @('ef', 'migrations', 'add', 'InitialQueue', '--context', 'QueueDbContext', '--output-dir', 'Database/Queue')
