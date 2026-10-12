@@ -19,12 +19,24 @@ public class AzureTransportSecurityTests
     [InlineData(true, 128)]
     public async Task StreamingLogsRespectPayloadLengthAndConfiguredLimit(bool asynchronousRead, int logLimit)
     {
-        var contentLogs = new ConcurrentQueue<string>();
-        using var listener = new AzureEventSourceListener((written, message) =>
+        var requestId = Guid.NewGuid().ToString();
+        var contentLogs = new ConcurrentQueue<byte[]>();
+        using var listener = new AzureEventSourceListener(written =>
         {
             if (written.EventSource.Name == "Azure-Core" &&
                 written.EventName?.Contains("ResponseContent", StringComparison.Ordinal) == true)
-                contentLogs.Enqueue(message);
+            {
+                var requestIdIndex = written.PayloadNames?.IndexOf("requestId") ?? -1;
+                var contentIndex = written.PayloadNames?.IndexOf("content") ?? -1;
+                if (requestIdIndex >= 0 && contentIndex >= 0 &&
+                    written.Payload?[requestIdIndex] as string == requestId)
+                {
+                    if (written.Payload[contentIndex] is string content)
+                        contentLogs.Enqueue(Encoding.UTF8.GetBytes(content));
+                    else if (written.Payload[contentIndex] is byte[] bytes)
+                        contentLogs.Enqueue(bytes);
+                }
+            }
         }, EventLevel.Verbose);
         using var handler = new RecordingHandler(_ =>
         {
@@ -39,6 +51,7 @@ public class AzureTransportSecurityTests
         var pipeline = HttpPipelineBuilder.Build(options);
         using var request = pipeline.CreateMessage();
         request.Request.Method = RequestMethod.Get;
+        request.Request.ClientRequestId = requestId;
         request.Request.Uri.Reset(new Uri("https://storage.invalid/stream-log-test"));
         request.BufferResponse = false;
         await pipeline.SendAsync(request, CancellationToken.None);
@@ -50,12 +63,10 @@ public class AzureTransportSecurityTests
             : stream.Read(buffer, 0, buffer.Length);
         Assert.Equal("payload", Encoding.UTF8.GetString(buffer, 0, length));
         var expectedLog = "payload"[..Math.Min(logLimit, "payload".Length)];
-        Assert.Contains(contentLogs, log => log.Contains(expectedLog, StringComparison.Ordinal));
-        Assert.All(contentLogs, log =>
-        {
-            if (logLimit < "payload".Length) Assert.DoesNotContain("payload", log, StringComparison.Ordinal);
-            Assert.DoesNotContain("UNREAD-SYNTHETIC-BUFFER", log, StringComparison.Ordinal);
-        });
+        var loggedContent = Assert.Single(contentLogs);
+        Assert.Equal(Encoding.UTF8.GetBytes(expectedLog), loggedContent);
+        Assert.Equal(expectedLog.Length, loggedContent.Length);
+        Assert.DoesNotContain("UNREAD-SYNTHETIC-BUFFER", Encoding.UTF8.GetString(loggedContent), StringComparison.Ordinal);
     }
 
     [Theory]
