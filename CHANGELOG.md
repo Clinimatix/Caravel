@@ -1,12 +1,13 @@
 # Changelog
 
-## 26.1.0-rc3 — unreleased
+## 26.1.1-rc2 — unreleased
 
 This maintenance candidate preserves the RC2 APIs and .NET 10 baseline. Update all first-party packages together and deliberately regenerate and review application dependency locks. No database migration is required by these dependency fixes.
 
 - Updated the optional Azure adapter to Azure.Storage.Blobs 12.30.1 and explicitly pinned Azure.Core 1.61.0, covering encrypted-stream disposal and streaming-content logging fixes. Applications still supply their Azure clients and own their transport and encryption options.
 - Updated the SQL Server sample, generated Identity starter and provider tests to Microsoft.Data.SqlClient 6.1.7 and Azure.Core 1.61.0, covering vendor certificate-pin, enclave-attestation and Azure transport fixes while keeping Clarion provider-neutral.
 - Corrected the Azure adapter's Hosting.Abstractions lock resolution to the centrally requested .NET 10 package version.
+- Clarified compatible maintenance versions within the current RC line, supported-family platform baselines, immutable backports and exact-commit release qualification.
 
 ## 26.1.0-rc2
 

@@ -9,7 +9,7 @@ Guidance for coding agents and contributors working in this repository. Start wi
 
 ## Platform
 
-- Target the latest generally available .NET **LTS**: currently .NET 10, C# 14 and ASP.NET Core 10. Newer STS or preview releases don't change the target. When the next LTS ships, update the target framework, SDK pin, dependencies, templates, tests and docs together.
+- New feature release families target the latest generally available .NET **LTS**: currently .NET 10, C# 14 and ASP.NET Core 10. Newer STS or preview releases don't change the target. Move the target framework, SDK pin, dependencies, templates, tests and docs together for a new family's baseline. Maintenance patches and backports keep the supported family's minimum platform requirements.
 - Build and test `Caravel.slnx` with the SDK pinned in `global.json`. Restore with `--locked-mode`. See [Testing Caravel](docs/TESTING.md) for the package and end-to-end scripts; changes to Bosun, starters or packaging should be verified with the installed-tool smoke test, not only unit tests.
 
 ## Architecture
@@ -36,4 +36,4 @@ Guidance for coding agents and contributors working in this repository. Start wi
 
 ## Releases
 
-Follow [versions and releases](docs/RELEASE-POLICY.md): calendar versions `YY.Release.Patch`, compact prereleases such as `26.1.0-m1` and `26.1.0-rc1`, compatibility within a stable release family, exact version pins, and deliberate tagging and publishing. Never move or reuse a published version. Tags, releases and package publishing are separate, deliberate steps, not part of routine pushes.
+Follow [versions and releases](docs/RELEASE-POLICY.md): calendar versions `YY.Release.Patch`, compact prereleases, exact version pins, and deliberate tagging and publishing. Compatible RC2 maintenance increments the numeric patch while retaining the suffix, such as `26.1.0-rc2` to `26.1.1-rc2`. A later approved candidate scope advances `rcN` without resetting the numeric patch floor; stable cannot sort below a previously published candidate in its line. Preserve APIs and platform minima in maintenance, and follow [dependency maintenance](docs/DEPENDENCY-MAINTENANCE.md). Never move or reuse a published version. Tags, releases and package publishing are separate, deliberate steps, not part of routine pushes.
