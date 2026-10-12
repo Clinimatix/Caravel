@@ -57,7 +57,7 @@ jobs:
         timeout-minutes: 10
         shell: pwsh
         run: ./scripts/Test-PackageSmoke.ps1 -Browser
-      - name: Verify upgrade from published RC1
+      - name: Verify upgrade from published RC2
         timeout-minutes: 10
         shell: pwsh
         run: ./scripts/Test-ReleaseUpgrade.ps1

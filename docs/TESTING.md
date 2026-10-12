@@ -27,13 +27,13 @@ The `scripts/` folder has PowerShell 7 scripts that pack the framework, install 
 | `Test-ServicePackages.ps1` | Runs the Clarion, Queues, Storage, Scheduling, Mail and Notifications tests against packed packages | Those packages or their packaging |
 | `Test-IdentitySmoke.ps1` | Runs the Identity, backend and OIDC sample tests against packed packages | Auth or the Identity/OIDC samples |
 | `Test-IdentityStarterSmoke.ps1` | Installs Bosun and checks the generated Identity app, explicit native migrations, commands, sessions and readiness; `-Browser` includes its browser regressions | The Identity starter or shared sample code |
-| `Test-ReleaseUpgrade.ps1` | Creates persisted Identity/application/queue state using published RC1 packages, upgrades exact pins and locks to candidate packages, then checks persistence and behavior with SQLite | Release preparation or compatibility-sensitive package changes |
+| `Test-ReleaseUpgrade.ps1` | Creates persisted Identity/application/queue state using published RC2 packages, upgrades exact pins and locks to candidate packages, then checks persistence and behavior with SQLite | Release preparation or compatibility-sensitive package changes |
 | `Test-WorkerSmoke.ps1` | Runs the worker sample end to end, including a crash after a result is saved, recovery and duplicate-free totals | Queues, hosting or the worker sample |
 | `Test-LtsPolicy.ps1` and `Test-LtsPolicy.Tests.ps1` | Confirms the repository targets the latest .NET LTS | The target framework or SDK pin |
 
 Run them with `pwsh -File scripts/<name>.ps1`. `Test-ServicePackages.ps1` expects the solution to be restored first.
 
-Run `pwsh -File scripts/Test-ReleaseUpgrade.ps1` for the published-RC1-to-source-candidate gate. To consume already packed candidate artifacts, add `-CandidatePackageDirectory <directory>`. This check uses real package references and disposable SQLite state, rather than substituting candidate source projects for the published baseline.
+Run `pwsh -File scripts/Test-ReleaseUpgrade.ps1` for the published-RC2-to-source-candidate gate. To consume already packed candidate artifacts, add `-CandidatePackageDirectory <directory>`. Select an earlier published baseline explicitly with `-BaselineVersion <version>` when qualifying an additional upgrade path. This check uses real package references and disposable SQLite state, rather than substituting candidate source projects for the published baseline.
 
 Release builds map the source root to `/_/` so compiled debug metadata does not disclose the build machine's checkout path. Debug builds retain local paths for normal debugging. To inspect an existing package directory separately, run `pwsh -File scripts/Test-PackagePaths.ps1 -PackageDirectory <directory>`.
 
@@ -88,7 +88,7 @@ Some Bosun tests start and stop child processes. When you run the suite inside a
 
 ## Continuous integration
 
-`.github/workflows/build.yml` defines the Windows, Linux and macOS matrix, including source/generated browser regressions, package checks and the published-RC1 upgrade gate. The server-provider job checks provider contracts, packaged backends and generated Identity applications on SQL Server/PostgreSQL. A separate Ubuntu job runs source and installed Azure packages against disposable Azurite; it uses no cloud resource. The workflow is configured for manual dispatch, with no automatic push or pull-request triggers. In your pull request, list the checks you ran locally and any platforms you couldn't test.
+`.github/workflows/build.yml` defines the Windows, Linux and macOS matrix, including source/generated browser regressions, package checks and the published-RC2 upgrade gate. The server-provider job checks provider contracts, packaged backends and generated Identity applications on SQL Server/PostgreSQL. A separate Ubuntu job runs source and installed Azure packages against disposable Azurite; it uses no cloud resource. The workflow is configured for manual dispatch, with no automatic push or pull-request triggers. In your pull request, list the checks you ran locally and any platforms you couldn't test.
 
 The complete run also downloads the Windows package artifact into Linux and macOS jobs and exercises its installed Identity starter and browser without rebuilding the framework packages. Release packages must work on supported consumer platforms regardless of the build host.
 
