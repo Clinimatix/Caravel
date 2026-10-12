@@ -42,6 +42,8 @@ internal static class IdentityStarter
                 <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.12" />
                 <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
                 <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.12" />
+                <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.7" />
+                <PackageReference Include="Azure.Core" Version="1.61.0" />
                 <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
                 <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12" PrivateAssets="all" />
               </ItemGroup>

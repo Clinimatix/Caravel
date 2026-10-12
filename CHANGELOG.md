@@ -1,5 +1,13 @@
 # Changelog
 
+## 26.1.0-rc3 — unreleased
+
+This maintenance candidate preserves the RC2 APIs and .NET 10 baseline. Update all first-party packages together and deliberately regenerate and review application dependency locks. No database migration is required by these dependency fixes.
+
+- Updated the optional Azure adapter to Azure.Storage.Blobs 12.30.1 and explicitly pinned Azure.Core 1.61.0, covering encrypted-stream disposal and streaming-content logging fixes. Applications still supply their Azure clients and own their transport and encryption options.
+- Updated the SQL Server sample, generated Identity starter and provider tests to Microsoft.Data.SqlClient 6.1.7 and Azure.Core 1.61.0, covering vendor certificate-pin, enclave-attestation and Azure transport fixes while keeping Clarion provider-neutral.
+- Corrected the Azure adapter's Hosting.Abstractions lock resolution to the centrally requested .NET 10 package version.
+
 ## 26.1.0-rc2
 
 This release candidate extends RC1 with a composed application path while preserving native ASP.NET Core and EF Core integration. See [upgrading from RC1](docs/UPGRADING.md) for exact package pins, explicit schema setup and optional adoption. [GitHub releases](https://github.com/Clinimatix/Caravel/releases) and [NuGet](https://www.nuget.org/profiles/Clinimatix) are the canonical distribution locations.
