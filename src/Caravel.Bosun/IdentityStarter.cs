@@ -39,13 +39,14 @@ internal static class IdentityStarter
               </PropertyGroup>
               <ItemGroup>
                 {{string.Join("\n    ", references)}}
-                <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.12" />
-                <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.12" />
-                <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.12" />
+                <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.13" />
+                <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.13" />
+                <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.13" />
+                <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
                 <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.7" />
                 <PackageReference Include="Azure.Core" Version="1.61.0" />
                 <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
-                <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12" PrivateAssets="all" />
+                <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13" PrivateAssets="all" />
               </ItemGroup>
             </Project>
             """);
