@@ -2,6 +2,6 @@
   "version": 1,
   "isRoot": true,
   "tools": {
-    "dotnet-ef": { "version": "10.0.12", "commands": ["dotnet-ef"], "rollForward": false }
+    "dotnet-ef": { "version": "10.0.13", "commands": ["dotnet-ef"], "rollForward": false }
   }
 }

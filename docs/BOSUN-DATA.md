@@ -28,7 +28,7 @@ To set up the tool in a new app:
 
 ```powershell
 dotnet new tool-manifest
-dotnet tool install dotnet-ef --version 10.0.12
+dotnet tool install dotnet-ef --version 10.0.13
 ```
 
 In an existing app that already has a manifest, run `dotnet tool restore`. Keep the EF Core runtime, Design package, and tool on matching versions.

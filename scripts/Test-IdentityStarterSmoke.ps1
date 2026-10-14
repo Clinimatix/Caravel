@@ -121,7 +121,7 @@ try {
         (Get-Content -LiteralPath (Join-Path $root "tests/fixtures/$file") -Raw).Replace('Caravel.IdentitySample', 'WorkbenchApplication') | Set-Content -LiteralPath (Join-Path $tests $file)
     }
     @'
-<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net10.0</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><IsTestProject>true</IsTestProject></PropertyGroup><ItemGroup><ProjectReference Include="../Workbench/Workbench.csproj"/><PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.12"/><PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1"/><PackageReference Include="xunit" Version="2.9.3"/><PackageReference Include="xunit.runner.visualstudio" Version="4.0.0"/></ItemGroup></Project>
+<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net10.0</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><IsTestProject>true</IsTestProject></PropertyGroup><ItemGroup><ProjectReference Include="../Workbench/Workbench.csproj"/><PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.13"/><PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1"/><PackageReference Include="xunit" Version="2.9.3"/><PackageReference Include="xunit.runner.visualstudio" Version="4.0.0"/></ItemGroup></Project>
 '@ | Set-Content -LiteralPath (Join-Path $tests 'StarterTests.csproj')
     '<Solution><Project Path="Workbench/Workbench.csproj"/><Project Path="Tests/StarterTests.csproj"/></Solution>' | Set-Content -LiteralPath (Join-Path $run 'StarterQualification.slnx')
     Invoke-Checked dotnet @('restore', (Join-Path $tests 'StarterTests.csproj'), '--configfile', $feed)

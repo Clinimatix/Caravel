@@ -31,3 +31,11 @@ Change the reviewed dependency pins, then deliberately regenerate affected locks
 Qualify source and installed-package behavior on the supported hosts and provider paths. Release approval needs a fresh, passing CI run on the exact final release commit, with the required portability and upgrade checks. Record failed, skipped and never-run checks honestly; a passing repeat alone does not resolve a reproduced correctness defect.
 
 Promote only the retained, reviewed package artifacts and checksums from that qualified commit. Never move a published tag, replace package bytes or rebuild an existing version. Follow the established human review and publication gates, and verify exact-version installation after the feed has indexed the new release.
+
+## October 2026 runtime servicing
+
+For the 26.1.1-rc2 maintenance candidate, use .NET and ASP.NET Core **10.0.13 or a later supported 10.0 servicing release**. The .NET 10 platform family is unchanged. SDK 10.0.402 supplies the October runtime update for builds. Updating Caravel or authentication NuGet packages alone does not replace the shared ASP.NET Core runtime that executes an application.
+
+Framework-dependent deployments need the serviced runtime on each host and an application restart. Self-contained applications must be rebuilt with the serviced runtime and redeployed; containers need an updated runtime image and rebuilt deployment. Verify the runtime actually loaded by the running application as well as installed runtime inventory. Existing deployments are not updated by this repository's dependency changes.
+
+Microsoft's [ASP.NET Core request-smuggling advisory](https://github.com/advisories/GHSA-rv87-ccxw-8ggf) and [security-feature-bypass advisory](https://github.com/advisories/GHSA-fpq8-4vhr-rcxx) identify the runtime corrections. The optional mail package and SQL examples also pin System.Security.Cryptography.Pkcs 10.0.13 for the [PKCS denial-of-service corrections](https://github.com/advisories/GHSA-846f-f764-76mx). Regenerate and audit consumer locks when adopting these fixes; inspect application-specific direct dependencies for conflicting pins.
