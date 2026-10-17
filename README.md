@@ -60,7 +60,7 @@ It is organized into optional packages, so you can take as much or as little as 
 
 You'll need the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0). Nothing else is required: no database server, Node, or Docker.
 
-This source candidate targets **`26.1.1-rc2`**, a maintenance patch for RC2 that has not been published. Install Bosun only using a configured feed containing that exact version. [GitHub releases](https://github.com/Clinimatix/Caravel/releases) and [NuGet](https://www.nuget.org/profiles/Clinimatix) are the canonical distribution locations; see [prerelease installation](https://github.com/Clinimatix/Caravel/blob/main/docs/RELEASE-POLICY.md#using-prerelease-packages).
+The current maintenance release is **`26.1.1-rc2`**, a compatible patch for RC2. All thirteen packages are available on NuGet; pin the exact version when installing Bosun or libraries. [GitHub releases](https://github.com/Clinimatix/Caravel/releases) and [NuGet](https://www.nuget.org/profiles/Clinimatix) are the canonical distribution locations; see [prerelease installation](https://github.com/Clinimatix/Caravel/blob/main/docs/RELEASE-POLICY.md#using-prerelease-packages).
 
 ```powershell
 dotnet tool install --global Clinimatix.Caravel.Bosun --version 26.1.1-rc2
