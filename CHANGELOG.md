@@ -1,6 +1,6 @@
 # Changelog
 
-## 26.1.1-rc2 — unreleased
+## 26.1.1-rc2
 
 This maintenance candidate preserves the RC2 APIs and .NET 10 baseline. Update all first-party packages together and deliberately regenerate and review application dependency locks. No database migration is required by these dependency fixes.
 

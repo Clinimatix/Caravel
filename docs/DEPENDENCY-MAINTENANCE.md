@@ -34,7 +34,7 @@ Promote only the retained, reviewed package artifacts and checksums from that qu
 
 ## October 2026 runtime servicing
 
-For the 26.1.1-rc2 maintenance candidate, use .NET and ASP.NET Core **10.0.13 or a later supported 10.0 servicing release**. The .NET 10 platform family is unchanged. SDK 10.0.402 supplies the October runtime update for builds. Updating Caravel or authentication NuGet packages alone does not replace the shared ASP.NET Core runtime that executes an application.
+For the 26.1.1-rc2 maintenance release, use .NET and ASP.NET Core **10.0.13 or a later supported 10.0 servicing release**. The .NET 10 platform family is unchanged. SDK 10.0.402 supplies the October runtime update for builds. Updating Caravel or authentication NuGet packages alone does not replace the shared ASP.NET Core runtime that executes an application.
 
 Framework-dependent deployments need the serviced runtime on each host and an application restart. Self-contained applications must be rebuilt with the serviced runtime and redeployed; containers need an updated runtime image and rebuilt deployment. Verify the runtime actually loaded by the running application as well as installed runtime inventory. Existing deployments are not updated by this repository's dependency changes.
 
