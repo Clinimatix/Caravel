@@ -1,21 +1,21 @@
 # Upgrading from RC1 to RC2
 
-The `26.1.0-rc2` candidate adds an installed Bosun Identity starter, the sample's authorized-command browser flow and optional Azure Blob storage. Applications remain ordinary .NET 10 projects. Adopt the additions you need; review your own policies, migrations and transport configuration before running them.
+The RC2 line adds an installed Bosun Identity starter, the sample's authorized-command browser flow and optional Azure Blob storage. The examples below use its compatible `26.1.1-rc2` maintenance release. Applications remain ordinary .NET 10 projects. Adopt the additions you need; review your own policies, migrations and transport configuration before running them.
 
-[GitHub releases](https://github.com/Clinimatix/Caravel/releases) and [NuGet](https://www.nuget.org/profiles/Clinimatix) are the canonical distribution locations. The commands below require a configured feed containing `26.1.0-rc2`. You can also use your selected source checkout with [source references](GETTING-STARTED.md#creating-and-running-an-app).
+[GitHub releases](https://github.com/Clinimatix/Caravel/releases) and [NuGet](https://www.nuget.org/profiles/Clinimatix) are the canonical distribution locations. The commands below require a configured feed containing `26.1.1-rc2`. You can also use your selected source checkout with [source references](GETTING-STARTED.md#creating-and-running-an-app).
 
 ## Update package pins and locks
 
 Keep all first-party `Clinimatix.Caravel.*` package references on the same exact version. Update every reference you use, including central package versions in `Directory.Packages.props` if applicable. For example:
 
 ```powershell
-dotnet add package Clinimatix.Caravel.AspNetCore --version 26.1.0-rc2
-dotnet add package Clinimatix.Caravel.Auth --version 26.1.0-rc2
-dotnet add package Clinimatix.Caravel.Queues --version 26.1.0-rc2
-dotnet tool update --global Clinimatix.Caravel.Bosun --version 26.1.0-rc2
+dotnet add package Clinimatix.Caravel.AspNetCore --version 26.1.1-rc2
+dotnet add package Clinimatix.Caravel.Auth --version 26.1.1-rc2
+dotnet add package Clinimatix.Caravel.Queues --version 26.1.1-rc2
+dotnet tool update --global Clinimatix.Caravel.Bosun --version 26.1.1-rc2
 ```
 
-For a manifest-managed Bosun tool, use `dotnet tool update Clinimatix.Caravel.Bosun --version 26.1.0-rc2` in its manifest directory. Update only tools and packages your application uses. Caravel namespaces and the `caravel` command stay the same.
+For a manifest-managed Bosun tool, use `dotnet tool update Clinimatix.Caravel.Bosun --version 26.1.1-rc2` in its manifest directory. Update only tools and packages your application uses. Caravel namespaces and the `caravel` command stay the same.
 
 Regenerate dependency locks deliberately, inspect the changes and commit them alongside version pins:
 
@@ -52,7 +52,7 @@ The small browser UI supports password sign-in/sign-out and work items. Registra
 ## Opt into Azure Blob storage
 
 ```powershell
-dotnet add package Clinimatix.Caravel.Storage.Azure --version 26.1.0-rc2
+dotnet add package Clinimatix.Caravel.Storage.Azure --version 26.1.1-rc2
 ```
 
 The new package is optional. Core, Bosun and local storage remain independent of Azure. Supply your own `BlobContainerClient` for an existing container; registration never provisions resources or discovers credentials.
