@@ -42,13 +42,13 @@ Every release requires a fresh, passing CI run on its exact commit.
 
 ## Using prerelease packages
 
-The published RC2 version is **`26.1.0-rc2`**. The source maintenance candidate **`26.1.1-rc2`** is not yet published. [GitHub releases](https://github.com/Clinimatix/Caravel/releases) and [nuget.org](https://www.nuget.org/profiles/Clinimatix) are the canonical distribution locations. Use a configured feed containing the exact version you select. RC1's immutable packages omit the RC2 Identity starter and Azure adapter.
+The current published RC2 maintenance version is **`26.1.1-rc2`**. The earlier **`26.1.0-rc2`** release remains available and immutable. [GitHub releases](https://github.com/Clinimatix/Caravel/releases) and [nuget.org](https://www.nuget.org/profiles/Clinimatix) are the canonical distribution locations. Use a configured feed containing the exact version you select. RC1's immutable packages omit the RC2 Identity starter and Azure adapter.
 
 With a configured feed containing RC2, install libraries into an existing project or install Bosun to create an application:
 
 ```powershell
-dotnet add package Clinimatix.Caravel.AspNetCore --version 26.1.0-rc2
-dotnet tool install --global Clinimatix.Caravel.Bosun --version 26.1.0-rc2
+dotnet add package Clinimatix.Caravel.AspNetCore --version 26.1.1-rc2
+dotnet tool install --global Clinimatix.Caravel.Bosun --version 26.1.1-rc2
 caravel new MyApp
 ```
 
@@ -74,8 +74,8 @@ Enable **Include prerelease** when browsing packages in Visual Studio. Pin exact
 3. From that application's directory, install the selected version:
 
    ```powershell
-   dotnet add package Clinimatix.Caravel.AspNetCore --version 26.1.0-rc2
-   dotnet tool install Clinimatix.Caravel.Bosun --tool-path <tools-folder> --version 26.1.0-rc2
+   dotnet add package Clinimatix.Caravel.AspNetCore --version 26.1.1-rc2
+   dotnet tool install Clinimatix.Caravel.Bosun --tool-path <tools-folder> --version 26.1.1-rc2
    ```
 
 4. Commit your lock file, and upgrade deliberately by changing the selected version. Use locked restore in automation to enforce the recorded dependency graph.
