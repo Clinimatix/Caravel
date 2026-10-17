@@ -102,9 +102,11 @@ public sealed class QueueWorker
                 await renewal.ConfigureAwait(false);
             }
 
-            if (leaseLost)
+            if (leaseLost || deadline.IsCancellationRequested)
             {
-                QueueDiagnostics.Finish(activity, "lease_lost", "LeaseLost");
+                // Timer cancellation may precede the stored UTC expiry. Leave the lease for
+                // recovery instead of recording retry backoff or exhausting attempts early.
+                QueueDiagnostics.Finish(activity, "lease_lost", leaseLost ? "LeaseLost" : "LeaseExpired");
                 return true;
             }
 

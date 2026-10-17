@@ -155,6 +155,11 @@ public sealed class BosunTests
             var target = Program.CreateApplication(parent.FullName, "class", null, "identity");
             Assert.Contains("namespace classApplication;", File.ReadAllText(Path.Combine(target, "Program.cs")));
             Assert.Contains("Clinimatix.Caravel.Auth", File.ReadAllText(Path.Combine(target, "class.csproj")));
+            var generatedProject = System.Xml.Linq.XDocument.Load(Path.Combine(target, "class.csproj"));
+            var packagePins = generatedProject.Descendants("PackageReference")
+                .ToDictionary(package => (string)package.Attribute("Include")!, package => (string?)package.Attribute("Version"));
+            Assert.Equal("6.1.7", packagePins["Microsoft.Data.SqlClient"]);
+            Assert.Equal("1.61.0", packagePins["Azure.Core"]);
             Assert.True(File.Exists(Path.Combine(target, "SessionEndpoints.cs")));
             Assert.True(File.Exists(Path.Combine(target, "WorkItemEndpoints.cs")));
             Assert.True(File.Exists(Path.Combine(target, "wwwroot", "work-items.js")));

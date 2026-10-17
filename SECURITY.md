@@ -19,11 +19,15 @@ Keep the details private, including any fix that would reveal them, until a main
 
 ## What to expect
 
-Caravel is prerelease software, and milestone builds and release candidates are meant for evaluation. There's no guaranteed response time. Maintainers assess severity and affected versions, and security fixes ship with a regression test in a new release. Older prereleases generally aren't patched; upgrade to the latest release.
+Caravel is prerelease software, and milestone builds and release candidates are meant for evaluation. There's no guaranteed response time. Maintainers assess severity, exposure and affected supported lines. Security fixes ship with regression coverage in a new immutable patch version on the affected supported line, subject to the [release gates](docs/RELEASE-POLICY.md). Compatible corrections to RC2 retain its suffix, for example `26.1.0-rc2` to `26.1.1-rc2`; they do not require a new candidate scope.
+
+Where an older stable family is explicitly supported, assess a compatible backport that preserves its documented API and minimum .NET baseline. Do not replace existing packages, move tags or raise a supported family's platform minimum to obtain a dependency fix. Earlier candidate scopes and milestones are not patched by default; upgrade to the current supported line. See [dependency maintenance](docs/DEPENDENCY-MAINTENANCE.md) for review of package advisories and vendor fixes.
 
 ## Supported versions
 
 | Version | Supported |
 | --- | --- |
-| Latest milestone or release candidate | Yes |
-| Earlier prereleases | No |
+| Current milestone or release-candidate line, including its maintenance patches | Yes |
+| Earlier candidate scopes and milestones | No, unless maintainers explicitly announce support |
+| Stable families explicitly listed as supported by maintainers | Yes, within their stated support period |
+| Other versions | No |

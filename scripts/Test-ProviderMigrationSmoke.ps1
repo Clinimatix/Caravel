@@ -58,6 +58,9 @@ try {
     <ProjectReference Include="$clarion" />
     <ProjectReference Include="$queues" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
+    <PackageReference Include="Microsoft.Data.SqlClient" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
+    <PackageReference Include="Azure.Core" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />

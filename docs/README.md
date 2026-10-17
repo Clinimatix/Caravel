@@ -45,6 +45,7 @@ New here? Start with the [repository README](../README.md) and its quick start.
 - [Design and roadmap](ROADMAP.md): principles, package layout, current status and what's next
 - [Upgrading from RC1](UPGRADING.md): exact versions, dependency locks and explicit schema changes
 - [Versions and releases](RELEASE-POLICY.md): what milestone, release candidate and stable mean
+- [Dependency maintenance](DEPENDENCY-MAINTENANCE.md): assess advisories, review package updates and qualify supported-line fixes
 - [Testing Caravel](TESTING.md): build, test and verify changes as a contributor
 - [Changelog](../CHANGELOG.md)
 - [Contributing](../CONTRIBUTING.md) and [security](../SECURITY.md)
