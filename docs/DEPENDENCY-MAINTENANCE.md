@@ -30,7 +30,7 @@ Change the reviewed dependency pins, then deliberately regenerate affected locks
 
 Qualify source and installed-package behavior on the supported hosts and provider paths. Release approval needs a fresh, passing CI run on the exact final release commit, with the required portability and upgrade checks. Record failed, skipped and never-run checks honestly; a passing repeat alone does not resolve a reproduced correctness defect.
 
-Promote only the retained, reviewed package artifacts and checksums from that qualified commit. Never move a published tag, replace package bytes or rebuild an existing version. Follow the established human review and publication gates, and verify exact-version installation after the feed has indexed the new release.
+Promote only the retained, reviewed package artifacts and checksums from that qualified commit. Never move a published tag, replace package bytes or rebuild an existing version. Complete the required review and release qualification before publication. Preserve configured publication-environment protections and verify exact-version installation after the feed has indexed the new release.
 
 ## October 2026 runtime servicing
 
