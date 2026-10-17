@@ -41,7 +41,7 @@ New packages are added when there's real integration work to do. Caching, for ex
 
 ## Where things stand
 
-This guide targets **`26.1.0-rc2`**, extending the RC1 foundation with the composed application path described below. [GitHub releases](https://github.com/Clinimatix/Caravel/releases) and [NuGet](https://www.nuget.org/profiles/Clinimatix) are the canonical distribution locations. Broader development is organized into architecture milestones:
+This guide targets **`26.1.1-rc2`**, extending the RC1 foundation with the composed application path described below. [GitHub releases](https://github.com/Clinimatix/Caravel/releases) and [NuGet](https://www.nuget.org/profiles/Clinimatix) are the canonical distribution locations. Broader development is organized into architecture milestones:
 
 | Milestone | Focus | Status |
 | --- | --- | --- |
