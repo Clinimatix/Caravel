@@ -60,10 +60,10 @@ It is organized into optional packages, so you can take as much or as little as 
 
 You'll need the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0). Nothing else is required: no database server, Node, or Docker.
 
-This guide targets **`26.1.0-rc2`**. Install Bosun using a configured feed containing that exact version. [GitHub releases](https://github.com/Clinimatix/Caravel/releases) and [NuGet](https://www.nuget.org/profiles/Clinimatix) are the canonical distribution locations; see [prerelease installation](https://github.com/Clinimatix/Caravel/blob/main/docs/RELEASE-POLICY.md#using-prerelease-packages).
+This source candidate targets **`26.1.1-rc2`**, a maintenance patch for RC2 that has not been published. Install Bosun only using a configured feed containing that exact version. [GitHub releases](https://github.com/Clinimatix/Caravel/releases) and [NuGet](https://www.nuget.org/profiles/Clinimatix) are the canonical distribution locations; see [prerelease installation](https://github.com/Clinimatix/Caravel/blob/main/docs/RELEASE-POLICY.md#using-prerelease-packages).
 
 ```powershell
-dotnet tool install --global Clinimatix.Caravel.Bosun --version 26.1.0-rc2
+dotnet tool install --global Clinimatix.Caravel.Bosun --version 26.1.1-rc2
 caravel new MyApp
 caravel serve --project MyApp
 ```
@@ -86,7 +86,7 @@ caravel route:list --project MyApp   # list your routes
 caravel doctor                       # check your setup
 ```
 
-To add Caravel to an existing application, install only the [packages you need](https://www.nuget.org/profiles/Clinimatix) with an exact version, for example `dotnet add package Clinimatix.Caravel.AspNetCore --version 26.1.0-rc2`. [Upgrading from RC1](https://github.com/Clinimatix/Caravel/blob/main/docs/UPGRADING.md) covers version pins, locks and schema changes. [GitHub release ZIPs](https://github.com/Clinimatix/Caravel/releases) remain available for [local-feed installation](https://github.com/Clinimatix/Caravel/blob/main/docs/RELEASE-POLICY.md#using-a-release-zip).
+To add Caravel to an existing application, install only the [packages you need](https://www.nuget.org/profiles/Clinimatix) with an exact version, for example `dotnet add package Clinimatix.Caravel.AspNetCore --version 26.1.1-rc2` once your feed contains it. Keep all first-party packages on the same version and deliberately review regenerated dependency locks. This RC2 maintenance candidate requires no database migration. [Upgrading from RC1](https://github.com/Clinimatix/Caravel/blob/main/docs/UPGRADING.md) covers the earlier API additions and schema changes. [GitHub release ZIPs](https://github.com/Clinimatix/Caravel/releases) remain available for [local-feed installation](https://github.com/Clinimatix/Caravel/blob/main/docs/RELEASE-POLICY.md#using-a-release-zip).
 
 ## Learn more
 
@@ -96,11 +96,12 @@ To add Caravel to an existing application, install only the [packages you need](
 - [Database providers](https://github.com/Clinimatix/Caravel/blob/main/docs/DATABASE-PROVIDERS.md): which databases work today
 - [Authentication](https://github.com/Clinimatix/Caravel/blob/main/docs/AUTHENTICATION.md): accounts, sign-in and policies
 - [Queues](https://github.com/Clinimatix/Caravel/blob/main/docs/QUEUES.md) and [the backend sample](https://github.com/Clinimatix/Caravel/blob/main/docs/BACKEND-SAMPLE.md): durable background work, end to end
+- [Dependency maintenance](https://github.com/Clinimatix/Caravel/blob/main/docs/DEPENDENCY-MAINTENANCE.md): advisories, compatible updates and supported-line fixes
 - [All documentation](https://github.com/Clinimatix/Caravel/blob/main/docs/README.md)
 
 ## Project status
 
-Caravel **`26.1.0-rc2`** extends RC1 with the authorized-command browser flow, installed Bosun Identity stack and optional Azure Blob companion. Its scope includes the application foundation, Clarion data layer, authentication, durable background work, mail and notifications, and Bosun tooling. Work toward stable focuses on fixes, upgrade validation and real-application feedback. See the [changelog](https://github.com/Clinimatix/Caravel/blob/main/CHANGELOG.md).
+The **`26.1.1-rc2`** maintenance candidate updates RC2's Azure transport and SQL Server dependency chains while preserving its APIs and .NET 10 baseline. Published RC2 packages remain unchanged. Its scope includes the application foundation, Clarion data layer, authentication, durable background work, mail and notifications, and Bosun tooling. Work toward stable focuses on fixes, upgrade validation and real-application feedback. See the [changelog](https://github.com/Clinimatix/Caravel/blob/main/CHANGELOG.md).
 
 - **Databases:** SQL Server, PostgreSQL, and SQLite are supported and tested. MariaDB is planned once an EF Core 10–compatible provider is available. See [database providers](https://github.com/Clinimatix/Caravel/blob/main/docs/DATABASE-PROVIDERS.md).
 - **Integration limits:** the Identity starter provides password sign-in/sign-out and work-item forms; complete account/MFA screens and external identity need application integration. Azure credentials, provisioning, scanning and cloud retention require separate setup and qualification.

@@ -1,5 +1,5 @@
 param(
-    [string]$BaselineVersion = '26.1.0-rc1',
+    [string]$BaselineVersion = '26.1.0-rc2',
     [string]$CandidatePackageDirectory
 )
 

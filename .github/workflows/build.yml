@@ -26,11 +26,11 @@ jobs:
         os: ${{ fromJSON(inputs.platform == 'all' && '["windows-latest","ubuntu-latest","macos-latest"]' || format('["{0}"]', inputs.platform)) }}
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
       - name: Install browser test dependencies
@@ -57,7 +57,7 @@ jobs:
         timeout-minutes: 10
         shell: pwsh
         run: ./scripts/Test-PackageSmoke.ps1 -Browser
-      - name: Verify upgrade from published RC1
+      - name: Verify upgrade from published RC2
         timeout-minutes: 10
         shell: pwsh
         run: ./scripts/Test-ReleaseUpgrade.ps1
@@ -95,14 +95,14 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: clinimatix-caravel-packages-${{ github.sha }}
           path: release-packages
@@ -145,8 +145,8 @@ jobs:
       CARAVEL_TEST_SQLSERVER: Server=localhost,1433;User ID=sa;Password=Caravel_Disposable_CI_42!;TrustServerCertificate=true
       CARAVEL_TEST_POSTGRES: Host=localhost;Username=postgres;Password=caravel_disposable_ci_only
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
       - run: dotnet restore Caravel.slnx --locked-mode
@@ -172,8 +172,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
       - name: Verify Azure storage source and installed packages against Azurite
@@ -185,11 +185,11 @@ jobs:
     timeout-minutes: 10
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
-      - uses: actions/setup-dotnet@v5
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '11.0.x'
           dotnet-quality: preview
