@@ -1,6 +1,6 @@
 # Upgrading from RC1 to RC2
 
-The `26.1.1-rc2` candidate adds an installed Bosun Identity starter, the sample's authorized-command browser flow and optional Azure Blob storage. Applications remain ordinary .NET 10 projects. Adopt the additions you need; review your own policies, migrations and transport configuration before running them.
+The RC2 line adds an installed Bosun Identity starter, the sample's authorized-command browser flow and optional Azure Blob storage. The examples below use its compatible `26.1.1-rc2` maintenance release. Applications remain ordinary .NET 10 projects. Adopt the additions you need; review your own policies, migrations and transport configuration before running them.
 
 [GitHub releases](https://github.com/Clinimatix/Caravel/releases) and [NuGet](https://www.nuget.org/profiles/Clinimatix) are the canonical distribution locations. The commands below require a configured feed containing `26.1.1-rc2`. You can also use your selected source checkout with [source references](GETTING-STARTED.md#creating-and-running-an-app).
 
