@@ -6,5 +6,7 @@
   <ItemGroup>
     <ProjectReference Include="../Caravel.Storage/Caravel.Storage.csproj" />
     <PackageReference Include="Azure.Storage.Blobs" />
+    <PackageReference Include="Azure.Core" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
   </ItemGroup>
 </Project>

@@ -6,5 +6,6 @@
   <ItemGroup>
     <ProjectReference Include="../Caravel.Queues/Caravel.Queues.csproj" />
     <PackageReference Include="MailKit" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" />
   </ItemGroup>
 </Project>

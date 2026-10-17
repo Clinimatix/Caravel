@@ -15,7 +15,7 @@ Caravel targets Windows, Linux and macOS, with platform-specific packages where 
 - **Batteries included, batteries replaceable.** Every capability ships as an optional package. Take what you need and replace the rest.
 - **No surprise dependencies.** Caravel prefers permissively licensed dependencies and platform components. It doesn't require commercial license keys, MediatR or AI credentials.
 - **Safe by default.** Destructive commands require `--force`, `caravel doctor` only reads, secrets stay out of logs and generated files, and nothing creates databases or runs migrations behind your back.
-- **Latest .NET LTS.** Caravel targets the newest generally available long-term-support release of .NET (currently .NET 10 and C# 14). It moves to the next LTS when that version ships.
+- **Latest .NET LTS.** New feature release families target the newest generally available long-term-support release of .NET (currently .NET 10 and C# 14). Maintenance patches and backports preserve the supported family's baseline; moving its minimum platform requires a new feature family.
 
 ## How the packages fit together
 
@@ -89,6 +89,8 @@ An optional [Azure Blob adapter](AZURE-STORAGE.md) supplies create-only streamin
 Release qualification covers the exact release commit, supported platforms and database/provider paths. Deployment and application-specific verification remain separate; see [versions and releases](RELEASE-POLICY.md).
 
 Work toward stable 26.1 focuses on integration feedback, fixes, documentation and upgrade validation. RCs remain public previews, not stable releases or a compatibility commitment. See the [release policy](RELEASE-POLICY.md) and [changelog](../CHANGELOG.md) for status and changes.
+
+Compatible maintenance stays on the current candidate scope: `26.1.1-rc2` is a patch for published `26.1.0-rc2`, not an RC3 feature candidate. A later approved scope advances the RC suffix while carrying forward the numeric patch floor, and stable must not sort below the published candidates. No later scope or release date is implied by the maintenance version.
 
 ## Non-goals
 
