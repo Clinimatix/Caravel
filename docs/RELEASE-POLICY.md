@@ -84,7 +84,7 @@ Avoid floating version ranges for prereleases. Keep a known working version on h
 
 ## How releases are made
 
-For each release, a maintainer:
+For each release, a maintainer or an authorized maintenance agent:
 
 1. Chooses the version and commit, then updates the changelog, known limitations and any migration notes.
 2. Confirms that complete CI passed on that commit, including consumption of the Windows-built starter packages on Linux and macOS, and retains the tested package artifacts without rebuilding them, recording SHA-256 checksums.
@@ -95,6 +95,8 @@ For each release, a maintainer:
 After publication, check the README, getting-started guide, roadmap, changelog, release policy and versioned website against the published version and package feeds. Update completed milestones from future to past tense, verify exact-version installation commands, and keep planned capabilities distinct from implemented behavior. Correct installation/status prose without changing historical API contracts or package payloads.
 
 Ordinary pushes never create tags or releases. Publishing to nuget.org is a separate, deliberate step.
+
+A standing maintenance mandate may authorize compatible security/dependency releases and routine documentation/site publication through established destinations after required review and technical checks. Review may be performed by the authorized agent/reviewer process; it does not inherently require a new human approval. Escalate concrete changes to supported-consumer compatibility or platform requirements, access/trust boundaries, a new exposed destination, unavoidable destructive ownership conflicts, or a different product goal. Failed checks call for repair and revalidation, not an approval request. Dependency major-version labels alone do not establish incompatibility. Preserve configured publication-environment protections; never bypass them.
 
 ### NuGet publication
 
