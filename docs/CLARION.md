@@ -33,6 +33,32 @@ Each DI scope (for a web app, each request) gets its own `IClarion` session, whi
 - If you need other services while configuring the context, use the overload `AddClarion<TContext>((services, options) => ...)`.
 - Sessions aren't thread-safe. Give each concurrent job its own scope.
 
+## Read a count-free slice (unreleased)
+
+The development branch adds `ToSliceAsync` for lists that need a next page without a total
+count. This API is not included in the published `26.1.1-rc2` package.
+
+```csharp
+var slice = await db.Models<User>()
+    .AsNoTracking()
+    .Where(user => user.Active) // Apply application visibility rules before paging.
+    .OrderBy(user => user.Name)
+    .ThenBy(user => user.Id) // Include a unique tie breaker.
+    .ToSliceAsync(offset: 0, pageSize: 25, cancellationToken: cancellationToken);
+
+// slice.Items, slice.HasMore and slice.NextOffset
+```
+
+Use `slice.NextOffset` for the next request when `slice.HasMore` is true. The helper reads at
+most one extra row, preserves query filters and ordering, and does not run a count query.
+It accepts page sizes from 1 through 200 (default 50), nonnegative offsets whose sum with
+the page size fits `Int32`, and the caller's cancellation token.
+
+The application still owns authorization and tenant filtering. Apply projections before
+ordering when returning a small view model. Use a stable unique ordering; offsets can shift
+when rows are inserted or removed between requests. A slice is not a snapshot or a cursor,
+and it does not make cross-request consistency or permission decisions for your app.
+
 ## Models
 
 Models are plain C# classes. If your context already declares `DbSet<T>` properties or maps entities with `modelBuilder.Entity<T>()`, they work as-is. You can also mark classes with `[ClarionModel]` and have Clarion find them in the assemblies you name:
