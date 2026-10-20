@@ -67,6 +67,14 @@ public sealed class ProviderContracts
             db.Context.ChangeTracker.Clear();
             Assert.Single(await db.Models<Activity>().GetAsync());
             Assert.Equal(2, await db.Models<Activity>().SumAsync(x => x.Quantity));
+            // Slicing must retain the provider's tenant filter before deciding continuation.
+            var slice = await db.Models<Activity>().AsNoTracking().OrderBy(x => x.Id).ToSliceAsync(pageSize: 1);
+            Assert.Equal(activity.Id, Assert.Single(slice.Items).Id);
+            Assert.False(slice.HasMore);
+            Assert.Null(slice.NextOffset);
+            var pastEnd = await db.Models<Activity>().OrderBy(x => x.Id).ToSliceAsync(offset: 1, pageSize: 1);
+            Assert.Empty(pastEnd.Items);
+            Assert.False(pastEnd.HasMore);
 
             // Database uniqueness underpins a consumer's idempotency implementation.
             db.Models<Activity>().Add(new Activity { EventKey = "event-1", Kind = "processed" });
@@ -79,6 +87,12 @@ public sealed class ProviderContracts
             db.Context.ChangeTracker.Clear();
             db.Context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
             Assert.Empty(await db.Models<Activity>().GetAsync());
+            var deletedSlice = await db.Models<Activity>().OrderBy(x => x.Id).ToSliceAsync(pageSize: 1);
+            Assert.Empty(deletedSlice.Items);
+            Assert.False(deletedSlice.HasMore);
+            var trashedSlice = await db.Models<Activity>().WithTrashed().OrderBy(x => x.Id).ToSliceAsync(pageSize: 1);
+            Assert.Equal(activity.Id, Assert.Single(trashedSlice.Items).Id);
+            Assert.False(trashedSlice.HasMore); // Other tenants remain excluded with trashed rows included.
             Assert.Single(await db.Models<Activity>().WithTrashed().ToListAsync());
             Assert.Null(await db.RestoreAsync<Activity>([otherTenant.Id]));
             Assert.NotNull(await db.RestoreAsync<Activity>([activity.Id]));
