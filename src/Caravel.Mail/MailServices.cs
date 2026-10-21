@@ -72,6 +72,16 @@ public sealed class MailCapture(MailOptions options) : IMailSender
 
 public sealed class QueuedMail(IDatabaseQueue queue, MailOptions options)
 {
+    /// <summary>Stage validated content in the application's outbox; the caller must save and commit.</summary>
+    public Task<OutboxStageResult> StageAsync<TContext>(QueueOutbox<TContext> outbox,
+        CaravelMailMessage message, QueueDispatchOptions dispatch, CancellationToken cancellationToken = default)
+        where TContext : Microsoft.EntityFrameworkCore.DbContext
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ArgumentNullException.ThrowIfNull(outbox);
+        return outbox.StageAsync(new SendMailJob(MailValidation.Snapshot(message, options)), dispatch, cancellationToken);
+    }
+
     public Task<EnqueueResult> EnqueueAsync(CaravelMailMessage message, QueueDispatchOptions dispatch,
         CancellationToken cancellationToken = default)
     {

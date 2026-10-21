@@ -66,6 +66,17 @@ public sealed class NotificationDeliveryHandler(NotificationDispatcher dispatche
 
 public sealed class QueuedNotifications(IDatabaseQueue queue, NotificationDispatcher dispatcher)
 {
+    /// <summary>Stage one channel in the application's outbox; the caller must save and commit.</summary>
+    public Task<OutboxStageResult> StageAsync<TContext>(QueueOutbox<TContext> outbox, string channel,
+        NotificationContent content, NotificationRecipient recipient, QueueDispatchOptions options,
+        CancellationToken cancellationToken = default) where TContext : Microsoft.EntityFrameworkCore.DbContext
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ArgumentNullException.ThrowIfNull(outbox);
+        dispatcher.Validate(channel, content, recipient);
+        return outbox.StageAsync(new NotificationDeliveryJob(channel, content, recipient), options, cancellationToken);
+    }
+
     /// <summary>Use a distinct idempotency key for each channel. This is a trusted infrastructure API.</summary>
     public Task<EnqueueResult> EnqueueAsync(string channel, NotificationContent content, NotificationRecipient recipient,
         QueueDispatchOptions options, CancellationToken cancellationToken = default)

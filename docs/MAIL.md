@@ -88,3 +88,46 @@ SMTP acceptance is not proof of inbox delivery. A failed connection after accept
 Transport failures throw `MailDeliveryException` with a redacted message and no server-response inner exception. Cancellation remains `OperationCanceledException`. No credentials, message bodies or server diagnostics are logged by this package. Use your provider's delivery records when investigating delivery beyond SMTP acceptance.
 
 Native Identity confirmation/reset endpoints can use a normal `IEmailSender<TUser>` adapter around `IMailSender`; the [Identity sample](../samples/Caravel.Identity/) demonstrates this composition. Mail does not depend on ASP.NET Core or require a particular account UI.
+
+## Stage mail with application changes (unreleased)
+
+When an application change and its message must commit together, use the existing
+[transactional outbox](QUEUES.md) through `QueuedMail.StageAsync`. Register
+`AddCaravelOutbox<AppDbContext>()`, include `AddCaravelOutbox()` in that context's model,
+and deliberately prepare its schema. Mail jobs, the database queue and an `IMailSender`
+still require their ordinary registrations.
+
+```csharp
+// appDb and outbox use the same scoped application context.
+await using var transaction = await appDb.Database.BeginTransactionAsync(cancellationToken);
+// Make the application's authorized changes here.
+var staged = await queuedMail.StageAsync(outbox, message,
+    new QueueDispatchOptions("mail", tenantId, deliveryKey), cancellationToken);
+await appDb.SaveChangesAsync(cancellationToken);
+await transaction.CommitAsync(cancellationToken);
+```
+
+Staging validates and snapshots mail content, then tracks an intent; it does not save,
+commit, enqueue immediately or send. Rollback discards the intent. After commit, an
+explicitly configured `OutboxRelay<AppDbContext>` forwards it to the queue, and a worker
+uses the configured sender. The application must supervise relay/worker health and
+retain the outbox/queue identity for status lookup. Reusing an identity with changed
+content is a conflict. Retrying a transport can still duplicate external acceptance.
+
+`QueuedNotifications.StageAsync(outbox, channel, content, recipient, dispatch, token)`
+provides the same transaction composition for one registered notification channel. It
+validates channel registration and content; destination validation remains channel-owned
+at delivery. Each recipient/channel needs its own stable application-assigned identity.
+
+Keep invitation expiry, revocation, redemption and eligibility in the application. A
+queued body is a persisted snapshot, so application jobs should re-check current
+eligibility before composing sensitive or expiring content when that is required. Neither
+queue completion nor a notification implies invitation acceptance. Service-item events,
+visible owner/watcher selection, subscriptions and opt-out also belong to the application.
+Transport registration stays behind `IMailSender`; choosing an API provider does not
+require changing these application policies.
+
+For isolated tests, register only capture/fake senders and use synthetic recipients.
+Capture must fail closed when full; never fall back to SMTP or another external sender.
+Do not register production transports as a fallback in a test host. Queue/outbox payloads
+still contain message content; keep token-bearing links out of test output and diagnostics.
