@@ -100,6 +100,7 @@ public static class Program
             })
         }, JsonOptions)));
         root.Add(schema);
+        AgentManifest.AddTo(root);
         DataCommands.AddTo(root);
         return root;
     }

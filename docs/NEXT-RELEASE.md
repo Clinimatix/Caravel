@@ -12,6 +12,11 @@ Settle and qualify these additive APIs together with the existing 26.1 applicati
 - Ordered, count-free Clarion query slices, preserving caller filtering and ordering.
 - Validated transactional mail/notification staging through the existing application outbox.
 - Explicit synchronous registered-job dispatch for development and tests.
+- Model-free Bosun `agent:manifest` v1, agent guidance, a versioned JSON contract and
+  regression coverage for data minimization and execution boundaries.
+
+The query/staging/synchronous slices remain separately owned work; this foundation does
+not imply they are merged or available in every checkout.
 
 The candidate retains the .NET10 baseline and existing durable job wire contracts. Application
 recipient selection, invitation validity, opt-out and authorization remain application-owned.
@@ -40,6 +45,23 @@ Every gate must have a retained result for the exact candidate commit:
 Publication is a separate deliberate action after these gates. A branch push or passing
 unit suite does not create a release or prove recipient delivery.
 
+## Minimum AI capability gate for first stable
+
+The first stable major release requires a useful agent-friendly development foundation:
+installed Bosun exports the versioned static project/capability manifest, links accurate
+command and route inspection guidance, and passes disclosure/non-execution regressions
+and installed-tool checks on the exact release commit. Review must confirm no secrets,
+configuration or application payloads escape and no arbitrary execution or database-write
+tool is exposed. This minimum gate is required, not an optional future aspiration.
+
+Develop in three ordered layers: (1) development context/tooling in RC3; (2) later,
+opt-in application tools/MCP with explicit authorization, cancellation, protocol tests and
+read/write boundaries; (3) application-driven model workflows with provider abstraction,
+structured output and fake-provider tests. Embeddings/search require separate storage and
+retrieval qualification. Later stages are not RC3 or first-stable prerequisites. No paid
+model call, provider key or complete Laravel ecosystem is required for the foundation.
+Feature-set naming remains undecided; public command/package names stay neutral.
+
 ## RC3 to first stable
 
 Freeze the candidate API scope; fix defects and repeat affected qualification. Before stable,
@@ -49,7 +71,8 @@ CI. Resolve critical defects and state the supported API/platform compatibility 
 Remove the suffix at the eligible numeric floor only after those checks and release review.
 
 Calendar scheduling, S3, batches/chains, in-memory queues, passkeys, richer starters, extra
-notification transports and AI integration remain later work. Laravel guides useful
+notification transports, application MCP and model workflows remain later work.
+The model-free development foundation above is required for first stable. Laravel guides useful
 conventions; parity with its entire feature set is not a gate for 26.1 stable. Container
 images and managed-cloud deployment require their own runtime/provider qualification and
 are not prerequisites for host-based framework development or claims outside that scope.

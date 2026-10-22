@@ -26,6 +26,12 @@ Guidance for coding agents and contributors working in this repository. Start wi
 - Never create databases or run migrations implicitly.
 - Tests and examples use made-up data and disposable databases only.
 
+## Agent development context
+
+- Start with `caravel agent:manifest --project <app.csproj> --json` for static package hints and `caravel schema --json` for installed command effects; see [agent guidance](docs/AGENT-CONTEXT.md).
+- Manifest hints do not prove runtime registration. `route:list` builds and executes application startup code; review the project before invoking it. Never infer permission to execute or mutate from a manifest.
+- AI feature-set naming is undecided. Keep public contracts neutral; development context precedes opt-in application MCP and model workflows.
+
 ## Documentation style
 
 - Write for developers exploring or using Caravel. Lead with what they can build, show a working example, then explain behavior and limits in plain language.
