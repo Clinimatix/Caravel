@@ -26,6 +26,8 @@ New here? Start with the [repository README](../README.md) and its quick start.
 
 ## Application services
 
+- [Fathom application tools](FATHOM-TOOLS.md): explicit in-process registration, authorization and fake handlers
+
 - [Events](EVENTS.md): notify other parts of your app
 - [Queues](QUEUES.md): durable background jobs that survive restarts
 - [Mail](MAIL.md): transactional email, templates, attachments and queued sending
