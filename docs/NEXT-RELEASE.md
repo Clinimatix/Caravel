@@ -54,6 +54,11 @@ and installed-tool checks on the exact release commit. Review must confirm no se
 configuration or application payloads escape and no arbitrary execution or database-write
 tool is exposed. This minimum gate is required, not an optional future aspiration.
 
+An opt-in [in-process application tool registry](FATHOM-TOOLS.md) is in development
+ahead of the network transport. It does not qualify MCP protocol support or expand RC3
+release scope. Qualify a synthetic consumer, trusted principal binding, resource-level
+denial, cancellation and safe error presentation before adding a transport.
+
 Develop in three ordered layers: (1) development context/tooling in RC3; (2) later,
 opt-in application tools/MCP with explicit authorization, cancellation, protocol tests and
 read/write boundaries; (3) application-driven model workflows with provider abstraction,

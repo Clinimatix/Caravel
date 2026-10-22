@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Added opt-in Caravel Fathom in-process application tool contracts and registry in Core, with mandatory per-call application authorization, declared read/write effects, cancellation boundaries and fake-handler coverage. Network MCP and model workflows remain planned.
+
 - Added model-free Bosun `agent:manifest` v1: static, allowlisted project package hints, a versioned JSON contract and explicit inspection guidance without application startup or configuration/data export.
 - Named the AI suite Caravel Fathom and made its agent development foundation a minimum first-stable gate; application MCP and model workflows remain later opt-in stages.
 
