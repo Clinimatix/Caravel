@@ -3,7 +3,7 @@
 ## Unreleased
 
 - Added model-free Bosun `agent:manifest` v1: static, allowlisted project package hints, a versioned JSON contract and explicit inspection guidance without application startup or configuration/data export.
-- Made the agent development foundation a minimum first-stable gate; application MCP and model workflows remain later opt-in stages.
+- Named the AI suite Caravel Fathom and made its agent development foundation a minimum first-stable gate; application MCP and model workflows remain later opt-in stages.
 
 ## 26.1.1-rc2
 

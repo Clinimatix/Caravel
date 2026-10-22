@@ -47,7 +47,7 @@ unit suite does not create a release or prove recipient delivery.
 
 ## Minimum AI capability gate for first stable
 
-The first stable major release requires a useful agent-friendly development foundation:
+The first stable major release requires the Caravel Fathom agent-friendly development foundation:
 installed Bosun exports the versioned static project/capability manifest, links accurate
 command and route inspection guidance, and passes disclosure/non-execution regressions
 and installed-tool checks on the exact release commit. Review must confirm no secrets,
@@ -60,7 +60,8 @@ read/write boundaries; (3) application-driven model workflows with provider abst
 structured output and fake-provider tests. Embeddings/search require separate storage and
 retrieval qualification. Later stages are not RC3 or first-stable prerequisites. No paid
 model call, provider key or complete Laravel ecosystem is required for the foundation.
-Feature-set naming remains undecided; public command/package names stay neutral.
+Caravel Fathom is the AI suite name. Existing public commands, schema identifiers and
+package names remain compatible; suite naming does not expand this release gate.
 
 ## RC3 to first stable
 
