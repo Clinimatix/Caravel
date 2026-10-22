@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Added model-free Bosun `agent:manifest` v1: static, allowlisted project package hints, a versioned JSON contract and explicit inspection guidance without application startup or configuration/data export.
+- Made the agent development foundation a minimum first-stable gate; application MCP and model workflows remain later opt-in stages.
+
 ## 26.1.1-rc2
 
 This maintenance candidate preserves the RC2 APIs and .NET 10 baseline. Update all first-party packages together and deliberately regenerate and review application dependency locks. No database migration is required by these dependency fixes.

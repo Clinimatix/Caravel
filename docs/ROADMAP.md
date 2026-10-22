@@ -49,13 +49,13 @@ This guide targets **`26.1.1-rc2`**, extending the RC1 foundation with the compo
 | **M1: Clarion** | EF Core integration, models, queries, timestamps, soft deletes, factories, seeders, migrations and data commands | Done; broader provider coverage continues |
 | **M2: Application services** | Identity, Windows authentication, events, durable queues and workers, scheduling, storage and caching | Largely done; see below |
 | **M3: Developer experience** | `caravel dev`, starter kits, generators, testing helpers, Windows Service and IIS helpers, optional Aspire support | In progress |
-| **M4: AI-native Caravel** | Microsoft.Extensions.AI integration, embeddings, structured output, MCP server support, agent tooling and search | Planned |
+| **M4: AI-native Caravel** | Agent development context first; opt-in application MCP next; model workflows and search after that | Static Bosun manifest in development; later layers planned |
 
 Architecture milestones (M0–M4) are separate from release version suffixes: `26.1.0-m1` identifies the first milestone candidate for the 26.1 family, not "milestone 1 only". See the [release policy](RELEASE-POLICY.md) for versioning.
 
 ### Available today
 
-These capabilities form the 26.1 release scope. The later work listed below can arrive in subsequent release families; it is not a prerequisite for 26.1 stable.
+These capabilities form the existing 26.1 application foundation. The model-free agent development foundation is also required for first stable. Other staged work listed below can arrive in subsequent release families.
 
 - Routing, configuration, service providers, validation defaults and route inspection
 - Clarion with SQL Server, PostgreSQL and SQLite
@@ -82,13 +82,13 @@ An optional [Azure Blob adapter](AZURE-STORAGE.md) supplies create-only streamin
 - **Starter kits:** Blazor and React, richer account screens and external-identity profiles
 - **Deployment helpers:** Windows Service and IIS publishing, and optional Aspire integration
 - **Databases:** MariaDB/MySQL, once an EF Core 10–compatible provider is available (see [database providers](DATABASE-PROVIDERS.md))
-- **AI and MCP:** the M4 packages listed above
+- **AI and MCP:** required model-free agent foundation for first stable; application MCP and model workflows staged later (see [next release](NEXT-RELEASE.md))
 
 ### Toward stable 26.1
 
 Release qualification covers the exact release commit, supported platforms and database/provider paths. Deployment and application-specific verification remain separate; see [versions and releases](RELEASE-POLICY.md).
 
-Work toward stable 26.1 focuses on integration feedback, fixes, documentation and upgrade validation. RCs remain public previews, not stable releases or a compatibility commitment. See the [release policy](RELEASE-POLICY.md) and [changelog](../CHANGELOG.md) for status and changes.
+Work toward stable 26.1 includes the required [minimum AI capability gate](NEXT-RELEASE.md#minimum-ai-capability-gate-for-first-stable), integration feedback, fixes, documentation and upgrade validation. RCs remain public previews, not stable releases or a compatibility commitment. See the [release policy](RELEASE-POLICY.md) and [changelog](../CHANGELOG.md) for status and changes.
 
 Compatible maintenance stays on the current candidate scope: `26.1.1-rc2` is a patch for published `26.1.0-rc2`, not an RC3 feature candidate. A later approved scope advances the RC suffix while carrying forward the numeric patch floor, and stable must not sort below the published candidates. No later scope or release date is implied by the maintenance version.
 

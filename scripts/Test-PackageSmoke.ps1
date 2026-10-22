@@ -40,7 +40,7 @@ try {
     $tool = Join-Path $toolDirectory $(if ($IsWindows) { 'caravel.exe' } else { 'caravel' })
     Invoke-Checked $tool @('version')
     $schema = (& $tool schema --json) | ConvertFrom-Json
-    $expectedCommands = @('new', 'serve', 'dev', 'route:list', 'doctor', 'version', 'schema', 'make:model', 'make:seeder', 'make:factory', 'make:job', 'make:event', 'make:listener', 'make:migration', 'migrate', 'migrate:status', 'migrate:rollback', 'migrate:fresh', 'db:seed')
+    $expectedCommands = @('new', 'serve', 'dev', 'route:list', 'doctor', 'version', 'schema', 'agent:manifest', 'make:model', 'make:seeder', 'make:factory', 'make:job', 'make:event', 'make:listener', 'make:migration', 'migrate', 'migrate:status', 'migrate:rollback', 'migrate:fresh', 'db:seed')
     if ($LASTEXITCODE -ne 0 -or (Compare-Object ($schema.commands.name | Sort-Object) ($expectedCommands | Sort-Object))) { throw 'Installed tool schema mismatch.' }
     $listenerEvent = ($schema.commands | Where-Object name -eq 'make:listener').options | Where-Object name -eq '--event'
     $watch = ($schema.commands | Where-Object name -eq 'serve').options | Where-Object name -eq '--watch'
@@ -58,6 +58,12 @@ try {
         Invoke-Checked $tool @('new', 'PackageApp')
         Invoke-Checked $tool @('new', 'SourceApi', '--stack', 'api', '--framework-source', $root)
         Invoke-Checked $tool @('new', 'PackageApi', '--stack', 'api')
+        $manifest = (& $tool agent:manifest --project (Join-Path $run 'PackageApi/PackageApi.csproj') --json) | ConvertFrom-Json
+        if ($LASTEXITCODE -ne 0 -or $manifest.schemaVersion -ne 1 -or $manifest.kind -ne 'caravel.project-capabilities' -or
+            $manifest.packages -notcontains 'Clinimatix.Caravel.AspNetCore' -or
+            -not ($manifest.discovery | Where-Object command -eq 'route:list').executesApplication) {
+            throw 'Installed tool agent manifest mismatch.'
+        }
         "<configuration><packageSources><clear/><add key=`"local`" value=`"$escaped`"/><add key=`"nuget.org`" value=`"https://api.nuget.org/v3/index.json`"/></packageSources></configuration>" | Set-Content -LiteralPath $feed
         foreach ($name in @('SourceApp', 'PackageApp', 'SourceApi', 'PackageApi')) {
             $project = Join-Path $run "$name/$name.csproj"
