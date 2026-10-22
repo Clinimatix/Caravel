@@ -9,7 +9,7 @@ New here? Start with the [repository README](../README.md) and its quick start.
 - [Development sessions](DEVELOPMENT.md): watch your web app and run a worker with one command
 - [Hosting](HOSTING.md): run web apps and workers as services, containers or IIS sites
 
-- [Agent development context](AGENT-CONTEXT.md): static project capability manifest and safe inspection
+- [Caravel Fathom development context](AGENT-CONTEXT.md): static project capability manifest and safe inspection
 
 ## Data
 

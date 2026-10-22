@@ -1,6 +1,6 @@
-# Agent development context
+# Caravel Fathom: agent development context
 
-Give a coding assistant a small, model-free description of a project's declared Caravel packages:
+Caravel Fathom begins with agent-friendly development context. Give a coding assistant a small, model-free description of a project's declared Caravel packages:
 
 ```sh
 caravel agent:manifest --project ./MyApp/MyApp.csproj --json
@@ -49,4 +49,5 @@ No database schema inspection, arbitrary execution tool or database-write tool i
 
 This foundation supplies development context, not an MCP server, model workflow, semantic
 search stack or complete AI integration. Application tools/MCP and model workflows are
-separate opt-in stages in the [release plan](NEXT-RELEASE.md). No feature-set brand is selected.
+separate opt-in stages of Caravel Fathom in the [release plan](NEXT-RELEASE.md). The suite
+name does not change `agent:manifest`, its version 1 schema identifiers or package names.

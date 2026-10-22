@@ -30,7 +30,7 @@ Guidance for coding agents and contributors working in this repository. Start wi
 
 - Start with `caravel agent:manifest --project <app.csproj> --json` for static package hints and `caravel schema --json` for installed command effects; see [agent guidance](docs/AGENT-CONTEXT.md).
 - Manifest hints do not prove runtime registration. `route:list` builds and executes application startup code; review the project before invoking it. Never infer permission to execute or mutate from a manifest.
-- AI feature-set naming is undecided. Keep public contracts neutral; development context precedes opt-in application MCP and model workflows.
+- The AI suite is **Caravel Fathom**. Existing commands, schema identifiers and package names remain compatible; development context precedes opt-in application MCP and model workflows.
 
 ## Documentation style
 

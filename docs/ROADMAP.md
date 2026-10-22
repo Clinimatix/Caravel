@@ -49,7 +49,7 @@ This guide targets **`26.1.1-rc2`**, extending the RC1 foundation with the compo
 | **M1: Clarion** | EF Core integration, models, queries, timestamps, soft deletes, factories, seeders, migrations and data commands | Done; broader provider coverage continues |
 | **M2: Application services** | Identity, Windows authentication, events, durable queues and workers, scheduling, storage and caching | Largely done; see below |
 | **M3: Developer experience** | `caravel dev`, starter kits, generators, testing helpers, Windows Service and IIS helpers, optional Aspire support | In progress |
-| **M4: AI-native Caravel** | Agent development context first; opt-in application MCP next; model workflows and search after that | Static Bosun manifest in development; later layers planned |
+| **M4: Caravel Fathom** | Agent development context first; opt-in application MCP next; model workflows and search after that | Static Bosun manifest in development; later layers planned |
 
 Architecture milestones (M0-M4) are separate from release version suffixes: `26.1.0-m1` identifies the first milestone candidate for the 26.1 family, not "milestone 1 only". See the [release policy](RELEASE-POLICY.md) for versioning.
 
@@ -84,7 +84,7 @@ The proposed next candidate has a [bounded scope and measurable gates](NEXT-RELE
 - **Starter kits:** Blazor and React, richer account screens and external-identity profiles
 - **Deployment helpers:** Windows Service and IIS publishing, and optional Aspire integration
 - **Databases:** MariaDB/MySQL, once an EF Core 10–compatible provider is available (see [database providers](DATABASE-PROVIDERS.md))
-- **AI and MCP:** required model-free agent foundation for first stable; application MCP and model workflows staged later (see [next release](NEXT-RELEASE.md))
+- **Caravel Fathom:** required model-free agent foundation for first stable; application MCP and model workflows staged later (see [next release](NEXT-RELEASE.md))
 
 ### Toward stable 26.1
 
