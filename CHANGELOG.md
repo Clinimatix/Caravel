@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased - proposed next candidate
+
+- Added explicit synchronous execution of registered jobs for development and tests, without a database or worker. Handler failures propagate; this path provides no durable receipt, retry or deduplication.
+- Planned a bounded RC3-to-stable qualification path using the existing 26.1 calendar-version convention; see [next release](docs/NEXT-RELEASE.md).
+
 ## 26.1.1-rc2
 
 This maintenance candidate preserves the RC2 APIs and .NET 10 baseline. Update all first-party packages together and deliberately regenerate and review application dependency locks. No database migration is required by these dependency fixes.
@@ -22,7 +27,7 @@ This release candidate extends RC1 with a composed application path while preser
 
 - Extended the authenticated backend sample with workspace-scoped work items, versioned commands, durable retry receipts, transactional history/outbox, reference-only notices and a browser form for errors and uncertain retries. Includes an explicit additive migration and setup guide; Bosun's basic starters remain unchanged.
 
-## 26.1.0-rc1 — 2026-09-29
+## 26.1.0-rc1 - 2026-09-29
 
 The first release candidate brings together the 26.1 application foundation, data layer and services. It replaces the earlier .NET 9 prototype with a modular framework built on .NET 10 and C# 14. The documented scope and APIs are settled for release qualification; stable follows real-application feedback and upgrade validation.
 
@@ -88,5 +93,5 @@ The first release candidate brings together the 26.1 application foundation, dat
 - All 12 RC1 packages are available on [nuget.org](https://www.nuget.org/profiles/Clinimatix), with GitHub release ZIPs retained for local-feed use; see [installation instructions](docs/RELEASE-POLICY.md#using-prerelease-packages).
 - Not yet included: passkeys, finished account-management screens, calendar/time-zone scheduling, cloud storage drivers, additional notification providers, a Caravel cache API, and the AI/MCP packages. See the [roadmap](docs/ROADMAP.md).
 - SMTP and SMS adapters have automated protocol tests; provider acceptance does not guarantee recipient delivery. Configure and verify your chosen delivery service before use. SMS delivery is not SMS MFA.
-- MariaDB is waiting on an EF Core 10–compatible provider.
+- MariaDB is waiting on an EF Core 10-compatible provider.
 - Linux and macOS storage requires a filesystem that supports hard links.

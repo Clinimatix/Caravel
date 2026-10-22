@@ -26,7 +26,7 @@ Everything lives in this repository and shares one version number, but each pack
 | `Clinimatix.Caravel.Core` | Microsoft.Extensions | Configuration, `.env` and service providers. No web or EF dependency. |
 | `Clinimatix.Caravel.AspNetCore` | Core, ASP.NET Core | Routing syntax, HTTP defaults and route inspection. |
 | `Clinimatix.Caravel.Clarion` | EF Core | The data layer. Works in any .NET host and doesn't need the rest of Caravel. You choose the database provider. |
-| `Clinimatix.Caravel.Bosun` | — | The `caravel` command-line tool, installed as a .NET tool. |
+| `Clinimatix.Caravel.Bosun` | - | The `caravel` command-line tool, installed as a .NET tool. |
 | `Clinimatix.Caravel.Auth` | ASP.NET Core Identity | Local accounts with secure defaults. You choose the store. |
 | `Clinimatix.Caravel.Auth.Windows` | ASP.NET Core Negotiate | Windows authentication for intranet apps. |
 | `Clinimatix.Caravel.Events` | Microsoft.Extensions.DependencyInjection | In-process events. |
@@ -51,7 +51,7 @@ This guide targets **`26.1.1-rc2`**, extending the RC1 foundation with the compo
 | **M3: Developer experience** | `caravel dev`, starter kits, generators, testing helpers, Windows Service and IIS helpers, optional Aspire support | In progress |
 | **M4: AI-native Caravel** | Microsoft.Extensions.AI integration, embeddings, structured output, MCP server support, agent tooling and search | Planned |
 
-Architecture milestones (M0–M4) are separate from release version suffixes: `26.1.0-m1` identifies the first milestone candidate for the 26.1 family, not "milestone 1 only". See the [release policy](RELEASE-POLICY.md) for versioning.
+Architecture milestones (M0-M4) are separate from release version suffixes: `26.1.0-m1` identifies the first milestone candidate for the 26.1 family, not "milestone 1 only". See the [release policy](RELEASE-POLICY.md) for versioning.
 
 ### Available today
 
@@ -72,6 +72,8 @@ The RC2 candidate includes an optional Bosun `--stack identity` profile: editabl
 
 An optional [Azure Blob adapter](AZURE-STORAGE.md) supplies create-only streaming, native ETag/range/version parameters and a download authorization recipe. Local emulator and transport checks do not qualify cloud identity, scanning or retention. This package is also separate from published RC1.
 
+The proposed next candidate has a [bounded scope and measurable gates](NEXT-RELEASE.md).
+
 ### Coming next
 
 - **Accounts:** passkeys and finished account-management screens built on the native account endpoints
@@ -81,7 +83,7 @@ An optional [Azure Blob adapter](AZURE-STORAGE.md) supplies create-only streamin
 - **Mail and notifications:** additional mail/SMS providers, in-app inboxes, browser/mobile push, chat channels, delivery receipts and recipient preferences; see [channel plans and current limits](NOTIFICATIONS.md#later-channel-work)
 - **Starter kits:** Blazor and React, richer account screens and external-identity profiles
 - **Deployment helpers:** Windows Service and IIS publishing, and optional Aspire integration
-- **Databases:** MariaDB/MySQL, once an EF Core 10–compatible provider is available (see [database providers](DATABASE-PROVIDERS.md))
+- **Databases:** MariaDB/MySQL, once an EF Core 10-compatible provider is available (see [database providers](DATABASE-PROVIDERS.md))
 - **AI and MCP:** the M4 packages listed above
 
 ### Toward stable 26.1
