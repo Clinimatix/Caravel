@@ -3,6 +3,17 @@ $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/install.ps1"
 $sandbox = Join-Path ([IO.Path]::GetTempPath()) ('caravel-fixture-' + [guid]::NewGuid().ToString('N'))
 New-Item -ItemType Directory $sandbox | Out-Null
+if (!$IsWindows) {
+    # macOS exposes its temporary directory through /var, which is a system symlink.
+    # Use the physical fixture path so installer link rejection is tested deliberately.
+    Push-Location -LiteralPath $sandbox
+    try {
+        $physicalPath = & /bin/pwd -P
+        if ($LASTEXITCODE -ne 0 -or $physicalPath -isnot [string] -or
+            ![IO.Path]::IsPathFullyQualified($physicalPath)) { throw 'Cannot resolve the fixture physical path.' }
+        $sandbox = $physicalPath.Trim()
+    } finally { Pop-Location }
+}
 $script:installs = 0
 $script:downloads = 0
 $script:failInstall = $false
@@ -104,6 +115,14 @@ try {
     function Start-Sleep { }
     MustFail { & $receiveImplementation 'https://example.invalid/fixture' (Join-Path $sandbox 'unused') } 'after three attempts'
     Assert ($script:attempts -eq 3) 'Download retry budget was not three'
+    if (!$IsWindows) {
+        $linkTarget = New-Item -ItemType Directory (Join-Path $sandbox 'link-target')
+        $linkPath = Join-Path $sandbox 'linked-root'
+        New-Item -ItemType SymbolicLink -Path $linkPath -Target $linkTarget.FullName | Out-Null
+        try { MustFail { Install-CaravelBosun -Channel prerelease -InstallRoot $linkPath } 'must not contain links' }
+        finally { Remove-Item -LiteralPath $linkPath }
+        Assert (!(Test-Path (Join-Path $linkTarget '26.1.1-rc2'))) 'Link target was modified'
+    }
     # A valid ZIP/hash is insufficient when the package manifest is absent or malformed.
     foreach ($manifest in @('missing', 'malformed')) {
         $packageDir = New-Item -ItemType Directory (Join-Path $sandbox "$manifest-package")
