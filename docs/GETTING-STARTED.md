@@ -4,6 +4,10 @@ This guide covers what happens inside a Caravel web app: how it starts up, how t
 
 ## Creating and running an app
 
+For the upcoming candidate, the [PowerShell installer](INSTALLER.md) provides verified,
+version-specific Bosun installation without changing PATH. Its public endpoint is pending
+website publication; existing package-feed installation remains available.
+
 This guide targets `26.1.1-rc2`. Install Bosun using a [configured package feed](RELEASE-POLICY.md#using-prerelease-packages) containing that exact version, or run the `caravel` tool from your selected source checkout with `dotnet run --project src/Caravel.Bosun -- <command>`. The table below uses source references; with the installed tool, omit `--framework-source .` to use packages from your configured feed.
 
 | Command | What it does |

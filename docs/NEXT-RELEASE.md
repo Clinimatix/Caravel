@@ -12,6 +12,10 @@ Settle and qualify these additive APIs together with the existing 26.1 applicati
 - Ordered, count-free Clarion query slices, preserving caller filtering and ordering.
 - Validated transactional mail/notification staging through the existing application outbox.
 - Explicit synchronous registered-job dispatch for development and tests.
+- A verified PowerShell Bosun installer with explicit stable/prerelease or pinned selection,
+  isolated version directories and a reviewed public `/install.ps1` serving path. See [installer](INSTALLER.md).
+- Integration and qualification of Fathom application-tool contracts and the agent manifest
+  foundation; Fathom is required for the first stable release.
 
 The candidate retains the .NET10 baseline and existing durable job wire contracts. Application
 recipient selection, invitation validity, opt-out and authorization remain application-owned.
@@ -36,6 +40,11 @@ Every gate must have a retained result for the exact candidate commit:
    that consumer's exact package/source/lock attribution before claiming reproducible adoption.
 6. Changelog, API examples, known limitations and upgrade guidance match the tested bytes.
    Security/dependency review and serviced-runtime policy checks pass without trust bypasses.
+7. Installer local fixtures cover integrity/provenance failures, prerequisites, repeated calls
+   and install failure/retry without administrator access or PATH changes. Retain exact-package
+   installed-tool and Windows/Linux/macOS evidence. Before website launch, verify the reviewed
+   installer digest, text MIME type, cache headers and download-and-inspect instructions on
+   the custom domain before launching the endpoint.
 
 Publication is a separate deliberate action after these gates. A branch push or passing
 unit suite does not create a release or prove recipient delivery.
@@ -49,7 +58,7 @@ CI. Resolve critical defects and state the supported API/platform compatibility 
 Remove the suffix at the eligible numeric floor only after those checks and release review.
 
 Calendar scheduling, S3, batches/chains, in-memory queues, passkeys, richer starters, extra
-notification transports and AI integration remain later work. Laravel guides useful
+notification transports and broader AI orchestration remain later work. Laravel guides useful
 conventions; parity with its entire feature set is not a gate for 26.1 stable. Container
-images and managed-cloud deployment require their own runtime/provider qualification and
-are not prerequisites for host-based framework development or claims outside that scope.
+images are in release scope with their own runtime/provider qualification; Kubernetes is
+out of scope. Host-based checks do not substitute for container qualification.
