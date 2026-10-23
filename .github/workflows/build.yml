@@ -47,6 +47,7 @@ jobs:
           ./scripts/Test-LtsPolicy.Tests.ps1
           ./scripts/Test-LtsPolicy.ps1
           ./scripts/Expand-NuGetRelease.Tests.ps1
+          ./scripts/install.Tests.ps1
       - run: dotnet restore Caravel.slnx --locked-mode
       - run: dotnet build Caravel.slnx -c Release --no-restore
       - run: dotnet test Caravel.slnx -c Release --no-build --no-restore

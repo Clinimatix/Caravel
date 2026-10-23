@@ -2,6 +2,7 @@
 
 ## Unreleased - proposed next candidate
 
+- Added a standalone PowerShell Bosun installer with a reviewed release catalog, SHA-256 and source-commit verification, isolated version directories, explicit prerelease selection and safe repeat/failure behavior. The public installer endpoint awaits separate website publication; see [installation](docs/INSTALLER.md).
 - Added explicit synchronous execution of registered jobs for development and tests, without a database or worker. Handler failures propagate; this path provides no durable receipt, retry or deduplication.
 - Planned a bounded RC3-to-stable qualification path using the existing 26.1 calendar-version convention; see [next release](docs/NEXT-RELEASE.md).
 - Added opt-in Caravel Fathom in-process application tool contracts and registry in Core, with mandatory per-call application authorization, declared read/write effects, cancellation boundaries and fake-handler coverage. Network MCP and model workflows remain planned.
