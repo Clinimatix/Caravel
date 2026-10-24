@@ -22,7 +22,7 @@ should reject unsupported versions and tolerate additional fields in a supported
 `toolVersion` identifies the installed Bosun, not the application's dependency version.
 
 `packages` is a deterministic, deduplicated list of known Caravel package IDs explicitly
-declared by `PackageReference Include` in that file. Matching ignores case; output uses
+declared by `PackageReference Include` in declarative MSBuild `ItemGroup` elements in that file. Standard SDK-style and legacy MSBuild XML namespaces are supported. References inside executable `Target` elements, foreign XML namespaces and unrelated nested elements are excluded. `Choose` branches remain static hints; all branches are inspected. Matching ignores case; output uses
 canonical IDs. Arbitrary identifiers and versions are omitted. Conditions are not evaluated:
 a conditional reference can appear even if disabled. Imported files, central versions,
 transitive dependencies and project references are not inspected. Absence is not evidence

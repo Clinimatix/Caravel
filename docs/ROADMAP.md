@@ -74,6 +74,12 @@ An optional [Azure Blob adapter](AZURE-STORAGE.md) supplies create-only streamin
 
 The proposed next candidate has a [bounded scope and measurable gates](NEXT-RELEASE.md).
 
+### Ordered development-context follow-up
+
+1. Qualify static manifest declaration boundaries and installed-tool output.
+2. Complete combined RC3 package, provider and participating-consumer gates.
+3. Qualify opt-in application tools/MCP authorization and cancellation before model workflows.
+
 ### Coming next
 
 - **Accounts:** passkeys and finished account-management screens built on the native account endpoints

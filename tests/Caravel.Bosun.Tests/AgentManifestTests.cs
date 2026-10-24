@@ -53,6 +53,41 @@ public sealed class AgentManifestTests
     }
 
     [Theory]
+    [InlineData("")]
+    [InlineData("http://schemas.microsoft.com/developer/msbuild/2003")]
+    public async Task OnlyDeclarativeMsBuildItemsSupplyPackageHints(string projectNamespace)
+    {
+        var directory = Directory.CreateTempSubdirectory("caravel-manifest-");
+        try
+        {
+            var project = Path.Combine(directory.FullName, "app.csproj");
+            File.WriteAllText(project, $$"""
+                <Project xmlns="{{projectNamespace}}" xmlns:other="urn:foreign">
+                  <ItemGroup><PackageReference Include="Clinimatix.Caravel.Core" /></ItemGroup>
+                  <Choose><When Condition="false"><ItemGroup>
+                    <PackageReference Include="Clinimatix.Caravel.Queues" />
+                  </ItemGroup></When><Otherwise><ItemGroup>
+                    <PackageReference Include="Clinimatix.Caravel.Mail" />
+                  </ItemGroup></Otherwise></Choose>
+                  <Target Name="Dynamic"><ItemGroup><PackageReference Include="Clinimatix.Caravel.Auth" /></ItemGroup></Target>
+                  <other:ItemGroup><PackageReference Include="Clinimatix.Caravel.Events" /></other:ItemGroup>
+                  <ItemGroup><other:PackageReference Include="Clinimatix.Caravel.Storage" /></ItemGroup>
+                  <PropertyGroup><ItemGroup><PackageReference Include="Clinimatix.Caravel.Clarion" /></ItemGroup></PropertyGroup>
+                  <PackageReference Include="Clinimatix.Caravel.Notifications" />
+                </Project>
+                """);
+            var result = await Invoke(project);
+            Assert.Equal(0, result.Exit);
+            Assert.Empty(result.Error);
+            using var document = JsonDocument.Parse(result.Output);
+            Assert.Equal(["Clinimatix.Caravel.Core", "Clinimatix.Caravel.Queues", "Clinimatix.Caravel.Mail"],
+                document.RootElement.GetProperty("packages").EnumerateArray().Select(value => value.GetString()));
+        }
+        finally { directory.Delete(true); }
+    }
+
+    [Theory]
+    [InlineData("<Project xmlns='urn:TOP_SECRET' />")]
     [InlineData("<Project><TOP_SECRET></Project>")]
     [InlineData("<!DOCTYPE Project [<!ENTITY secret SYSTEM 'file:///TOP_SECRET'>]><Project>&secret;</Project>")]
     [InlineData("<TOP_SECRET />")]

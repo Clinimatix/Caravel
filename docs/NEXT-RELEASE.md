@@ -50,7 +50,7 @@ unit suite does not create a release or prove recipient delivery.
 The first stable major release requires the Caravel Fathom agent-friendly development foundation:
 installed Bosun exports the versioned static project/capability manifest, links accurate
 command and route inspection guidance, and passes disclosure/non-execution regressions
-and installed-tool checks on the exact release commit. Review must confirm no secrets,
+and installed-tool checks on the exact release commit. Static hints must distinguish declarative MSBuild items from executable targets and foreign XML, including legacy namespace and conditional-branch coverage. Review must confirm no secrets,
 configuration or application payloads escape and no arbitrary execution or database-write
 tool is exposed. This minimum gate is required, not an optional future aspiration.
 
