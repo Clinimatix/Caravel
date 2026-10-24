@@ -48,8 +48,15 @@ internal static class AgentManifest
             MaxCharactersInDocument = 1024 * 1024
         });
         var document = XDocument.Load(reader);
-        if (document.Root?.Name.LocalName != "Project") throw new XmlException("Expected project.");
-        var references = document.Descendants().Where(element => element.Name.LocalName == "PackageReference")
+        var root = document.Root;
+        if (root is null || root.Name.LocalName != "Project" ||
+            (root.Name.NamespaceName != "" && root.Name.NamespaceName != "http://schemas.microsoft.com/developer/msbuild/2003"))
+            throw new XmlException("Expected project.");
+        var ns = root.Name.Namespace;
+        var references = root.Descendants(ns + "PackageReference")
+            .Where(element => element.Parent?.Name == ns + "ItemGroup" &&
+                element.Parent.Ancestors().All(ancestor => ancestor == root ||
+                    ancestor.Name == ns + "Choose" || ancestor.Name == ns + "When" || ancestor.Name == ns + "Otherwise"))
             .Select(element => (string?)element.Attribute("Include")).ToHashSet(StringComparer.OrdinalIgnoreCase);
         return new
         {
