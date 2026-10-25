@@ -15,13 +15,14 @@ Settle and qualify these additive APIs together with the existing 26.1 applicati
 - Model-free Bosun `agent:manifest` v1, agent guidance, a versioned JSON contract and
   regression coverage for data minimization and execution boundaries.
 
-The query/staging/synchronous slices remain separately owned work; this foundation does
-not imply they are merged or available in every checkout.
-
 - A verified PowerShell Bosun installer with explicit stable/prerelease or pinned selection,
   isolated version directories and a reviewed public `/install.ps1` serving path. See [installer](INSTALLER.md).
 - Integration and qualification of Fathom application-tool contracts and the agent manifest
-  foundation; Fathom is required for the first stable release.
+  foundation; the model-free development foundation is required for the first stable release.
+
+These APIs are combined in the qualification candidate. They remain unreleased; passing
+individual feature checks does not satisfy the combined release gates below. Installer
+website serving and application adoption require their own acceptance evidence.
 
 The candidate retains the .NET10 baseline and existing durable job wire contracts. Application
 recipient selection, invitation validity, opt-out and authorization remain application-owned.
@@ -65,8 +66,8 @@ configuration or application payloads escape and no arbitrary execution or datab
 tool is exposed. This minimum gate is required, not an optional future aspiration.
 
 An opt-in [in-process application tool registry](FATHOM-TOOLS.md) is in development
-ahead of the network transport. It does not qualify MCP protocol support or expand RC3
-release scope. Qualify a synthetic consumer, trusted principal binding, resource-level
+ahead of the network transport. The candidate includes its in-process contracts; network
+MCP remains later work. Qualify a synthetic consumer, trusted principal binding, resource-level
 denial, cancellation and safe error presentation before adding a transport.
 
 Develop in three ordered layers: (1) development context/tooling in RC3; (2) later,

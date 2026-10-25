@@ -1,3 +1,4 @@
+param([string]$PackageVersion)
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot
 $run = Join-Path $root ('artifacts/service packages ' + [guid]::NewGuid().ToString('N'))
@@ -6,7 +7,7 @@ $null = New-Item -ItemType Directory -Path $packages
 $previousPackages = $env:NUGET_PACKAGES
 $previousCertificate = $env:DOTNET_GENERATE_ASPNET_CERTIFICATE
 $env:DOTNET_GENERATE_ASPNET_CERTIFICATE = 'false'
-$components = @('Clarion', 'Queues', 'Storage', 'Scheduling', 'Mail', 'Notifications')
+$components = @('Core', 'Clarion', 'Queues', 'Storage', 'Scheduling', 'Mail', 'Notifications')
 
 function Invoke-Checked([string[]]$Arguments) {
     & dotnet @Arguments
@@ -17,7 +18,9 @@ Push-Location $root
 try {
     # Source projects must already be restored with the pinned SDK.
     foreach ($component in $components) {
-        Invoke-Checked @('pack', "src/Caravel.$component/Caravel.$component.csproj", '-c', 'Release', '--no-restore', '-o', $packages)
+        $packArguments = @('pack', "src/Caravel.$component/Caravel.$component.csproj", '-c', 'Release', '--no-restore', '-o', $packages)
+        if ($PackageVersion) { $packArguments += "-p:Version=$PackageVersion" }
+        Invoke-Checked $packArguments
     }
     $version = $null
     foreach ($component in $components) {

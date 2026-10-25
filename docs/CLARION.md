@@ -153,6 +153,25 @@ The details:
 
 `ExecuteDelete`, `ExecuteUpdate`, raw SQL, and database triggers skip all of this and behave exactly as they do in plain EF Core, including permanently deleting rows. Use them deliberately.
 
+## Ordered query slices (unreleased)
+
+Use `ToSliceAsync` when a list needs continuation without a total-count query:
+
+```csharp
+var slice = await db.Models<User>()
+    .Where(user => user.Active)
+    .OrderBy(user => user.Name).ThenBy(user => user.Id)
+    .ToSliceAsync(offset: 0, pageSize: 50, cancellationToken: cancellationToken);
+// slice.Items, slice.HasMore and slice.NextOffset describe this window.
+```
+
+Filter and authorize the query first, then supply a deterministic order with a unique
+tie breaker. One query reads at most the requested page size plus one row; it does not
+compute a total. Page sizes range from 1 through 200. Offset plus page size must fit a
+nonnegative `Int32`; cancellation propagates to EF Core. Concurrent inserts/deletes can
+shift offset windows, so this is not a stable cursor or snapshot. Keep existing count
+queries for screens or reports that require complete totals.
+
 ## Factories and seeders
 
 A factory builds test records from a function you supply. `Make` creates them in memory; `AddTo` adds them to the session. Neither one saves, and neither invents random personal data.

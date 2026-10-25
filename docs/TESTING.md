@@ -33,6 +33,11 @@ The `scripts/` folder has PowerShell 7 scripts that pack the framework, install 
 
 Run them with `pwsh -File scripts/<name>.ps1`. `Test-ServicePackages.ps1` expects the solution to be restored first.
 
+Service-package checks also exercise Core's in-process Fathom contracts. For an isolated
+development candidate, pass `-PackageVersion 0.0.0-local.<unique-id>` to
+`Test-ServicePackages.ps1`; all tested packages use that version in a fresh mapped cache.
+Keep its checksums and source revision separate from published package identities.
+
 Run `pwsh -File scripts/Test-ReleaseUpgrade.ps1` for the published-RC2-to-source-candidate gate. To consume already packed candidate artifacts, add `-CandidatePackageDirectory <directory>`. Select an earlier published baseline explicitly with `-BaselineVersion <version>` when qualifying an additional upgrade path. This check uses real package references and disposable SQLite state, rather than substituting candidate source projects for the published baseline.
 
 Release builds map the source root to `/_/` so compiled debug metadata does not disclose the build machine's checkout path. Debug builds retain local paths for normal debugging. To inspect an existing package directory separately, run `pwsh -File scripts/Test-PackagePaths.ps1 -PackageDirectory <directory>`.

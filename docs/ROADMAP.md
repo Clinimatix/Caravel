@@ -76,16 +76,18 @@ The proposed next candidate has a [bounded scope and measurable gates](NEXT-RELE
 
 ### Ordered development-context follow-up
 
-1. Qualify static manifest declaration boundaries and installed-tool output.
-2. Complete combined RC3 package, provider and participating-consumer gates.
-3. Qualify opt-in application tools/MCP authorization and cancellation before model workflows.
+1. Complete combined RC3 source, package, provider, recovery and installed-tool gates,
+   including static manifest declaration boundaries and in-process tool authorization.
+2. Obtain participating-consumer acceptance using exact packages and preserved application policies.
+3. Qualify container images and installer serving, then freeze scope for RC3 and stable review.
+4. Add opt-in network MCP protocol qualification before model workflows.
 
 ### Coming next
 
 - **Accounts:** passkeys and finished account-management screens built on the native account endpoints
 - **Scheduling:** calendar and time-zone-aware schedules (cron-style)
 - **Storage:** S3 and separately qualified cloud deployment/retention recipes
-- **Queues:** in-memory and synchronous drivers, batches and chains
+- **Queues:** qualify the unreleased explicit synchronous dispatcher; in-memory drivers, batches and chains follow later
 - **Mail and notifications:** additional mail/SMS providers, in-app inboxes, browser/mobile push, chat channels, delivery receipts and recipient preferences; see [channel plans and current limits](NOTIFICATIONS.md#later-channel-work)
 - **Starter kits:** Blazor and React, richer account screens and external-identity profiles
 - **Deployment helpers:** Windows Service and IIS publishing, and optional Aspire integration

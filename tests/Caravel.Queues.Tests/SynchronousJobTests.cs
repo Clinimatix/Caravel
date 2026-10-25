@@ -65,4 +65,78 @@ public sealed class SynchronousJobTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => dispatcher.DispatchAsync(new Work("cancelled"), "tenant-a", cancelled.Token));
         Assert.Empty(services.GetRequiredService<Receipt>().Values);
     }
+
+    public sealed record MutableWork(string Key, List<string> Values);
+    public sealed class ConcurrentReceipt(int expected)
+    {
+        private int started;
+        public TaskCompletionSource Started { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public TaskCompletionSource Release { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        public System.Collections.Concurrent.ConcurrentDictionary<string, (Guid Scope, string[] Values)> Completed { get; } = new();
+        public System.Collections.Concurrent.ConcurrentBag<Guid> Disposed { get; } = [];
+        public void Enter() { if (Interlocked.Increment(ref started) == expected) Started.TrySetResult(); }
+    }
+    public sealed class ScopedMarker(ConcurrentReceipt receipt) : IAsyncDisposable
+    {
+        public Guid Id { get; } = Guid.NewGuid();
+        public ValueTask DisposeAsync() { receipt.Disposed.Add(Id); return ValueTask.CompletedTask; }
+    }
+    public sealed class WaitingHandler(ConcurrentReceipt receipt, ScopedMarker marker) : IJobHandler<MutableWork>
+    {
+        public async Task HandleAsync(MutableWork job, JobContext context, CancellationToken cancellationToken)
+        {
+            receipt.Enter();
+            await receipt.Release.Task.WaitAsync(cancellationToken);
+            receipt.Completed[job.Key] = (marker.Id, job.Values.ToArray());
+        }
+    }
+    private static ServiceProvider ConcurrentServices(int expected) => new ServiceCollection()
+        .AddSingleton(new ConcurrentReceipt(expected)).AddScoped<ScopedMarker>()
+        .AddQueueJob<MutableWork, WaitingHandler>("test.mutable.v1").AddCaravelSynchronousJobs()
+        .BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
+
+    [Fact]
+    public async Task Concurrent_dispatch_snapshots_mutable_payloads_and_isolates_scoped_dependencies()
+    {
+        await using var services = ConcurrentServices(2);
+        await using var caller = services.CreateAsyncScope();
+        var callerMarker = caller.ServiceProvider.GetRequiredService<ScopedMarker>();
+        var receipt = services.GetRequiredService<ConcurrentReceipt>();
+        var dispatcher = caller.ServiceProvider.GetRequiredService<SynchronousJobDispatcher>();
+        var values = new List<string> { "original" };
+        var first = dispatcher.DispatchAsync(new MutableWork("first", values), "tenant-a");
+        var second = dispatcher.DispatchAsync(new MutableWork("second", values), "tenant-b");
+        try
+        {
+            await receipt.Started.Task.WaitAsync(TimeSpan.FromSeconds(10));
+            values[0] = "changed";
+        }
+        finally { receipt.Release.TrySetResult(); }
+        await Task.WhenAll(first, second).WaitAsync(TimeSpan.FromSeconds(10));
+        var one = receipt.Completed["first"];
+        var two = receipt.Completed["second"];
+        Assert.Equal(new[] { "original" }, one.Values);
+        Assert.Equal(new[] { "original" }, two.Values);
+        Assert.NotEqual(one.Scope, two.Scope);
+        Assert.NotEqual(callerMarker.Id, one.Scope);
+        Assert.NotEqual(callerMarker.Id, two.Scope);
+        Assert.Equal(2, receipt.Disposed.Count);
+        Assert.Contains(one.Scope, receipt.Disposed);
+        Assert.Contains(two.Scope, receipt.Disposed);
+    }
+
+    [Fact]
+    public async Task In_flight_cancellation_propagates_and_disposes_the_handler_scope()
+    {
+        await using var services = ConcurrentServices(1);
+        using var cancellation = new CancellationTokenSource();
+        var receipt = services.GetRequiredService<ConcurrentReceipt>();
+        var dispatch = services.GetRequiredService<SynchronousJobDispatcher>()
+            .DispatchAsync(new MutableWork("cancelled", ["synthetic"]), "tenant-a", cancellation.Token);
+        try { await receipt.Started.Task.WaitAsync(TimeSpan.FromSeconds(10)); }
+        finally { cancellation.Cancel(); }
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => dispatch.WaitAsync(TimeSpan.FromSeconds(10)));
+        Assert.Empty(receipt.Completed);
+        Assert.Single(receipt.Disposed);
+    }
 }

@@ -2,6 +2,9 @@
 
 ## Unreleased - proposed next candidate
 
+- Added ordered, count-free Clarion query slices with bounded page sizes and explicit continuation; existing total-count APIs are preserved.
+- Added validated transactional mail and notification staging through the application outbox, preserving application-owned eligibility and delivery policy.
+- Extended package-consumer qualification to Core's Fathom contracts and synchronous dispatch cancellation, payload snapshots and independent scopes, with optional unique development package versions.
 - Added a standalone PowerShell Bosun installer with a reviewed release catalog, SHA-256 and source-commit verification, isolated version directories, explicit prerelease selection and safe repeat/failure behavior. The public installer endpoint awaits separate website publication; see [installation](docs/INSTALLER.md).
 - Added explicit synchronous execution of registered jobs for development and tests, without a database or worker. Handler failures propagate; this path provides no durable receipt, retry or deduplication.
 - Planned a bounded RC3-to-stable qualification path using the existing 26.1 calendar-version convention; see [next release](docs/NEXT-RELEASE.md).
