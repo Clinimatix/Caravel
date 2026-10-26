@@ -48,6 +48,7 @@ jobs:
           ./scripts/Test-LtsPolicy.ps1
           ./scripts/Expand-NuGetRelease.Tests.ps1
           ./scripts/install.Tests.ps1
+          ./scripts/Test-ServicePackages.Tests.ps1
       - run: dotnet restore Caravel.slnx --locked-mode
       - run: dotnet build Caravel.slnx -c Release --no-restore
       - run: dotnet test Caravel.slnx -c Release --no-build --no-restore
@@ -115,6 +116,9 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Browser dependency installation failed.' }
           npx playwright install --with-deps chromium
           if ($LASTEXITCODE -ne 0) { throw 'Browser installation failed.' }
+      - name: Verify the Windows-built service packages without repacking
+        shell: pwsh
+        run: ./scripts/Test-ServicePackages.ps1 -CandidatePackageDirectory "$PWD/release-packages"
       - name: Verify the Windows-built Identity starter without repacking
         shell: pwsh
         run: ./scripts/Test-IdentityStarterSmoke.ps1 -CandidatePackageDirectory "$PWD/release-packages" -Browser

@@ -79,6 +79,8 @@ The proposed next candidate has a [bounded scope and measurable gates](NEXT-RELE
 1. Complete combined RC3 source, package, provider, recovery and installed-tool gates,
    including static manifest declaration boundaries and in-process tool authorization.
 2. Obtain participating-consumer acceptance using exact packages and preserved application policies.
+   The service-package artifact mode verifies supplied bytes independently of source packing;
+   application-owner acceptance remains a separate gate.
 3. Qualify container images and installer serving, then freeze scope for RC3 and stable review.
 4. Add opt-in network MCP protocol qualification before model workflows.
 

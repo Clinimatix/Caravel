@@ -2,6 +2,7 @@
 
 ## Unreleased - proposed next candidate
 
+- Added service-package testing against existing artifacts, with source/version consistency checks and restored-package checksum verification.
 - Added ordered, count-free Clarion query slices with bounded page sizes and explicit continuation; existing total-count APIs are preserved.
 - Added validated transactional mail and notification staging through the application outbox, preserving application-owned eligibility and delivery policy.
 - Extended package-consumer qualification to Core's Fathom contracts and synchronous dispatch cancellation, payload snapshots and independent scopes, with optional unique development package versions.

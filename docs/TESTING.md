@@ -38,6 +38,15 @@ development candidate, pass `-PackageVersion 0.0.0-local.<unique-id>` to
 `Test-ServicePackages.ps1`; all tested packages use that version in a fresh mapped cache.
 Keep its checksums and source revision separate from published package identities.
 
+To test existing CI or release artifacts without rebuilding them, pass
+`-CandidatePackageDirectory <downloaded-artifact>` instead. Nested package directories
+are supported. The script requires one package per tested component, matching versions
+and source commits, and verifies that restored package bytes match the supplied files.
+It records package identities and SHA-256 hashes in its run directory. Do not combine
+this mode with `-PackageVersion`: supplied artifacts keep their original identities.
+Run `scripts/Test-ServicePackages.Tests.ps1` to check rejection of incomplete,
+ambiguous or inconsistent artifact inputs without building the framework.
+
 Run `pwsh -File scripts/Test-ReleaseUpgrade.ps1` for the published-RC2-to-source-candidate gate. To consume already packed candidate artifacts, add `-CandidatePackageDirectory <directory>`. Select an earlier published baseline explicitly with `-BaselineVersion <version>` when qualifying an additional upgrade path. This check uses real package references and disposable SQLite state, rather than substituting candidate source projects for the published baseline.
 
 Release builds map the source root to `/_/` so compiled debug metadata does not disclose the build machine's checkout path. Debug builds retain local paths for normal debugging. To inspect an existing package directory separately, run `pwsh -File scripts/Test-PackagePaths.ps1 -PackageDirectory <directory>`.

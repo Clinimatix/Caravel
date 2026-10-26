@@ -39,6 +39,8 @@ Every gate must have a retained result for the exact candidate commit:
 3. Package-only consumers exercise query slices and both staging APIs. A synchronous-job
    consumer runs without database registration and verifies failure, cancellation and scope
    disposal. Retain immutable package checksums and reconcile declared source identity.
+   Use `Test-ServicePackages.ps1 -CandidatePackageDirectory <artifact>` to exercise the
+   supplied bytes in fresh caches; a source repack does not qualify an existing artifact.
 4. Recovery verifies rollback, relay receipt-window deduplication, expired/stale leases and
    retry/dead-letter/replay. Document possible duplicate external acceptance after a lost
    acknowledgement; no exactly-once promise.
@@ -69,6 +71,8 @@ An opt-in [in-process application tool registry](FATHOM-TOOLS.md) is in developm
 ahead of the network transport. The candidate includes its in-process contracts; network
 MCP remains later work. Qualify a synthetic consumer, trusted principal binding, resource-level
 denial, cancellation and safe error presentation before adding a transport.
+Core's service-package consumer suite exercises these model-free contracts; run it against
+the selected immutable artifacts as well as source before first-stable review.
 
 Develop in three ordered layers: (1) development context/tooling in RC3; (2) later,
 opt-in application tools/MCP with explicit authorization, cancellation, protocol tests and
