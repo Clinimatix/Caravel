@@ -81,6 +81,7 @@ The proposed next candidate has a [bounded scope and measurable gates](NEXT-RELE
 2. Obtain participating-consumer acceptance using exact packages and preserved application policies.
    The service-package artifact mode verifies supplied bytes independently of source packing;
    application-owner acceptance remains a separate gate.
+   Retain per-OS run/manifests/results and independently reconcile artifact provenance.
 3. Qualify container images and installer serving, then freeze scope for RC3 and stable review.
 4. Add opt-in network MCP protocol qualification before model workflows.
 

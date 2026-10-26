@@ -42,10 +42,24 @@ To test existing CI or release artifacts without rebuilding them, pass
 `-CandidatePackageDirectory <downloaded-artifact>` instead. Nested package directories
 are supported. The script requires one package per tested component, matching versions
 and source commits, and verifies that restored package bytes match the supplied files.
-It records package identities and SHA-256 hashes in its run directory. Do not combine
+It records the seven service-package identities and SHA-256 hashes, run metadata and
+TRX results in its run directory's `evidence` folder. This manifest does not inventory
+the other packages in a full release artifact. Do not combine
 this mode with `-PackageVersion`: supplied artifacts keep their original identities.
 Run `scripts/Test-ServicePackages.Tests.ps1` to check rejection of incomplete,
-ambiguous or inconsistent artifact inputs without building the framework.
+ambiguous or inconsistent artifact inputs and restored-graph integrity guards without
+building the framework. Add `-ExpectedRepositoryCommit <sha>` to compare declared
+source metadata with an independently selected revision; CI portability uses the run SHA.
+`-CandidateArtifactName <name>` records the supplied artifact's identity. Matching declared
+commits and bytes does not authenticate their origin: obtain artifacts through a trusted
+CI/release channel and independently review its run, revision and checksums.
+
+CI retains separate per-OS source and portability evidence artifacts for 14 days, identified
+by workflow SHA, run ID and attempt. Collection runs even after test failure. The exporter
+allowlists only run/package JSON and these seven synthetic suites' TRX files, limits each
+file to 2 MiB and the complete export to 100 files/20 MiB, requires an empty destination,
+and excludes caches, package
+payloads, configuration and arbitrary logs. A missing or failed suite is not a pass.
 
 Run `pwsh -File scripts/Test-ReleaseUpgrade.ps1` for the published-RC2-to-source-candidate gate. To consume already packed candidate artifacts, add `-CandidatePackageDirectory <directory>`. Select an earlier published baseline explicitly with `-BaselineVersion <version>` when qualifying an additional upgrade path. This check uses real package references and disposable SQLite state, rather than substituting candidate source projects for the published baseline.
 

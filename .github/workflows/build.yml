@@ -87,6 +87,19 @@ jobs:
         timeout-minutes: 10
         shell: pwsh
         run: ./scripts/Test-WorkerSmoke.ps1
+      - name: Collect service-package evidence
+        id: service_evidence
+        if: always()
+        shell: pwsh
+        run: ./scripts/Export-ServicePackageEvidence.ps1 -Destination "$PWD/artifacts/service-evidence"
+      - name: Retain service-package evidence
+        if: always() && steps.service_evidence.outcome == 'success'
+        uses: actions/upload-artifact@v7
+        with:
+          name: caravel-service-evidence-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-source-${{ matrix.os }}
+          path: artifacts/service-evidence/
+          if-no-files-found: warn
+          retention-days: 14
   package-portability:
     if: inputs.platform == 'all'
     needs: lts
@@ -118,10 +131,23 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Browser installation failed.' }
       - name: Verify the Windows-built service packages without repacking
         shell: pwsh
-        run: ./scripts/Test-ServicePackages.ps1 -CandidatePackageDirectory "$PWD/release-packages"
+        run: ./scripts/Test-ServicePackages.ps1 -CandidatePackageDirectory "$PWD/release-packages" -ExpectedRepositoryCommit '${{ github.sha }}' -CandidateArtifactName 'clinimatix-caravel-packages-${{ github.sha }}'
       - name: Verify the Windows-built Identity starter without repacking
         shell: pwsh
         run: ./scripts/Test-IdentityStarterSmoke.ps1 -CandidatePackageDirectory "$PWD/release-packages" -Browser
+      - name: Collect service-package evidence
+        id: service_evidence
+        if: always()
+        shell: pwsh
+        run: ./scripts/Export-ServicePackageEvidence.ps1 -Destination "$PWD/artifacts/service-evidence"
+      - name: Retain service-package evidence
+        if: always() && steps.service_evidence.outcome == 'success'
+        uses: actions/upload-artifact@v7
+        with:
+          name: caravel-service-evidence-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-portability-${{ matrix.os }}
+          path: artifacts/service-evidence/
+          if-no-files-found: warn
+          retention-days: 14
   providers:
     if: inputs.platform == 'all'
     runs-on: ubuntu-latest

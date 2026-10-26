@@ -1,8 +1,12 @@
 param(
     [string]$PackageVersion,
-    [string]$CandidatePackageDirectory
+    [string]$CandidatePackageDirectory,
+    [ValidatePattern('^[a-fA-F0-9]{40}$')][string]$ExpectedRepositoryCommit,
+    [string]$CandidateArtifactName
 )
 $ErrorActionPreference = 'Stop'
+. (Join-Path $PSScriptRoot 'ServicePackageGraph.ps1')
+if ($ExpectedRepositoryCommit -and -not $CandidatePackageDirectory) { throw 'ExpectedRepositoryCommit requires supplied candidate packages.' }
 if ($PackageVersion -and $CandidatePackageDirectory) {
     throw 'PackageVersion cannot relabel supplied candidate packages.'
 }
@@ -13,10 +17,20 @@ $root = Split-Path $PSScriptRoot
 $run = Join-Path $root ('artifacts/service packages ' + [guid]::NewGuid().ToString('N'))
 $packages = Join-Path $run 'packages'
 $null = New-Item -ItemType Directory -Path $packages
+$evidence = Join-Path $run 'evidence'
+$null = New-Item -ItemType Directory -Path $evidence
+[ordered]@{
+    WorkflowSha = $env:GITHUB_SHA; WorkflowRunId = $env:GITHUB_RUN_ID
+    WorkflowRunAttempt = $env:GITHUB_RUN_ATTEMPT; WorkflowJob = $env:GITHUB_JOB
+    RunnerOS = $env:RUNNER_OS; CandidateArtifactName = $CandidateArtifactName
+    ExpectedRepositoryCommit = $ExpectedRepositoryCommit
+    Mode = $(if ($CandidatePackageDirectory) { 'supplied-artifacts' } else { 'source-pack' })
+} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $evidence 'run-evidence.json')
 $previousPackages = $env:NUGET_PACKAGES
 $previousCertificate = $env:DOTNET_GENERATE_ASPNET_CERTIFICATE
 $env:DOTNET_GENERATE_ASPNET_CERTIFICATE = 'false'
 $components = @('Core', 'Clarion', 'Queues', 'Storage', 'Scheduling', 'Mail', 'Notifications')
+$completed = $false
 
 function Invoke-Checked([string[]]$Arguments) {
     & dotnet @Arguments
@@ -70,6 +84,7 @@ try {
             if ($CandidatePackageDirectory) {
                 if ($commit -notmatch '^[a-fA-F0-9]{40}$') { throw "Candidate source commit is missing: $component" }
                 if ($repositoryCommit -and $commit -ine $repositoryCommit) { throw 'Candidate source commits must agree.' }
+                if ($ExpectedRepositoryCommit -and $commit -ine $ExpectedRepositoryCommit) { throw "Candidate source commit does not match expected SHA: $component" }
                 $repositoryCommit = $commit
             }
             $packageEvidence += [ordered]@{
@@ -78,7 +93,7 @@ try {
             }
         } finally { $archive.Dispose() }
     }
-    $packageEvidence | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $run 'package-evidence.json')
+    $packageEvidence | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $evidence 'package-evidence.json')
 
     $escaped = [Security.SecurityElement]::Escape($packages)
     $feed = Join-Path $run 'NuGet.Config'
@@ -124,24 +139,17 @@ try {
         $xml.Save($project)
         Invoke-Checked @('restore', $project, '--configfile', $feed)
         $assets = Get-Content -LiteralPath (Join-Path $destination 'obj/project.assets.json') -Raw | ConvertFrom-Json
-        foreach ($library in $assets.libraries.PSObject.Properties) {
-            if ($library.Value.type -eq 'project') { throw 'Package tests must not resolve source projects.' }
-            if ($library.Name -like 'Clinimatix.Caravel.*/*') {
-                $identity = $library.Name.Split('/')
-                $expected = @($packageEvidence | Where-Object { $_.Package -ieq $identity[0] -and $_.Version -ceq $identity[1] })
-                if ($expected.Count -ne 1) { throw "Unexpected Caravel package graph: $($library.Name)" }
-                $id = $identity[0].ToLowerInvariant()
-                $installed = Join-Path $env:NUGET_PACKAGES "$id/$version/$id.$version.nupkg"
-                if ((Get-FileHash -LiteralPath $installed -Algorithm SHA256).Hash -ne $expected[0].SHA256) {
-                    throw "Installed package bytes differ: $($library.Name)"
-                }
-            }
-        }
-        Invoke-Checked @('test', $project, '-c', 'Release', '--no-restore', '--logger', 'trx', '--results-directory', (Join-Path $run 'results'))
+        Assert-ServicePackageGraph $assets $packageEvidence $env:NUGET_PACKAGES
+        Invoke-Checked @('test', $project, '-c', 'Release', '--no-restore', '--logger', "trx;LogFileName=$component.trx", '--results-directory', $evidence)
     }
+    $completed = $true
     Write-Output "Service package tests passed against isolated $version NuGet packages. Artifacts: $run"
 } finally {
     $env:NUGET_PACKAGES = $previousPackages
     $env:DOTNET_GENERATE_ASPNET_CERTIFICATE = $previousCertificate
     Pop-Location
+    $recordPath = Join-Path $evidence 'run-evidence.json'
+    $record = Get-Content -LiteralPath $recordPath -Raw | ConvertFrom-Json
+    $record | Add-Member -NotePropertyName Outcome -NotePropertyValue $(if ($completed) { 'succeeded' } else { 'failed' })
+    $record | ConvertTo-Json | Set-Content -LiteralPath $recordPath
 }

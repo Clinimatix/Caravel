@@ -41,6 +41,9 @@ Every gate must have a retained result for the exact candidate commit:
    disposal. Retain immutable package checksums and reconcile declared source identity.
    Use `Test-ServicePackages.ps1 -CandidatePackageDirectory <artifact>` to exercise the
    supplied bytes in fresh caches; a source repack does not qualify an existing artifact.
+   Select the expected source revision independently and retain per-OS package manifests,
+   run/artifact identities and TRX results. Declared source consistency is not authenticated
+   provenance; the service manifest covers seven components, not every release package.
 4. Recovery verifies rollback, relay receipt-window deduplication, expired/stale leases and
    retry/dead-letter/replay. Document possible duplicate external acceptance after a lost
    acknowledgement; no exactly-once promise.
