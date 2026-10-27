@@ -49,6 +49,7 @@ jobs:
           ./scripts/Expand-NuGetRelease.Tests.ps1
           ./scripts/install.Tests.ps1
           ./scripts/Test-ServicePackages.Tests.ps1
+          ./scripts/Test-WorkerContainer.Tests.ps1
       - run: dotnet restore Caravel.slnx --locked-mode
       - run: dotnet build Caravel.slnx -c Release --no-restore
       - run: dotnet test Caravel.slnx -c Release --no-build --no-restore
@@ -146,6 +147,36 @@ jobs:
         with:
           name: caravel-service-evidence-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-portability-${{ matrix.os }}
           path: artifacts/service-evidence/
+          if-no-files-found: warn
+          retention-days: 14
+  worker-container:
+    if: inputs.platform == 'all'
+    needs: lts
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: clinimatix-caravel-packages-${{ github.sha }}
+          path: release-packages
+      - name: Verify the packaged worker in a runtime container
+        shell: pwsh
+        run: |
+          docker pull mcr.microsoft.com/dotnet/runtime:10.0
+          if ($LASTEXITCODE -ne 0) { throw 'Runtime image pull failed.' }
+          $image = docker image inspect --format '{{index .RepoDigests 0}}' mcr.microsoft.com/dotnet/runtime:10.0
+          if ($LASTEXITCODE -ne 0) { throw 'Runtime image digest lookup failed.' }
+          ./scripts/Test-WorkerContainer.ps1 -CandidatePackageDirectory "$PWD/release-packages" -ExpectedRepositoryCommit '${{ github.sha }}' -RuntimeImage $image
+      - name: Retain worker container evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: caravel-worker-container-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/worker-container-evidence/
           if-no-files-found: warn
           retention-days: 14
   providers:

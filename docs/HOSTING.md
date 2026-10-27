@@ -51,6 +51,22 @@ You can run the worker inside the web process, but then the web server's recycli
 
 If you run development tools or tests that start child processes inside a Linux container, start the container with Docker's `--init` option. Without an init process, finished child processes can linger as zombies. See Docker's [guidance on running multiple processes](https://docs.docker.com/engine/containers/multi-service_container/).
 
+### Qualify a worker runtime image
+
+`scripts/Test-WorkerContainer.ps1` publishes the synthetic SQLite worker against a supplied
+candidate Queues package and builds a disposable Linux runtime image. Supply the candidate
+package directory, expected source SHA and an official `mcr.microsoft.com/dotnet/runtime@sha256:...`
+image reference. It checks the restored package bytes in an isolated cache, applies both
+sample migrations explicitly, then exercises persistent deduplication, crash/lease recovery,
+idle SIGTERM shutdown and nonzero infrastructure-failure exit. Containers run as `app` with
+networking disabled, a read-only root filesystem and one disposable data volume.
+
+The build workflow records the selected base digest, image ID, runtime inventory and package
+checksum. Declared package source is checked for consistency; it is not authenticated provenance
+by itself. The script removes only its labelled containers, volume and image. It never pushes
+an image or provisions a deployment. This SQLite fixture does not qualify an application's
+server database, credentials, storage, in-flight shutdown or production image security baseline.
+
 ## Keep users signed in across deployments
 
 Identity cookies and account tokens are protected by ASP.NET Core Data Protection. For production, configure a persistent key store so sign-ins survive restarts and deployments:

@@ -2,6 +2,8 @@
 
 ## Unreleased - proposed next candidate
 
+- Added exact-package Linux worker runtime-container qualification for persistent deduplication, crash recovery, idle shutdown and infrastructure-failure exit without publishing images.
+
 - Added service-package testing against existing artifacts, with source/version consistency checks and restored-package checksum verification.
 - Retained bounded per-platform service-package evidence in CI and added expected-source checks and focused restored-graph integrity regressions.
 - Added ordered, count-free Clarion query slices with bounded page sizes and explicit continuation; existing total-count APIs are preserved.
