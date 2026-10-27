@@ -82,7 +82,7 @@ try {
     try {
         Invoke-ContainerDotnet @('tool', 'restore', '--configfile', $feed)
         foreach ($db in 'QueueDbContext', 'ResultContext') {
-            Invoke-ContainerDotnet @('ef', 'database', 'update', '--context', $db, '--project', $project, '--startup-project', $project, '-c', 'Release', '--no-build')
+            Invoke-ContainerDotnet @('ef', 'database', 'update', '--context', $db, '--project', $project, '--startup-project', $project, '--configuration', 'Release', '--no-build')
         }
     } finally { Pop-Location }
     @"
