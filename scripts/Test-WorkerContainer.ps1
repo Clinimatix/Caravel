@@ -7,6 +7,7 @@ $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'WorkerContainerInputs.ps1')
 . (Join-Path $PSScriptRoot 'ServicePackageGraph.ps1')
 . (Join-Path $PSScriptRoot 'WorkerContainerCleanup.ps1')
+. (Join-Path $PSScriptRoot 'WorkerContainerShutdown.ps1')
 $package = Get-WorkerContainerPackage $CandidatePackageDirectory $ExpectedRepositoryCommit $RuntimeImage
 if (-not $IsLinux) { throw 'Worker runtime-container qualification requires Linux.' }
 if ((& docker info --format '{{.OSType}}') -ne 'linux' -or $LASTEXITCODE -ne 0) { throw 'A running Linux Docker engine is required.' }
@@ -61,6 +62,9 @@ Push-Location $root
 try {
     Get-ChildItem (Join-Path $root 'samples/Caravel.Worker') -File | Where-Object Extension -In '.cs', '.csproj' | Copy-Item -Destination $sample
     Copy-Item (Join-Path $root 'samples/Caravel.Worker/Database') -Destination $sample -Recurse
+    # Instrument only the disposable sample copy, never the package or application source.
+    $handler = Join-Path $sample 'RecordQuantityHandler.cs'
+    Add-WorkerContainerPause (Get-Content -LiteralPath $handler -Raw) | Set-Content -LiteralPath $handler
     Copy-Item (Join-Path $root '.config') -Destination $run -Recurse
     $feedDirectory = Join-Path $run 'packages'
     $null = New-Item -ItemType Directory -Path $feedDirectory
@@ -126,6 +130,58 @@ ENTRYPOINT ["dotnet", "Caravel.Worker.dll"]
     $record.Checks += 'idle-sigterm'
     Run-Worker '--work' @('-e', 'CARAVEL_WORKER_DIRECTORY=/tmp') 1
     $record.Checks += 'infrastructure-failure-exit'
+
+    # A separate volume starts with the explicitly migrated, empty image data.
+    $volume += '-inflight'
+    $null = Invoke-ContainerDocker @('volume', 'create', '--label', $label, $volume)
+    $accepted = @(Run-Worker '--enqueue-demo')
+    if ($accepted.Count -ne 3 -or @($accepted | Where-Object AlreadyEnqueued).Count) { throw 'In-flight fixture needs three new jobs.' }
+    $name = "caravel-worker-$id-inflight"
+    $null = Invoke-ContainerDocker @('run', '-d', '--name', $name, '--label', $label, '--network', 'none', '--read-only', '--tmpfs', '/tmp',
+        '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges', '--mount', "type=volume,src=$volume,dst=/data",
+        '-e', 'CARAVEL_CONTAINER_PAUSE_AFTER_RESULT=1', '-e', 'CARAVEL_WORKER_LEASE_SECONDS=30', $image, '--work')
+    $ready = Wait-WorkerContainerPause $name $accepted.JobId { param([string[]]$Arguments) Invoke-ContainerDocker $Arguments }
+    $record.InFlight = [ordered]@{ PausedJobId = $ready }
+    $null = Invoke-ContainerDocker @('stop', '--signal', 'SIGTERM', '--time', '10', $name)
+    $state = Invoke-ContainerDocker @('inspect', '--format', '{{json .State}}', $name) | ConvertFrom-Json
+    Invoke-ContainerDocker @('logs', $name) | Set-Content -LiteralPath (Join-Path $evidence 'inflight-worker.log')
+    # Read the marker from the stopped container's volume using the same non-root image.
+    $cancelled = @(Invoke-ContainerDocker @('run', '--rm', '--label', $label, '--network', 'none', '--read-only', '--cap-drop', 'ALL',
+        '--security-opt', 'no-new-privileges', '--mount', "type=volume,src=$volume,dst=/data,readonly", '--entrypoint', 'cat',
+        $image, '/data/handler-cancelled')) -join ''
+    Assert-WorkerContainerShutdown $state $ready $cancelled
+    $record.InFlight.CancelledJobId = $cancelled
+    $record.InFlight.ExitCode = $state.ExitCode
+    $record.InFlight.OOMKilled = $state.OOMKilled
+    $partial = Run-Worker '--report'
+    $status = Run-Worker '--queue-status'
+    if ($partial.events -ne 1 -or $partial.total -notin 1..3 -or $status.ready -ne 2 -or $status.activeLeases -ne 1 -or
+        $status.completed -ne 0 -or $status.deadLetter -ne 0 -or $status.delayed -ne 0 -or $status.expiredLeases -ne 0) {
+        throw 'Shutdown acknowledged or failed the interrupted job instead of leaving its active lease.'
+    }
+    $record.InFlight.BeforeRecovery = $status
+    $record.InFlight.PartialResult = $partial
+    $deadline = [DateTime]::UtcNow.AddSeconds(35)
+    do {
+        $status = Run-Worker '--queue-status'
+        if ($status.expiredLeases -eq 1) { break }
+        if ([DateTime]::UtcNow -ge $deadline) { throw 'Interrupted lease never became recoverable.' }
+        Start-Sleep -Milliseconds 200
+    } while ($true)
+    $record.InFlight.ExpiredLease = $status
+    foreach ($attempt in 1..3) { if (-not (Run-Worker '--work-once').claimed) { throw 'In-flight recovery lost a job.' } }
+    if ((Run-Worker '--work-once').claimed) { throw 'In-flight recovery did not drain.' }
+    $report = Run-Worker '--report'
+    $status = Run-Worker '--queue-status'
+    if ($report.events -ne 3 -or $report.total -ne 6 -or $status.completed -ne 3 -or $status.deadLetter -ne 0 -or
+        ($status.ready + $status.delayed + $status.activeLeases + $status.expiredLeases) -ne 0) { throw 'In-flight recovery lost or repeated persisted results.' }
+    $repeated = @(Run-Worker '--enqueue-demo')
+    if (@($repeated | Where-Object AlreadyEnqueued).Count -ne 3 -or
+        @(Compare-Object ($accepted.JobId | Sort-Object) ($repeated.JobId | Sort-Object)).Count -ne 0 -or
+        (Run-Worker '--work-once').claimed) { throw 'Recovered jobs lost their deduplication identities.' }
+    $record.InFlight.AfterRecovery = $status
+    $record.InFlight.RecoveredResult = $report
+    $record.Checks += 'inflight-sigterm', 'inflight-lease-recovery', 'inflight-result-deduplication'
     $record.Outcome = 'succeeded'
 } catch {
     $testFailure = $_

@@ -58,14 +58,18 @@ candidate Queues package and builds a disposable Linux runtime image. Supply the
 package directory, expected source SHA and an official `mcr.microsoft.com/dotnet/runtime@sha256:...`
 image reference. It checks the restored package bytes in an isolated cache, applies both
 sample migrations explicitly, then exercises persistent deduplication, crash/lease recovery,
-idle SIGTERM shutdown and nonzero infrastructure-failure exit. Containers run as `app` with
-networking disabled, a read-only root filesystem and one disposable data volume.
+idle and in-flight SIGTERM shutdown and nonzero infrastructure-failure exit. The in-flight
+fixture pauses a disposable copy of the synthetic handler after committing a result and
+before acknowledging its job. It observes cancellation, requires a clean exit with an
+unacknowledged lease, then waits for expiry and recovers without repeating the persisted result.
+Containers run as `app` with networking disabled, a read-only root filesystem and isolated
+disposable data volumes for crash recovery and in-flight shutdown.
 
 The build workflow records the selected base digest, image ID, runtime inventory and package
 checksum. Declared package source is checked for consistency; it is not authenticated provenance
 by itself. The script removes only its labelled containers, volume and image. It never pushes
 an image or provisions a deployment. This SQLite fixture does not qualify an application's
-server database, credentials, storage, in-flight shutdown or production image security baseline.
+server database, credentials, storage, application-specific shutdown or production image security baseline.
 
 ## Keep users signed in across deployments
 

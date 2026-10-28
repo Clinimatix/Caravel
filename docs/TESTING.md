@@ -114,6 +114,17 @@ Run `pwsh ./scripts/Test-AzureStorage.ps1` with a local Linux Docker engine. It 
 
 Some Bosun tests start and stop child processes. When you run the suite inside a Linux container, start it with Docker's `--init` option (or your runtime's equivalent). Without an init process, stopped child processes linger as zombies and the cleanup tests will correctly fail.
 
+## Worker container shutdown
+
+`Test-WorkerContainer.ps1` exercises the supplied Queues package in a disposable, non-root
+Linux runtime image. Alongside crash recovery and idle shutdown, it sends SIGTERM while a
+synthetic handler is paused after committing a result. The receipt retains the paused and
+cancelled job identity, exit status, uncompleted lease, expiry and recovered result counts.
+A separate volume prevents earlier completed jobs from satisfying the shutdown check.
+`Test-WorkerContainerShutdown.Tests.ps1` checks observation and failure handling without Docker.
+The pause is injected only into the disposable sample copy; package and application code stay intact.
+See [hosting](HOSTING.md#qualify-a-worker-runtime-image) for prerequisites and boundaries.
+
 ## Continuous integration
 
 `.github/workflows/build.yml` defines the Windows, Linux and macOS matrix, including source/generated browser regressions, package checks and the published-RC2 upgrade gate. The server-provider job checks provider contracts, packaged backends and generated Identity applications on SQL Server/PostgreSQL. A separate Ubuntu job runs source and installed Azure packages against disposable Azurite; it uses no cloud resource. The workflow is configured for manual dispatch, with no automatic push or pull-request triggers. In your pull request, list the checks you ran locally and any platforms you couldn't test.

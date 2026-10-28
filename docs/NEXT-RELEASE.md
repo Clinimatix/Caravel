@@ -99,4 +99,7 @@ notification transports, application MCP and model workflows remain later work.
 The model-free development foundation above is required for first stable. Laravel guides useful
 conventions; parity with its entire feature set is not a gate for 26.1 stable. Container
 images are in release scope with their own runtime/provider qualification; Kubernetes is
-out of scope. Host-based checks do not substitute for container qualification.
+out of scope. Host-based checks do not substitute for container qualification. The synthetic SQLite runtime
+image checks idle and in-flight SIGTERM, cooperative cancellation and lease recovery;
+participating application images, server-provider shutdown and security baselines still
+need their own qualification before release.

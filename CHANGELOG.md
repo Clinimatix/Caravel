@@ -2,6 +2,8 @@
 
 ## Unreleased - proposed next candidate
 
+- Extended exact-package worker container checks to in-flight SIGTERM, cooperative handler cancellation and lease recovery without duplicate persisted results.
+
 - Added exact-package Linux worker runtime-container qualification for persistent deduplication, crash recovery, idle shutdown and infrastructure-failure exit without publishing images.
 
 - Added service-package testing against existing artifacts, with source/version consistency checks and restored-package checksum verification.
