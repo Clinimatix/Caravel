@@ -127,6 +127,24 @@ See [hosting](HOSTING.md#qualify-a-worker-runtime-image) for prerequisites and b
 
 ## Continuous integration
 
+`Test-InstalledManifest.ps1 -ToolPath <installed-caravel> -BosunPackagePath <package>`
+checks Fathom's static manifest through an existing installed Bosun shim. It compares the
+installed archive with the selected package, then inspects synthetic modern and legacy XML
+projects with SDK/import/build/startup traps and synthetic private values. Project and directory
+selection must agree without changing files; malformed, DTD, oversized, missing and ambiguous
+inputs must fail with the fixed content-free diagnostic. Add `-ExpectedRepositoryCommit <sha>`
+to compare the package's declared source against an independently selected revision.
+The helper installs nothing, restores nothing and invokes only `schema` and `agent:manifest`.
+
+The package and Identity-starter smoke scripts run this helper using their existing tool
+installations. Portability jobs exercise the Windows-built Bosun package without repacking it.
+CI retains only bounded manifest receipts containing package/version/hash, declared/expected
+revision, workflow identity and case names; project source, command output and configuration
+are excluded. Hash equality and matching declarations do not authenticate provenance: retain
+the trusted artifact/run identity separately. A receipt is written only after all checks pass;
+missing receipts are not a pass. `Test-InstalledManifest.Tests.ps1` checks package-input guards
+without installing or executing a tool.
+
 `.github/workflows/build.yml` defines the Windows, Linux and macOS matrix, including source/generated browser regressions, package checks and the published-RC2 upgrade gate. The server-provider job checks provider contracts, packaged backends and generated Identity applications on SQL Server/PostgreSQL. A separate Ubuntu job runs source and installed Azure packages against disposable Azurite; it uses no cloud resource. The workflow is configured for manual dispatch, with no automatic push or pull-request triggers. In your pull request, list the checks you ran locally and any platforms you couldn't test.
 
 The complete run also downloads the Windows package artifact into Linux and macOS jobs and exercises its installed Identity starter and browser without rebuilding the framework packages. Release packages must work on supported consumer platforms regardless of the build host.

@@ -2,6 +2,8 @@
 
 ## Unreleased - proposed next candidate
 
+- Qualify installed Fathom manifests against exact Bosun package bytes, including static inspection, disclosure-safe failures and cross-platform artifact reuse.
+
 - Extended exact-package worker container checks to in-flight SIGTERM, cooperative handler cancellation and lease recovery without duplicate persisted results.
 
 - Added exact-package Linux worker runtime-container qualification for persistent deduplication, crash recovery, idle shutdown and infrastructure-failure exit without publishing images.

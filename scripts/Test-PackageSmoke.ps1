@@ -39,6 +39,9 @@ try {
     Invoke-Checked dotnet @('tool', 'install', 'Clinimatix.Caravel.Bosun', '--tool-path', $toolDirectory, '--version', $version, '--configfile', $feed)
     $tool = Join-Path $toolDirectory $(if ($IsWindows) { 'caravel.exe' } else { 'caravel' })
     Invoke-Checked $tool @('version')
+    $manifestArguments = @{ ToolPath = $tool; BosunPackagePath = $toolPackages[0].FullName }
+    if ($env:GITHUB_SHA) { $manifestArguments.ExpectedRepositoryCommit = $env:GITHUB_SHA }
+    & (Join-Path $PSScriptRoot 'Test-InstalledManifest.ps1') @manifestArguments
     $schema = (& $tool schema --json) | ConvertFrom-Json
     $expectedCommands = @('new', 'serve', 'dev', 'route:list', 'doctor', 'version', 'schema', 'agent:manifest', 'make:model', 'make:seeder', 'make:factory', 'make:job', 'make:event', 'make:listener', 'make:migration', 'migrate', 'migrate:status', 'migrate:rollback', 'migrate:fresh', 'db:seed')
     if ($LASTEXITCODE -ne 0 -or (Compare-Object ($schema.commands.name | Sort-Object) ($expectedCommands | Sort-Object))) { throw 'Installed tool schema mismatch.' }

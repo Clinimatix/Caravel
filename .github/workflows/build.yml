@@ -51,6 +51,7 @@ jobs:
           ./scripts/Test-ServicePackages.Tests.ps1
           ./scripts/Test-WorkerContainer.Tests.ps1
           ./scripts/Test-WorkerContainerShutdown.Tests.ps1
+          ./scripts/Test-InstalledManifest.Tests.ps1
       - run: dotnet restore Caravel.slnx --locked-mode
       - run: dotnet build Caravel.slnx -c Release --no-restore
       - run: dotnet test Caravel.slnx -c Release --no-build --no-restore
@@ -73,6 +74,14 @@ jobs:
           path: artifacts/smoke */packages/*.nupkg
           if-no-files-found: error
           retention-days: 30
+      - name: Retain installed manifest evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: caravel-manifest-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.os }}
+          path: artifacts/fathom-manifest-evidence/*.json
+          if-no-files-found: warn
+          retention-days: 14
       - name: Verify migration and seeding workflow
         timeout-minutes: 10
         shell: pwsh
@@ -137,6 +146,14 @@ jobs:
       - name: Verify the Windows-built Identity starter without repacking
         shell: pwsh
         run: ./scripts/Test-IdentityStarterSmoke.ps1 -CandidatePackageDirectory "$PWD/release-packages" -Browser
+      - name: Retain installed manifest portability evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: caravel-manifest-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-portability-${{ matrix.os }}
+          path: artifacts/fathom-manifest-evidence/*.json
+          if-no-files-found: warn
+          retention-days: 14
       - name: Collect service-package evidence
         id: service_evidence
         if: always()

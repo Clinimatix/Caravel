@@ -69,6 +69,10 @@ command and route inspection guidance, and passes disclosure/non-execution regre
 and installed-tool checks on the exact release commit. Static hints must distinguish declarative MSBuild items from executable targets and foreign XML, including legacy namespace and conditional-branch coverage. Review must confirm no secrets,
 configuration or application payloads escape and no arbitrary execution or database-write
 tool is exposed. This minimum gate is required, not an optional future aspiration.
+The installed-manifest helper in the [testing guide](TESTING.md#continuous-integration)
+exercises these static boundaries through the selected Bosun shim and binds its receipt to
+the consumed package hash. Complete exact-candidate CI and provenance review remain required;
+this check does not establish participating-application acceptance or network MCP behavior.
 
 An opt-in [in-process application tool registry](FATHOM-TOOLS.md) is in development
 ahead of the network transport. The candidate includes its in-process contracts; network
