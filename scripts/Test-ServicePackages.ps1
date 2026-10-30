@@ -2,10 +2,14 @@ param(
     [string]$PackageVersion,
     [string]$CandidatePackageDirectory,
     [ValidatePattern('^[a-fA-F0-9]{40}$')][string]$ExpectedRepositoryCommit,
-    [string]$CandidateArtifactName
+    [string]$CandidateArtifactName,
+    [switch]$IncludeProviderTests
 )
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'ServicePackageGraph.ps1')
+if ($IncludeProviderTests -and (-not $env:CARAVEL_TEST_SQLSERVER -or -not $env:CARAVEL_TEST_POSTGRES)) {
+    throw 'Provider package qualification requires both disposable server configurations.'
+}
 if ($ExpectedRepositoryCommit -and -not $CandidatePackageDirectory) { throw 'ExpectedRepositoryCommit requires supplied candidate packages.' }
 if ($PackageVersion -and $CandidatePackageDirectory) {
     throw 'PackageVersion cannot relabel supplied candidate packages.'
@@ -30,6 +34,11 @@ $previousPackages = $env:NUGET_PACKAGES
 $previousCertificate = $env:DOTNET_GENERATE_ASPNET_CERTIFICATE
 $env:DOTNET_GENERATE_ASPNET_CERTIFICATE = 'false'
 $components = @('Core', 'Clarion', 'Queues', 'Storage', 'Scheduling', 'Mail', 'Notifications')
+$testComponents = @($components)
+if ($IncludeProviderTests) {
+    $components += 'AspNetCore'
+    $testComponents += 'Provider'
+}
 $completed = $false
 
 function Invoke-Checked([string[]]$Arguments) {
@@ -113,7 +122,7 @@ try {
 "@ | Set-Content -LiteralPath $feed
     $env:NUGET_PACKAGES = Join-Path $run 'cache'
 
-    foreach ($component in $components) {
+    foreach ($component in $testComponents) {
         $testName = "Caravel.$component.Tests"
         $source = Join-Path $root "tests/$testName"
         $destination = Join-Path $run "tests/$testName"
@@ -141,6 +150,12 @@ try {
         $assets = Get-Content -LiteralPath (Join-Path $destination 'obj/project.assets.json') -Raw | ConvertFrom-Json
         Assert-ServicePackageGraph $assets $packageEvidence $env:NUGET_PACKAGES
         Invoke-Checked @('test', $project, '-c', 'Release', '--no-restore', '--logger', "trx;LogFileName=$component.trx", '--results-directory', $evidence)
+        if ($component -eq 'Provider') {
+            $results = ([xml](Get-Content -LiteralPath (Join-Path $evidence 'Provider.trx') -Raw)).TestRun.Results.UnitTestResult
+            if (@($results).Count -eq 0 -or @($results | Where-Object outcome -ne 'Passed').Count -gt 0) {
+                throw 'Provider package qualification requires executed passing tests with no skips.'
+            }
+        }
     }
     $completed = $true
     Write-Output "Service package tests passed against isolated $version NuGet packages. Artifacts: $run"

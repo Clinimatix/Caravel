@@ -116,6 +116,20 @@ Some Bosun tests start and stop child processes. When you run the suite inside a
 
 ## Worker container shutdown
 
+The provider suite also exercises Generic Host shutdown on SQLite, SQL Server and
+PostgreSQL. It waits for a handler to persist a synthetic result, stops the host, and
+checks both throwing and normally returning cancellation paths. The interrupted lease
+must retain its attempt and availability without a failure or acknowledgement. A fresh
+host recovers it after expiry and completes without duplicating the saved result.
+These in-process host tests complement the Linux container signal checks below.
+
+Use `Test-ServicePackages.ps1 -IncludeProviderTests` with both disposable server
+configurations to run the provider contracts against isolated NuGet packages. Supplied
+candidate mode verifies declared source revisions and restored archive hashes, with no
+source project references. The full CI provider job consumes the retained Windows-built
+packages and exports `Provider.trx` alongside its package evidence; skipped provider tests
+fail that qualification. These checks do not establish application deployment acceptance.
+
 `Test-WorkerContainer.ps1` exercises the supplied Queues package in a disposable, non-root
 Linux runtime image. Alongside crash recovery and idle shutdown, it sends SIGTERM while a
 synthetic handler is paused after committing a result. The receipt retains the paused and

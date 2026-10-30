@@ -26,6 +26,16 @@ function Assert-Rejected([string]$Name, [string]$Expected, [hashtable]$Arguments
 }
 
 try {
+    $previousSql = $env:CARAVEL_TEST_SQLSERVER
+    $previousPostgres = $env:CARAVEL_TEST_POSTGRES
+    try {
+        $env:CARAVEL_TEST_SQLSERVER = $null
+        $env:CARAVEL_TEST_POSTGRES = $null
+        Assert-Rejected 'provider configurations required' 'requires both disposable server configurations' @{ IncludeProviderTests = $true }
+    } finally {
+        $env:CARAVEL_TEST_SQLSERVER = $previousSql
+        $env:CARAVEL_TEST_POSTGRES = $previousPostgres
+    }
     $stale = Join-Path $run 'stale-export'
     $null = New-Item -ItemType Directory -Path $stale
     'synthetic sentinel' | Set-Content -LiteralPath (Join-Path $stale 'sentinel.txt')
@@ -38,6 +48,15 @@ try {
     Write-Output 'PASS nonempty evidence destination'
     Assert-Rejected 'no relabelling' 'cannot relabel' @{ PackageVersion = '1.0.0'; CandidatePackageDirectory = $run }
     Assert-Rejected 'missing package' 'exactly one supplied Core' @{ CandidatePackageDirectory = $run }
+    try {
+        $env:CARAVEL_TEST_SQLSERVER = 'synthetic-not-used'
+        $env:CARAVEL_TEST_POSTGRES = 'synthetic-not-used'
+        foreach ($component in $components) { New-Fixture (Join-Path $run 'provider-missing') $component }
+        Assert-Rejected 'provider ASP.NET package required' 'exactly one supplied AspNetCore' @{ IncludeProviderTests = $true; CandidatePackageDirectory = (Join-Path $run 'provider-missing') }
+    } finally {
+        $env:CARAVEL_TEST_SQLSERVER = $previousSql
+        $env:CARAVEL_TEST_POSTGRES = $previousPostgres
+    }
     foreach ($component in $components) { New-Fixture (Join-Path $run 'valid') $component }
     # Real artifacts include a distinct Storage.Azure package alongside Storage.
     New-Fixture (Join-Path $run 'valid') 'Storage.Azure'

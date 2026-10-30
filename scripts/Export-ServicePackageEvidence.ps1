@@ -7,7 +7,7 @@ if (Test-Path -LiteralPath $Destination) {
 $root = Split-Path $PSScriptRoot
 $files = @(Get-ChildItem -LiteralPath (Join-Path $root 'artifacts') -Directory -Filter 'service packages *' -ErrorAction SilentlyContinue |
     ForEach-Object { Get-ChildItem -LiteralPath (Join-Path $_.FullName 'evidence') -File -ErrorAction SilentlyContinue } |
-    Where-Object { $_.Name -in @('run-evidence.json', 'package-evidence.json', 'Core.trx', 'Clarion.trx', 'Queues.trx', 'Storage.trx', 'Scheduling.trx', 'Mail.trx', 'Notifications.trx') })
+    Where-Object { $_.Name -in @('run-evidence.json', 'package-evidence.json', 'Core.trx', 'Clarion.trx', 'Queues.trx', 'Storage.trx', 'Scheduling.trx', 'Mail.trx', 'Notifications.trx', 'Provider.trx') })
 # Only allowlisted metadata and synthetic test results are exported, never caches,
 # package payloads, configs, source, arbitrary logs or environment snapshots.
 if ($files.Count -gt 100 -or @($files | Where-Object Length -gt 2MB).Count -or

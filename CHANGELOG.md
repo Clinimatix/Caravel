@@ -2,6 +2,8 @@
 
 ## Unreleased - proposed next candidate
 
+- Added hosted worker shutdown and fresh-host recovery contracts on disposable server providers, including persisted-result deduplication and exact candidate package verification.
+
 - Qualify installed Fathom manifests against exact Bosun package bytes, including static inspection, disclosure-safe failures and cross-platform artifact reuse.
 
 - Extended exact-package worker container checks to in-flight SIGTERM, cooperative handler cancellation and lease recovery without duplicate persisted results.
