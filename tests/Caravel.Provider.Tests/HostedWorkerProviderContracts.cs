@@ -124,7 +124,7 @@ public sealed class HostedWorkerProviderContracts
         builder.Services.AddDbContextFactory<ResultDatabase>(options => ProviderTestDatabase.Configure(options, provider, database + "_results"));
         builder.Services.AddCaravelDatabaseQueue(options => options.LeaseDuration = TimeSpan.FromMinutes(1));
         builder.Services.AddQueueJob<WaitingJob, WaitingHandler>("shutdown.wait.v1");
-        builder.Services.AddCaravelQueueWorker("shutdown", TimeSpan.FromMilliseconds(50));
+        builder.Services.AddCaravelQueueWorker("shutdown", TimeSpan.FromMilliseconds(100));
         return builder.Build();
     }
 
