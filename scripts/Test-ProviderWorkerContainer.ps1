@@ -72,7 +72,9 @@ try {
     Copy-Item (Join-Path $root 'tests/Caravel.Provider.Tests/ProviderTestDatabase.cs') -Destination $sample
     $projectFile = Join-Path $sample 'Caravel.Worker.csproj'
     $projectText = Get-Content $projectFile -Raw
-    $projectText.Replace('</ItemGroup>', '<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" /><PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" /></ItemGroup>') | Set-Content $projectFile
+    # Match the already-pinned provider test graph, including its explicit transitive baselines.
+    $projectText = $projectText.Replace('<PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />', '')
+    $projectText.Replace('</ItemGroup>', '<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" /><PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" /><PackageReference Include="Microsoft.Data.SqlClient" /><PackageReference Include="Azure.Core" /><PackageReference Include="System.Security.Cryptography.Pkcs" /></ItemGroup>') | Set-Content $projectFile
     # Instrument only the disposable sample copy, never the package or application source.
     $handler = Join-Path $sample 'RecordQuantityHandler.cs'
     Add-WorkerContainerPause (Get-Content -LiteralPath $handler -Raw) | Set-Content -LiteralPath $handler
