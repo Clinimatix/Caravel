@@ -257,6 +257,25 @@ jobs:
         timeout-minutes: 10
         shell: pwsh
         run: ./scripts/Test-ProviderMigrationSmoke.ps1
+      - name: Verify server-provider worker process interruption and recovery
+        timeout-minutes: 8
+        shell: pwsh
+        run: |
+          docker pull mcr.microsoft.com/dotnet/runtime:10.0
+          if ($LASTEXITCODE -ne 0) { throw 'Runtime image pull failed.' }
+          $image = docker image inspect --format '{{index .RepoDigests 0}}' mcr.microsoft.com/dotnet/runtime:10.0
+          if ($LASTEXITCODE -ne 0) { throw 'Runtime image digest lookup failed.' }
+          foreach ($provider in 'sqlserver', 'postgres') {
+            ./scripts/Test-ProviderWorkerContainer.ps1 -Provider $provider -CandidatePackageDirectory "$PWD/release-packages" -ExpectedRepositoryCommit '${{ github.sha }}' -RuntimeImage $image
+          }
+      - name: Retain server-provider worker container evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: caravel-provider-worker-container-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/provider-worker-container-*-evidence/
+          if-no-files-found: warn
+          retention-days: 14
       - name: Verify packaged backends on server providers
         timeout-minutes: 15
         shell: pwsh

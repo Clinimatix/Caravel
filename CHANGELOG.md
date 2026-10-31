@@ -2,6 +2,8 @@
 
 ## Unreleased - proposed next candidate
 
+- Added exact-package server-provider worker container SIGTERM and fresh-process recovery qualification with durable result deduplication.
+
 - Added hosted worker shutdown and fresh-host recovery contracts on disposable server providers, including persisted-result deduplication and exact candidate package verification.
 
 - Qualify installed Fathom manifests against exact Bosun package bytes, including static inspection, disclosure-safe failures and cross-platform artifact reuse.

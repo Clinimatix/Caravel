@@ -1,5 +1,7 @@
 # Testing Caravel
 
+The manual full build also exercises a disposable SQL Server and PostgreSQL worker fixture in a non-root Linux runtime image. It sends SIGTERM after the handler saves its result, observes cooperative cancellation and an unacknowledged lease, then recovers through fresh processes after expiry. Repeated enqueue and recovery preserve the saved result exactly once through the application's idempotency key. The fixture uses the supplied candidate Queues package and checks the restored package graph; it does not publish an image or establish application deployment acceptance.
+
 This guide is for contributors. It explains how to build and test the framework locally and which extra checks to run for different kinds of changes.
 
 ## Build and run the tests
