@@ -42,6 +42,13 @@ ID, exact version, repository URL and source commit. It never downloads another 
 NuGet resolves third-party dependencies from nuget.org using normal NuGet validation;
 Caravel packages are mapped exclusively to the verified local feed with an isolated cache.
 
+The archive must contain exactly one Bosun package at its expected top-level path. Nested,
+duplicate or differently cased package entries are rejected. Only that entry is copied;
+other archive paths are never extracted. Its single package manifest must parse without
+DTDs and match the pinned identity and source. Offline fixtures cover these rejection
+boundaries and transport retry orchestration with a fake HTTP boundary, without executing
+package payloads.
+
 Once this exact script is published and its digest confirmed against reviewed source, the
 download, verification and invocation can also be written as one line:
 

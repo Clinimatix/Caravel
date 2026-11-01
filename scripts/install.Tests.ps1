@@ -143,3 +143,6 @@ try {
     # Fixed task-created absolute root only.
     Remove-Item -LiteralPath $sandbox -Recurse -Force
 }
+
+# Isolate function mocks in a child scope so neither suite leaks its fake HTTP boundary.
+& "$PSScriptRoot/Test-InstallerArchive.Tests.ps1"

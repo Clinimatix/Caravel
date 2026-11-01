@@ -2,6 +2,8 @@
 
 ## Unreleased - proposed next candidate
 
+- Extended offline installer qualification for archive paths, duplicate entries, package identity/XML rejection and interrupted download recovery.
+
 - Added exact-package server-provider worker container SIGTERM and fresh-process recovery qualification with durable result deduplication.
 
 - Added hosted worker shutdown and fresh-host recovery contracts on disposable server providers, including persisted-result deduplication and exact candidate package verification.
