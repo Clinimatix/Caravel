@@ -8,6 +8,45 @@ namespace Caravel.Bosun.Tests;
 public sealed class AgentManifestTests
 {
     [Fact]
+    public async Task GuidanceMatchesCommandSchemaVersionAndExecutionEffects()
+    {
+        var directory = Directory.CreateTempSubdirectory("caravel-guidance-");
+        try
+        {
+            var project = Path.Combine(directory.FullName, "app.csproj");
+            File.WriteAllText(project, "<Project Sdk=\"MissingSdk\" />");
+            var manifestResult = await Invoke(project);
+            Assert.Equal(0, manifestResult.Exit);
+            Assert.Empty(manifestResult.Error);
+            using var manifest = JsonDocument.Parse(manifestResult.Output);
+            using var output = new StringWriter();
+            using var error = new StringWriter();
+            Assert.Equal(0, await Program.CreateCommand().Parse(["schema", "--json"])
+                .InvokeAsync(new InvocationConfiguration { Output = output, Error = error }));
+            Assert.Empty(error.ToString());
+            using var schema = JsonDocument.Parse(output.ToString());
+            Assert.Equal(schema.RootElement.GetProperty("version").GetString(),
+                manifest.RootElement.GetProperty("toolVersion").GetString());
+            var commands = schema.RootElement.GetProperty("commands").EnumerateArray()
+                .ToDictionary(command => command.GetProperty("name").GetString()!, StringComparer.Ordinal);
+            foreach (var hint in manifest.RootElement.GetProperty("discovery").EnumerateArray())
+            {
+                Assert.True(commands.TryGetValue(hint.GetProperty("command").GetString()!, out var command));
+                Assert.False(string.IsNullOrWhiteSpace(command.GetProperty("effects").GetString()));
+            }
+            Assert.Contains("diagnostic processes", commands["doctor"].GetProperty("effects").GetString());
+            Assert.Contains("executes application startup code", commands["route:list"].GetProperty("effects").GetString());
+            var routeOptions = commands["route:list"].GetProperty("options").EnumerateArray()
+                .Select(option => option.GetProperty("name").GetString()).ToArray();
+            Assert.Contains("--project", routeOptions);
+            Assert.Contains("--json", routeOptions);
+            Assert.Single(directory.GetFiles());
+            Assert.Empty(directory.GetDirectories());
+        }
+        finally { directory.Delete(true); }
+    }
+
+    [Fact]
     public async Task StaticManifestEmitsOnlyKnownPackageIdsAndNeverExecutesProject()
     {
         var directory = Directory.CreateTempSubdirectory("caravel-manifest-");
