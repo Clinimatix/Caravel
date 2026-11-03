@@ -145,8 +145,10 @@ See [hosting](HOSTING.md#qualify-a-worker-runtime-image) for prerequisites and b
 
 `Test-InstalledManifest.ps1 -ToolPath <installed-caravel> -BosunPackagePath <package>`
 checks Fathom's static manifest through an existing installed Bosun shim. It compares the
-installed archive with the selected package, then inspects synthetic modern and legacy XML
-projects with SDK/import/build/startup traps and synthetic private values. Project and directory
+installed archive with the selected package. Discovery guidance must match the installed schema version, name existing commands
+and describe diagnostic-process and application-startup effects with route inspection options.
+The helper also inspects synthetic modern and legacy XML projects with SDK/import/build/startup
+traps and synthetic private values. Project and directory
 selection must agree without changing files; malformed, DTD, oversized, missing and ambiguous
 inputs must fail with the fixed content-free diagnostic. Add `-ExpectedRepositoryCommit <sha>`
 to compare the package's declared source against an independently selected revision.

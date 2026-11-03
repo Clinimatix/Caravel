@@ -2,6 +2,8 @@
 
 ## Unreleased - proposed next candidate
 
+- Clarified diagnostic-process effects in Bosun's command schema and extended installed Fathom guidance checks to require matching versions, existing commands and route inspection options.
+
 - Extended offline installer qualification for archive paths, duplicate entries, package identity/XML rejection and interrupted download recovery.
 
 - Added exact-package server-provider worker container SIGTERM and fresh-process recovery qualification with durable result deduplication.

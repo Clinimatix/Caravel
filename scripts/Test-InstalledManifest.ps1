@@ -120,6 +120,20 @@ try {
             if ($result.ExitCode -ne 0 -or $result.Error -or $result.Output.Contains($sentinel) -or
                 $result.Output.Contains($fixture)) { throw 'Installed manifest disclosed fixture data or failed static inspection.' }
             $manifest = $result.Output | ConvertFrom-Json
+            if ($manifest.toolVersion -cne $schema.version) { throw 'Manifest guidance version differs from installed command schema.' }
+            foreach ($hint in $manifest.discovery) {
+                $commands = @($schema.commands | Where-Object name -CEQ $hint.command)
+                if ($commands.Count -ne 1 -or [string]::IsNullOrWhiteSpace($commands[0].effects)) {
+                    throw 'Manifest guidance references an absent, ambiguous or undocumented installed command.'
+                }
+            }
+            $doctor = $schema.commands | Where-Object name -CEQ 'doctor'
+            $routes = $schema.commands | Where-Object name -CEQ 'route:list'
+            if ($doctor.effects -notlike '*diagnostic processes*' -or
+                $routes.effects -notlike '*executes application startup code*' -or
+                '--project' -cnotin $routes.options.name -or '--json' -cnotin $routes.options.name) {
+                throw 'Installed discovery guidance omits execution effects or route inspection options.'
+            }
             if ($manifest.schemaVersion -ne 1 -or $manifest.kind -cne 'caravel.project-capabilities' -or
                 $manifest.product -cne 'Clinimatix Caravel' -or $manifest.toolVersion -cne $version -or
                 $manifest.inspection -cne 'static-project-xml' -or
@@ -134,6 +148,7 @@ try {
             $previousOutput = $result.Output
             $checks.Add("$name-$(if ($selection -eq $project) { 'file' } else { 'directory' })")
         }
+        $checks.Add("$name-installed-guidance")
     }
     $errors = Join-Path $fixture 'errors'
     $null = New-Item -ItemType Directory -Path $errors
