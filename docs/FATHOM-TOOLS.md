@@ -64,6 +64,13 @@ errors without any external service. No network MCP endpoint, protocol compatibi
 provider adapter or model workflow is supplied by this registry. The required first-stable
 foundation and later qualification remain in the [release plan](NEXT-RELEASE.md).
 
+For tenant and resource authorization, use the compiled [project-tool example](../samples/FathomPolicy/README.md).
+It binds a trusted application's principal once per scope, rejects forged binding fields,
+checks current per-resource read/write grants and formats safe application errors. Its
+source and package-consumer tests cover revocation between calls and overlapping scopes.
+The application still owns authenticated session validity and atomic permission checks
+at a write boundary; the registry does not supply either guarantee.
+
 [Laravel MCP](https://laravel.com/framework/docs/13.x/mcp) provides useful reference
 conventions for explicit tools, authorization and annotations. Its
 [AI SDK](https://laravel.com/framework/docs/13.x/ai-sdk) documents model workflows and

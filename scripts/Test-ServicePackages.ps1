@@ -146,6 +146,12 @@ try {
             $null = $reference.ParentNode.ReplaceChild($package, $reference)
         }
         $xml.Save($project)
+        if ($component -eq 'Core') {
+            # Preserve the same linked application example in the isolated package consumer.
+            $sampleDestination = Join-Path $run 'samples/FathomPolicy'
+            $null = New-Item -ItemType Directory -Path $sampleDestination -Force
+            Copy-Item -LiteralPath (Join-Path $root 'samples/FathomPolicy/ProjectTools.cs') -Destination $sampleDestination
+        }
         Invoke-Checked @('restore', $project, '--configfile', $feed)
         $assets = Get-Content -LiteralPath (Join-Path $destination 'obj/project.assets.json') -Raw | ConvertFrom-Json
         Assert-ServicePackageGraph $assets $packageEvidence $env:NUGET_PACKAGES

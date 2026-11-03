@@ -78,8 +78,13 @@ An opt-in [in-process application tool registry](FATHOM-TOOLS.md) is in developm
 ahead of the network transport. The candidate includes its in-process contracts; network
 MCP remains later work. Qualify a synthetic consumer, trusted principal binding, resource-level
 denial, cancellation and safe error presentation before adding a transport.
-Core's service-package consumer suite exercises these model-free contracts; run it against
+The compiled [application-policy example](../samples/FathomPolicy/README.md) covers trusted
+scope binding, forged tenant/resource denial, separate read/write grants, permission
+revocation between calls, concurrent scope isolation and safe application errors.
+Core's service-package consumer suite exercises this same example; run it against
 the selected immutable artifacts as well as source before first-stable review.
+Synthetic qualification does not replace participating-application acceptance, transactional
+write checks, session revocation, runtime servicing or installer acceptance.
 
 Develop in three ordered layers: (1) development context/tooling in RC3; (2) later,
 opt-in application tools/MCP with explicit authorization, cancellation, protocol tests and

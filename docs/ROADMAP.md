@@ -78,12 +78,16 @@ The proposed next candidate has a [bounded scope and measurable gates](NEXT-RELE
 
 1. Complete combined RC3 source, package, provider, recovery and installed-tool gates,
    including static manifest declaration boundaries and in-process tool authorization.
+   The synthetic application-policy example covers tenant/resource denial, changing grants,
+   isolated caller scopes and safe errors; carry it into exact-candidate package qualification.
 2. Obtain participating-consumer acceptance using exact packages and preserved application policies.
    The service-package artifact mode verifies supplied bytes independently of source packing;
    application-owner acceptance remains a separate gate.
    Retain per-OS run/manifests/results and independently reconcile artifact provenance.
 3. Qualify container images and installer serving, then freeze scope for RC3 and stable review.
-4. Add opt-in network MCP protocol qualification before model workflows.
+4. After application acceptance, scope opt-in network MCP authentication, discovery visibility,
+   cancellation and protocol qualification before model workflows. Do not infer transport
+   authorization from successful in-process examples.
 
 ### Coming next
 
