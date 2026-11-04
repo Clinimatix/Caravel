@@ -172,3 +172,13 @@ The `platform` input defaults to `all`. Select a single OS to investigate that p
 ## Changing dependencies
 
 Packages are pinned centrally with lock files. To change one, restore normally, review the lock-file changes, then confirm that `dotnet restore --locked-mode` passes. Don't disable NuGet vulnerability auditing to get a green build.
+
+## Lease renewal timing
+
+Queue renewal tests control the registered `TimeProvider` and wait for handler startup
+and renewal rearming before advancing time. They distinguish a claim that expires before
+handler startup from cancellation during execution, and cover renewal beyond the original
+expiry, maximum lifetime, lost ownership and connection failure. SQLite state assertions
+verify that interrupted leases remain recoverable without completion or failure backoff.
+The service-package harness runs these same tests against restored candidate packages.
+The separate early-deadline tests retain coverage for timer delivery before stored UTC expiry.

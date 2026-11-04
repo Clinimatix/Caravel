@@ -46,7 +46,9 @@ Every gate must have a retained result for the exact candidate commit:
    provenance; the service manifest covers seven components, not every release package.
 4. Recovery verifies rollback, relay receipt-window deduplication, expired/stale leases and
    retry/dead-letter/replay. Document possible duplicate external acceptance after a lost
-   acknowledgement; no exactly-once promise.
+   acknowledgement; no exactly-once promise. Lease qualification must distinguish expiry
+   before handler startup from cancellation after confirmed startup, and verify renewal,
+   maximum lifetime, lost ownership and renewal outages against source and installed packages.
 5. At least one participating application's synthetic integration confirms the intended
    contract; its owner signs off on application eligibility and audience behavior. Resolve
    that consumer's exact package/source/lock attribution before claiming reproducible adoption.

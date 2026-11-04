@@ -2,6 +2,8 @@
 
 ## Unreleased - proposed next candidate
 
+- Made queue lease-renewal qualification independent of wall-clock scheduling, with separate coverage for expiry before handler startup and cancellation after startup, durable recovery and exact-package execution.
+
 - Added a compiled Fathom application-policy example with source and exact-package coverage for trusted tenant/resource binding, separate read/write grants, revocation between calls, concurrent scope isolation and safe application errors. Registry APIs and exception behavior are unchanged.
 
 - Clarified diagnostic-process effects in Bosun's command schema and extended installed Fathom guidance checks to require matching versions, existing commands and route inspection options.
