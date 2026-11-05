@@ -28,7 +28,9 @@ a conditional reference can appear even if disabled. Imported files, central ver
 transitive dependencies and project references are not inspected. Absence is not evidence
 that a capability is unavailable; presence does not prove runtime registration or behavior.
 
-The file must be valid project XML, at most 1 MiB. DTDs/external entities are prohibited.
+The file must be valid project XML, at most 1 MiB (1,048,576 encoded bytes, including any
+byte-order mark). The limit counts file bytes, not decoded characters; an exact-limit
+file is accepted. DTDs/external entities are prohibited.
 Only known package IDs are copied from the file. Project names/paths, arbitrary properties,
 dependency versions, source, configuration, `.env`, credentials and application/database
 payloads are never emitted. This is data minimization by allowlist, not a general-purpose

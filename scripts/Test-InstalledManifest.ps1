@@ -152,6 +152,39 @@ try {
     }
     $errors = Join-Path $fixture 'errors'
     $null = New-Item -ItemType Directory -Path $errors
+    foreach ($encodingCase in @(
+        @{ Name = 'utf8'; Encoding = [Text.UTF8Encoding]::new($false); Step = 1 },
+        @{ Name = 'utf8-bom'; Encoding = [Text.UTF8Encoding]::new($true); Step = 1 },
+        @{ Name = 'utf16'; Encoding = [Text.UnicodeEncoding]::new($false, $true); Step = 2 })) {
+        foreach ($excess in @(0, $encodingCase.Step)) {
+            $name = "$($encodingCase.Name)-$(if ($excess) { 'over-byte-limit' } else { 'at-byte-limit' })"
+            $path = Join-Path $errors "$name.csproj"
+            $encoding = $encodingCase.Encoding
+            $prefix = '<Project><ItemGroup><PackageReference Include="Clinimatix.Caravel.Core" /></ItemGroup><!--'
+            $suffix = '--></Project>'
+            $expectedBytes = 1MB + $excess
+            $paddingBytes = $expectedBytes - $encoding.GetPreamble().Length - $encoding.GetByteCount($prefix + $suffix)
+            $xml = $prefix + (' ' * ($paddingBytes / $encoding.GetByteCount(' '))) + $suffix
+            [IO.File]::WriteAllText($path, $xml, $encoding)
+            if ((Get-Item -LiteralPath $path).Length -ne $expectedBytes) { throw 'Byte-limit fixture length differs.' }
+            # Validate independently so an invalid XML fixture cannot satisfy size rejection.
+            if ([Xml.Linq.XDocument]::Load($path).Root.Name.LocalName -cne 'Project') { throw 'Byte-limit fixture is not project XML.' }
+            if ($excess) {
+                Assert-Failure $name $path
+            } else {
+                $before = Get-FixtureInventory
+                $result = Invoke-ManifestProcess @('agent:manifest', '--project', $path, '--json')
+                if ($result.ExitCode -ne 0 -or $result.Error -or $result.Output.Contains($fixture)) {
+                    throw "Installed manifest rejected exact byte limit: $name"
+                }
+                $manifest = $result.Output | ConvertFrom-Json
+                if ($manifest.schemaVersion -ne 1 -or $manifest.toolVersion -cne $version -or
+                    ($manifest.packages -join ',') -cne 'Clinimatix.Caravel.Core') { throw "Byte-limit manifest differs: $name" }
+                if (Compare-Object $before (Get-FixtureInventory)) { throw "Manifest changed its byte-limit fixture: $name" }
+                $checks.Add($name)
+            }
+        }
+    }
     foreach ($case in @(
         @{ Name = 'malformed'; Xml = "<Project><$sentinel></Project>" },
         @{ Name = 'dtd'; Xml = "<!DOCTYPE Project [<!ENTITY secret SYSTEM 'file:///$sentinel'>]><Project>&secret;</Project>" },

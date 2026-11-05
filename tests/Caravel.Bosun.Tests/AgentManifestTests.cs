@@ -1,5 +1,7 @@
 using System.CommandLine;
+using System.Text;
 using System.Text.Json;
+using System.Xml.Linq;
 using Caravel.Bosun;
 using Xunit;
 
@@ -7,6 +9,61 @@ namespace Caravel.Bosun.Tests;
 
 public sealed class AgentManifestTests
 {
+    [Theory]
+    [InlineData("utf8", 0)]
+    [InlineData("utf8", 1)]
+    [InlineData("utf8-bom", 0)]
+    [InlineData("utf8-bom", 1)]
+    [InlineData("utf16", 0)]
+    [InlineData("utf16", 2)]
+    public async Task ValidXmlFileLimitCountsEncodedBytesIncludingPreamble(string encodingName, int excessBytes)
+    {
+        var directory = Directory.CreateTempSubdirectory("caravel-manifest-size-");
+        try
+        {
+            Encoding encoding = encodingName switch
+            {
+                "utf8" => new UTF8Encoding(false),
+                "utf8-bom" => new UTF8Encoding(true),
+                _ => new UnicodeEncoding(false, true)
+            };
+            const string prefix = "<Project><ItemGroup><PackageReference Include=\"Clinimatix.Caravel.Core\" /></ItemGroup><!--";
+            const string suffix = "--></Project>";
+            var expectedBytes = 1024 * 1024 + excessBytes;
+            var paddingBytes = expectedBytes - encoding.GetPreamble().Length - encoding.GetByteCount(prefix + suffix);
+            var xml = prefix + new string(' ', paddingBytes / encoding.GetByteCount(" ")) + suffix;
+            var project = Path.Combine(directory.FullName, "SYNTHETIC_PRIVATE.csproj");
+            File.WriteAllText(project, xml, encoding);
+            var before = File.ReadAllBytes(project);
+            Assert.Equal(expectedBytes, before.Length);
+            // Prove that rejection cannot be explained by malformed XML or a wrong root.
+            Assert.Equal("Project", XDocument.Load(project).Root!.Name.LocalName);
+
+            var result = await Invoke(project);
+            if (excessBytes == 0)
+            {
+                Assert.Equal(0, result.Exit);
+                Assert.Empty(result.Error);
+                using var manifest = JsonDocument.Parse(result.Output);
+                Assert.Equal(["Clinimatix.Caravel.Core"], manifest.RootElement.GetProperty("packages")
+                    .EnumerateArray().Select(value => value.GetString()));
+                Assert.DoesNotContain(directory.FullName, result.Output);
+                Assert.DoesNotContain("SYNTHETIC_PRIVATE", result.Output);
+            }
+            else
+            {
+                Assert.Equal(1, result.Exit);
+                Assert.Empty(result.Output);
+                Assert.Equal("Cannot inspect project. Specify one readable .csproj containing valid XML (maximum 1 MiB; DTDs prohibited).",
+                    result.Error.TrimEnd());
+            }
+            Assert.Equal(before, File.ReadAllBytes(project));
+            Assert.Single(directory.GetFiles());
+            Assert.Empty(directory.GetDirectories());
+        }
+        finally { directory.Delete(true); }
+    }
+
     [Fact]
     public async Task GuidanceMatchesCommandSchemaVersionAndExecutionEffects()
     {

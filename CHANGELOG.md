@@ -2,6 +2,8 @@
 
 ## Unreleased - proposed next candidate
 
+- Qualified Fathom's existing project-file size limit with valid UTF-8 and UTF-16 XML at and above the byte boundary, including byte-order marks, through source and installed-tool checks.
+
 - Made queue lease-renewal qualification independent of wall-clock scheduling, with separate coverage for expiry before handler startup and cancellation after startup, durable recovery and exact-package execution.
 
 - Added a compiled Fathom application-policy example with source and exact-package coverage for trusted tenant/resource binding, separate read/write grants, revocation between calls, concurrent scope isolation and safe application errors. Registry APIs and exception behavior are unchanged.

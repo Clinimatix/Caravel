@@ -152,6 +152,9 @@ traps and synthetic private values. Project and directory
 selection must agree without changing files; malformed, DTD, oversized, missing and ambiguous
 inputs must fail with the fixed content-free diagnostic. Add `-ExpectedRepositoryCommit <sha>`
 to compare the package's declared source against an independently selected revision.
+Valid UTF-8 (with and without a byte-order mark) and UTF-16 projects exercise the exact
+1 MiB file-byte limit and the next encodable size above it. Independent XML parsing checks
+fixture validity before invocation so malformed XML cannot masquerade as size rejection.
 The helper installs nothing, restores nothing and invokes only `schema` and `agent:manifest`.
 
 The package and Identity-starter smoke scripts run this helper using their existing tool
