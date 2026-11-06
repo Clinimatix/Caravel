@@ -155,6 +155,8 @@ to compare the package's declared source against an independently selected revis
 Valid UTF-8 (with and without a byte-order mark) and UTF-16 projects exercise the exact
 1 MiB file-byte limit and the next encodable size above it. Independent XML parsing checks
 fixture validity before invocation so malformed XML cannot masquerade as size rejection.
+Valid empty and internal DTD fixtures independently verify DTD rejection, including entity
+and default-attribute declarations, with external resolution disabled during fixture validation.
 The helper installs nothing, restores nothing and invokes only `schema` and `agent:manifest`.
 
 The package and Identity-starter smoke scripts run this helper using their existing tool

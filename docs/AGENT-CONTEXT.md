@@ -30,7 +30,8 @@ that a capability is unavailable; presence does not prove runtime registration o
 
 The file must be valid project XML, at most 1 MiB (1,048,576 encoded bytes, including any
 byte-order mark). The limit counts file bytes, not decoded characters; an exact-limit
-file is accepted. DTDs/external entities are prohibited.
+file is accepted. All DTDs are prohibited, including empty declarations, internal entities
+and default attributes; no external entity resolution is allowed.
 Only known package IDs are copied from the file. Project names/paths, arbitrary properties,
 dependency versions, source, configuration, `.env`, credentials and application/database
 payloads are never emitted. This is data minimization by allowlist, not a general-purpose

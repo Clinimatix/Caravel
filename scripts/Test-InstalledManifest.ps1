@@ -185,6 +185,28 @@ try {
             }
         }
     }
+    foreach ($dtdCase in @(
+        @{ Name = 'dtd-empty'; Xml = '<!DOCTYPE Project []><Project />' },
+        @{ Name = 'dtd-internal-entity'; Xml = '<!DOCTYPE Project [<!ENTITY package "Clinimatix.Caravel.Core">]><Project><ItemGroup><PackageReference Include="&package;" /></ItemGroup></Project>' },
+        @{ Name = 'dtd-default-attribute'; Xml = '<!DOCTYPE Project [<!ATTLIST PackageReference Include CDATA "Clinimatix.Caravel.Core">]><Project><ItemGroup><PackageReference /></ItemGroup></Project>' })) {
+        $path = Join-Path $errors ($dtdCase.Name + '.csproj')
+        [IO.File]::WriteAllText($path, $dtdCase.Xml)
+        # Parse only bounded synthetic fixtures with external resolution disabled.
+        # This proves rejection cannot be attributed to malformed XML or a missing entity.
+        $settings = [Xml.XmlReaderSettings]::new()
+        $settings.DtdProcessing = [Xml.DtdProcessing]::Parse
+        $settings.XmlResolver = $null
+        $settings.MaxCharactersInDocument = 4096
+        $settings.MaxCharactersFromEntities = 1024
+        $reader = [Xml.XmlReader]::Create($path, $settings)
+        try {
+            $parsed = [Xml.Linq.XDocument]::Load($reader)
+            if ($parsed.Root.Name.LocalName -cne 'Project' -or $null -eq $parsed.DocumentType) {
+                throw 'DTD fixture is not valid project XML with a DTD.'
+            }
+        } finally { $reader.Dispose() }
+        Assert-Failure $dtdCase.Name $path
+    }
     foreach ($case in @(
         @{ Name = 'malformed'; Xml = "<Project><$sentinel></Project>" },
         @{ Name = 'dtd'; Xml = "<!DOCTYPE Project [<!ENTITY secret SYSTEM 'file:///$sentinel'>]><Project>&secret;</Project>" },

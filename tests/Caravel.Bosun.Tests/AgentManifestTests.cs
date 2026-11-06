@@ -1,6 +1,7 @@
 using System.CommandLine;
 using System.Text;
 using System.Text.Json;
+using System.Xml;
 using System.Xml.Linq;
 using Caravel.Bosun;
 using Xunit;
@@ -57,6 +58,44 @@ public sealed class AgentManifestTests
                 Assert.Equal("Cannot inspect project. Specify one readable .csproj containing valid XML (maximum 1 MiB; DTDs prohibited).",
                     result.Error.TrimEnd());
             }
+            Assert.Equal(before, File.ReadAllBytes(project));
+            Assert.Single(directory.GetFiles());
+            Assert.Empty(directory.GetDirectories());
+        }
+        finally { directory.Delete(true); }
+    }
+
+    [Theory]
+    [InlineData("<!DOCTYPE Project []><Project />")]
+    [InlineData("<!DOCTYPE Project [<!ENTITY package 'Clinimatix.Caravel.Core'>]><Project><ItemGroup><PackageReference Include='&package;' /></ItemGroup></Project>")]
+    [InlineData("<!DOCTYPE Project [<!ATTLIST PackageReference Include CDATA 'Clinimatix.Caravel.Core'>]><Project><ItemGroup><PackageReference /></ItemGroup></Project>")]
+    public async Task ValidInternalDtdIsRejectedWithoutDisclosureOrMutation(string xml)
+    {
+        var directory = Directory.CreateTempSubdirectory("caravel-manifest-dtd-");
+        try
+        {
+            var project = Path.Combine(directory.FullName, "SYNTHETIC_PRIVATE.csproj");
+            File.WriteAllText(project, xml);
+            var before = File.ReadAllBytes(project);
+            // Parse only these bounded synthetic fixtures, never arbitrary project input.
+            // A null resolver prevents external access; successful parsing isolates DTD policy.
+            using (var reader = XmlReader.Create(new StringReader(xml), new XmlReaderSettings
+            {
+                DtdProcessing = DtdProcessing.Parse,
+                XmlResolver = null,
+                MaxCharactersInDocument = 4096,
+                MaxCharactersFromEntities = 1024
+            }))
+            {
+                var parsed = XDocument.Load(reader);
+                Assert.Equal("Project", parsed.Root!.Name.LocalName);
+                Assert.NotNull(parsed.DocumentType);
+            }
+            var result = await Invoke(project);
+            Assert.Equal(1, result.Exit);
+            Assert.Empty(result.Output);
+            Assert.Equal("Cannot inspect project. Specify one readable .csproj containing valid XML (maximum 1 MiB; DTDs prohibited).",
+                result.Error.TrimEnd());
             Assert.Equal(before, File.ReadAllBytes(project));
             Assert.Single(directory.GetFiles());
             Assert.Empty(directory.GetDirectories());
