@@ -27,6 +27,22 @@ function MustFail([scriptblock]$Action, [string]$Message) {
     try { & $Action | Out-Null } catch { if ($_.Exception.Message -like "*$Message*") { return }; throw }
     throw "Expected failure: $Message"
 }
+# Check the published catalog before replacing it with synthetic fixture data.
+$publishedCatalog = Get-CaravelInstallerCatalog
+Assert ($null -eq $publishedCatalog.stable) 'Stable channel must remain unavailable until a stable release is reviewed'
+Assert ($publishedCatalog.releases.ContainsKey($publishedCatalog.prerelease)) 'Prerelease channel is not cataloged'
+Assert ($publishedCatalog.prerelease -ceq '26.1.2-rc2') 'Prerelease channel did not advance to the reviewed maintenance release'
+$currentRelease = $publishedCatalog.releases['26.1.2-rc2']
+Assert ($currentRelease.sha256 -ceq '65211142ccd277b34e2380cef14b6e3fbd1af30a1dcb8920559045fd647c6913') 'Current release archive pin changed'
+Assert ($currentRelease.commit -ceq '50664cf0c9dae783d5390d2eb64485df93832fd8') 'Current release source pin changed'
+$previousRelease = $publishedCatalog.releases['26.1.1-rc2']
+Assert ($previousRelease.sha256 -ceq 'd695d8d3c179b7542a34d99015eaa354a05ac61f2661a5c6fb0b4fa15c6796bc') 'Previous release archive pin changed'
+Assert ($previousRelease.commit -ceq 'fcaa760cef15a81925e389b8727b18a2dadd0271') 'Previous release source pin changed'
+foreach ($entry in $publishedCatalog.releases.GetEnumerator()) {
+    Assert ($entry.Key -cmatch '^[0-9]{2}\.[0-9]+\.[0-9]+(?:-(?:rc|m)[0-9]+)?$') 'Catalog version is invalid'
+    Assert ($entry.Value.sha256 -cmatch '^[0-9a-f]{64}$') 'Catalog archive digest is invalid'
+    Assert ($entry.Value.commit -cmatch '^[0-9a-f]{40}$') 'Catalog source commit is invalid'
+}
 function Invoke-CaravelDotnet([string[]]$Arguments) {
     switch ($Arguments[0]) {
         '--list-sdks' { if ($script:badSdk) { '9.0.100 [fixture]' } else { '10.0.402 [fixture]' } }

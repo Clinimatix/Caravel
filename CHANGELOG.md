@@ -2,10 +2,6 @@
 
 ## Unreleased - proposed next candidate
 
-- Selected .NET SDK 10.0.403 for source and CI builds, retaining the .NET 10 platform family and using the serviced 10.0.14 runtime.
-
-- Updated the SQL Server dependency and generated Identity starter to Microsoft.Data.SqlClient 6.1.8, enforcing explicit certificate hostnames and isolating encrypted enclave sessions by attestation protocol.
-
 - Qualified Fathom DTD rejection with valid empty declarations, internal entities and default attributes in source and installed-tool checks.
 
 - Qualified Fathom's existing project-file size limit with valid UTF-8 and UTF-16 XML at and above the byte boundary, including byte-order marks, through source and installed-tool checks.
@@ -42,6 +38,14 @@
 
 - Added model-free Bosun `agent:manifest` v1: static, allowlisted project package hints, a versioned JSON contract and explicit inspection guidance without application startup or configuration/data export.
 - Named the AI suite Caravel Fathom and made its agent development foundation a minimum first-stable gate; application MCP and model workflows remain later opt-in stages.
+
+## 26.1.2-rc2
+
+Compatible security maintenance for RC2, preserving its APIs and .NET 10 platform family. No database migration is required. Keep all first-party packages on this exact version and review regenerated application locks. Existing application dependencies and deployed runtimes must be serviced separately; see [dependency maintenance](docs/DEPENDENCY-MAINTENANCE.md).
+
+- Selected .NET SDK 10.0.403 for source and CI builds, retaining the .NET 10 platform family and using the serviced 10.0.14 runtime.
+
+- Updated the SQL Server dependency and generated Identity starter to Microsoft.Data.SqlClient 6.1.8, enforcing explicit certificate hostnames and isolating encrypted enclave sessions by attestation protocol.
 
 ## 26.1.1-rc2
 
