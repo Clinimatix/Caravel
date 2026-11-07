@@ -44,7 +44,7 @@ internal static class IdentityStarter
                 <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.13" />
                 <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
                 <PackageReference Include="Microsoft.Data.SqlClient" Version="6.1.8" />
-                <PackageReference Include="Azure.Core" Version="1.61.0" />
+                <PackageReference Include="Azure.Core" Version="1.63.0" />
                 <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.3" />
                 <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13" PrivateAssets="all" />
               </ItemGroup>

@@ -6,6 +6,20 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot
+[xml]$centralPackages = Get-Content -LiteralPath (Join-Path $root 'Directory.Packages.props') -Raw
+$azureCorePins = @($centralPackages.Project.ItemGroup.PackageVersion | Where-Object Include -CEQ 'Azure.Core')
+if ($azureCorePins.Count -ne 1 -or [string]::IsNullOrWhiteSpace($azureCorePins[0].Version)) {
+    throw 'Expected one explicit central Azure.Core version.'
+}
+$azureCoreVersion = [string]$azureCorePins[0].Version
+$azureCoreEvidence = [ordered]@{
+    provider = $Provider
+    expectedVersion = $azureCoreVersion
+    generatedPin = @()
+    resolvedApplication = @()
+    resolvedTests = @()
+    completed = $false
+}
 $run = Join-Path ([IO.Path]::GetTempPath()) ('caravel identity starter ' + [guid]::NewGuid().ToString('N'))
 $null = New-Item -ItemType Directory -Path $run
 if (-not $IsWindows) {
@@ -84,6 +98,11 @@ try {
     Set-Location -LiteralPath $run
     Invoke-Checked $cli @('new', 'Workbench', '--stack', 'identity')
     [xml]$generatedProject = Get-Content -LiteralPath (Join-Path $app 'Workbench.csproj') -Raw
+    $generatedAzureCore = @($generatedProject.Project.ItemGroup.PackageReference | Where-Object Include -CEQ 'Azure.Core')
+    $azureCoreEvidence.generatedPin = @($generatedAzureCore | ForEach-Object { [string]$_.Version })
+    if ($generatedAzureCore.Count -ne 1 -or $generatedAzureCore[0].Version -cne $azureCoreVersion) {
+        throw "Generated Identity starter must pin central Azure.Core $azureCoreVersion."
+    }
     $sqlClientPins = @($generatedProject.Project.ItemGroup.PackageReference | Where-Object Include -CEQ 'Microsoft.Data.SqlClient')
     $sqlClientEvidence.generatedPin = @($sqlClientPins | ForEach-Object { [string]$_.Version })
     if ($sqlClientPins.Count -ne 1 -or $sqlClientPins[0].Version -cne '6.1.8') {
@@ -118,6 +137,10 @@ try {
     Invoke-Checked dotnet @('restore', '--configfile', $feed)
     Invoke-Checked dotnet @('restore', '--locked-mode', '--configfile', $feed)
     $assets = Get-Content -LiteralPath (Join-Path $app 'obj/project.assets.json') -Raw | ConvertFrom-Json
+    $azureCoreEvidence.resolvedApplication = @($assets.libraries.PSObject.Properties.Name | Where-Object { $_ -like 'Azure.Core/*' })
+    if ($azureCoreEvidence.resolvedApplication.Count -ne 1 -or $azureCoreEvidence.resolvedApplication[0] -cne "Azure.Core/$azureCoreVersion") {
+        throw 'Generated Identity starter restored an unexpected Azure.Core version.'
+    }
     $sqlClientLibraries = @($assets.libraries.PSObject.Properties.Name | Where-Object { $_ -like 'Microsoft.Data.SqlClient/*' })
     $sqlClientEvidence.resolvedApplication = $sqlClientLibraries
     if ($sqlClientLibraries.Count -ne 1 -or $sqlClientLibraries[0] -cne 'Microsoft.Data.SqlClient/6.1.8') {
@@ -154,6 +177,10 @@ try {
     '<Solution><Project Path="Workbench/Workbench.csproj"/><Project Path="Tests/StarterTests.csproj"/></Solution>' | Set-Content -LiteralPath (Join-Path $run 'StarterQualification.slnx')
     Invoke-Checked dotnet @('restore', (Join-Path $tests 'StarterTests.csproj'), '--configfile', $feed)
     $testAssets = Get-Content -LiteralPath (Join-Path $tests 'obj/project.assets.json') -Raw | ConvertFrom-Json
+    $azureCoreEvidence.resolvedTests = @($testAssets.libraries.PSObject.Properties.Name | Where-Object { $_ -like 'Azure.Core/*' })
+    if ($azureCoreEvidence.resolvedTests.Count -ne 1 -or $azureCoreEvidence.resolvedTests[0] -cne "Azure.Core/$azureCoreVersion") {
+        throw 'Generated Identity starter tests restored an unexpected Azure.Core version.'
+    }
     $sqlClientEvidence.resolvedTests = @($testAssets.libraries.PSObject.Properties.Name | Where-Object { $_ -like 'Microsoft.Data.SqlClient/*' })
     if ($sqlClientEvidence.resolvedTests.Count -ne 1 -or $sqlClientEvidence.resolvedTests[0] -cne 'Microsoft.Data.SqlClient/6.1.8') {
         throw 'Generated Identity starter tests restored an unexpected Microsoft.Data.SqlClient version.'
@@ -173,6 +200,7 @@ try {
         } finally { $env:CARAVEL_BROWSER_APP_ROOT = $previousBrowserRoot }
     }
     $sqlClientEvidence.completed = $true
+    $azureCoreEvidence.completed = $true
     Write-Output "Installed Identity starter passed against ${Provider}. Synthetic artifacts: $run"
 } finally {
     try {
@@ -196,6 +224,7 @@ try {
         try {
             if (Test-Path -LiteralPath $evidence -PathType Container) {
                 $sqlClientEvidence | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $evidence 'sqlclient-summary.json')
+                $azureCoreEvidence | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $evidence 'azure-core-summary.json')
             }
         } finally {
             foreach ($variable in $variables) { [Environment]::SetEnvironmentVariable($variable, $previous[$variable]) }

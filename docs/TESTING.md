@@ -20,6 +20,8 @@ A handful of database tests are skipped unless you point them at SQL Server or P
 
 ## Package and end-to-end checks
 
+Identity starter checks compare its generated Azure.Core pin with `Directory.Packages.props` and verify the exact resolved version in both the generated application and its test host. This catches dependency drift even when restore could otherwise resolve a newer transitive version.
+
 The `scripts/` folder has PowerShell 7 scripts that pack the framework, install it into an isolated package cache and exercise it the way an application would. Scratch files and evidence use `artifacts/` or an owned system temporary directory outside the checkout; scripts report their run directories. Nothing is installed globally or published.
 
 | Script | What it checks | Run it when you change… |

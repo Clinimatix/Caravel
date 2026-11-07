@@ -159,7 +159,11 @@ public sealed class BosunTests
             var packagePins = generatedProject.Descendants("PackageReference")
                 .ToDictionary(package => (string)package.Attribute("Include")!, package => (string?)package.Attribute("Version"));
             Assert.Equal("6.1.8", packagePins["Microsoft.Data.SqlClient"]);
-            Assert.Equal("1.61.0", packagePins["Azure.Core"]);
+            Assert.Equal("1.63.0", packagePins["Azure.Core"]);
+            var centralPackages = System.Xml.Linq.XDocument.Load(Path.Combine(AppContext.BaseDirectory, "CentralPackages.props"));
+            var centralAzureCore = Assert.Single(centralPackages.Descendants("PackageVersion"),
+                package => (string?)package.Attribute("Include") == "Azure.Core");
+            Assert.Equal((string?)centralAzureCore.Attribute("Version"), packagePins["Azure.Core"]);
             Assert.True(File.Exists(Path.Combine(target, "SessionEndpoints.cs")));
             Assert.True(File.Exists(Path.Combine(target, "WorkItemEndpoints.cs")));
             Assert.True(File.Exists(Path.Combine(target, "wwwroot", "work-items.js")));

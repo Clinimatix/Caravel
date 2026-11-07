@@ -2,6 +2,8 @@
 
 ## Unreleased - proposed next candidate
 
+- Aligned the generated Identity starter's Azure.Core pin with the framework's 1.63.0 baseline and added central-pin and restored-package consistency checks.
+
 - Selected .NET SDK 10.0.403 for source and CI builds, retaining the .NET 10 platform family and using the serviced 10.0.14 runtime.
 
 - Updated the SQL Server dependency and generated Identity starter to Microsoft.Data.SqlClient 6.1.8, enforcing explicit certificate hostnames and isolating encrypted enclave sessions by attestation protocol.
