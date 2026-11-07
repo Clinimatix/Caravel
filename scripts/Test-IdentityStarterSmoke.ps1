@@ -68,6 +68,11 @@ try {
     $cli = Join-Path $tool $(if ($IsWindows) { 'caravel.exe' } else { 'caravel' })
     Set-Location -LiteralPath $run
     Invoke-Checked $cli @('new', 'Workbench', '--stack', 'identity')
+    [xml]$generatedProject = Get-Content -LiteralPath (Join-Path $app 'Workbench.csproj') -Raw
+    $sqlClientPins = @($generatedProject.Project.ItemGroup.PackageReference | Where-Object Include -CEQ 'Microsoft.Data.SqlClient')
+    if ($sqlClientPins.Count -ne 1 -or $sqlClientPins[0].Version -cne '6.1.8') {
+        throw 'Generated Identity starter must pin Microsoft.Data.SqlClient 6.1.8.'
+    }
     foreach ($relative in @('.config/dotnet-tools.json', 'Properties/launchSettings.json',
         'Database/Identity/IdentityContextModelSnapshot.cs', 'Database/Queue/QueueDbContextModelSnapshot.cs')) {
         if (-not (Test-Path -LiteralPath (Join-Path $app $relative) -PathType Leaf)) { throw "Generated nested file is missing: $relative" }
@@ -96,6 +101,11 @@ try {
     }
     Invoke-Checked dotnet @('restore', '--configfile', $feed)
     Invoke-Checked dotnet @('restore', '--locked-mode', '--configfile', $feed)
+    $assets = Get-Content -LiteralPath (Join-Path $app 'obj/project.assets.json') -Raw | ConvertFrom-Json
+    $sqlClientLibraries = @($assets.libraries.PSObject.Properties.Name | Where-Object { $_ -like 'Microsoft.Data.SqlClient/*' })
+    if ($sqlClientLibraries.Count -ne 1 -or $sqlClientLibraries[0] -cne 'Microsoft.Data.SqlClient/6.1.8') {
+        throw 'Generated Identity starter restored an unexpected Microsoft.Data.SqlClient version.'
+    }
     Invoke-Checked dotnet @('tool', 'restore', '--configfile', $feed)
     if ($CandidatePackageDirectory) {
         foreach ($name in $components) {
@@ -117,6 +127,7 @@ try {
     foreach ($file in @('WorkItemApplicationTests.cs', 'IdentityTestDatabase.cs')) {
         (Get-Content -LiteralPath (Join-Path $root "tests/Caravel.Identity.Tests/$file") -Raw).Replace('Caravel.IdentitySample', 'WorkbenchApplication') | Set-Content -LiteralPath (Join-Path $tests $file)
     }
+    Copy-Item -LiteralPath (Join-Path $root 'tests/Caravel.Provider.Tests/SqlClientSecurityTests.cs') -Destination $tests
     foreach ($file in @('IdentityStarterFixture.cs', 'IdentityStarterLifecycleTests.cs')) {
         (Get-Content -LiteralPath (Join-Path $root "tests/fixtures/$file") -Raw).Replace('Caravel.IdentitySample', 'WorkbenchApplication') | Set-Content -LiteralPath (Join-Path $tests $file)
     }

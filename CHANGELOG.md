@@ -1,5 +1,13 @@
 # Changelog
 
+## 26.1.2-rc2
+
+This compatible maintenance release preserves the RC2 APIs and .NET 10 platform family. Update first-party packages together and review application dependency locks. No database migration is required.
+
+- Updated the SQL Server dependency and generated Identity starter to Microsoft.Data.SqlClient 6.1.8, enforcing explicit certificate hostnames on the managed SNI path and isolating Always Encrypted enclave sessions by attestation protocol.
+- Advanced the build SDK to 10.0.403 and runtime qualification to 10.0.14 security servicing while retaining the .NET 10 platform family.
+- Added source and installed-starter regression coverage for certificate hostname validation and enclave-session separation. Existing applications must update their own SqlClient dependencies and redeploy; updating Bosun alone does not remediate a deployed application. See [dependency maintenance](docs/DEPENDENCY-MAINTENANCE.md).
+
 ## 26.1.1-rc2
 
 This maintenance candidate preserves the RC2 APIs and .NET 10 baseline. Update all first-party packages together and deliberately regenerate and review application dependency locks. No database migration is required by these dependency fixes.

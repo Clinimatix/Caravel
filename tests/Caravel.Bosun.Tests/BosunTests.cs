@@ -158,7 +158,7 @@ public sealed class BosunTests
             var generatedProject = System.Xml.Linq.XDocument.Load(Path.Combine(target, "class.csproj"));
             var packagePins = generatedProject.Descendants("PackageReference")
                 .ToDictionary(package => (string)package.Attribute("Include")!, package => (string?)package.Attribute("Version"));
-            Assert.Equal("6.1.7", packagePins["Microsoft.Data.SqlClient"]);
+            Assert.Equal("6.1.8", packagePins["Microsoft.Data.SqlClient"]);
             Assert.Equal("1.61.0", packagePins["Azure.Core"]);
             Assert.True(File.Exists(Path.Combine(target, "SessionEndpoints.cs")));
             Assert.True(File.Exists(Path.Combine(target, "WorkItemEndpoints.cs")));

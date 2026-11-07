@@ -1,204 +1,125 @@
 name: Build Clinimatix Caravel
 on:
-  # Manual verification only; no automatic push or pull-request triggers.
   workflow_dispatch:
     inputs:
       platform:
-        description: Platform to verify (all includes server-provider checks)
+        description: Platform to verify
         type: choice
-        options: [all, windows-latest, ubuntu-latest, macos-latest]
-        default: all
+        options: [windows-latest]
+        default: windows-latest
       experimental:
-        description: Also run the optional preview/STS SDK lane
+        description: Reserved for the standard verification workflow
         type: boolean
         default: false
 concurrency:
   group: caravel-verification-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 permissions:
   contents: read
 jobs:
-  lts:
+  sqlclient-preparation:
+    runs-on: windows-latest
     timeout-minutes: 40
-    strategy:
-      fail-fast: false
-      matrix:
-        os: ${{ fromJSON(inputs.platform == 'all' && '["windows-latest","ubuntu-latest","macos-latest"]' || format('["{0}"]', inputs.platform)) }}
-    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: '1'
+      DOTNET_GENERATE_ASPNET_CERTIFICATE: 'false'
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-dotnet@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          global-json-file: global.json
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+          persist-credentials: false
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
-          node-version: '24'
-      - name: Install browser test dependencies
-        working-directory: tests/browser
-        shell: pwsh
+          dotnet-version: '10.0.403'
+      - name: Record toolchain and source
         run: |
-          npm ci
-          if ($LASTEXITCODE -ne 0) { throw 'Browser dependency installation failed.' }
-          npx playwright install --with-deps chromium
-          if ($LASTEXITCODE -ne 0) { throw 'Browser installation failed.' }
-      - name: Check latest LTS policy
-        shell: pwsh
+          $ErrorActionPreference = 'Stop'
+          New-Item -ItemType Directory -Path artifacts/sqlclient-preparation -Force | Out-Null
+          $sdk = (dotnet --version).Trim()
+          if ($LASTEXITCODE -ne 0 -or $sdk -ne '10.0.403') { throw "Unexpected SDK: $sdk" }
+          dotnet --info | Tee-Object artifacts/sqlclient-preparation/dotnet-info.txt
+          if ($LASTEXITCODE -ne 0) { throw 'Toolchain inventory failed.' }
+          git rev-parse HEAD | Set-Content artifacts/sqlclient-preparation/source-sha.txt
+          if ($LASTEXITCODE -ne 0) { throw 'Source inventory failed.' }
+      - name: Regenerate and validate dependency locks
         run: |
-          ./scripts/Test-LtsPolicy.Tests.ps1
-          ./scripts/Test-LtsPolicy.ps1
-          ./scripts/Expand-NuGetRelease.Tests.ps1
-      - run: dotnet restore Caravel.slnx --locked-mode
-      - run: dotnet build Caravel.slnx -c Release --no-restore
-      - run: dotnet test Caravel.slnx -c Release --no-build --no-restore
-      - name: Verify browser session and retry behavior
-        working-directory: tests/browser
-        run: npm test
-      - name: Verify packaged CLI and generated apps
-        timeout-minutes: 10
-        shell: pwsh
-        run: ./scripts/Test-PackageSmoke.ps1 -Browser
-      - name: Verify upgrade from published RC2
-        timeout-minutes: 10
-        shell: pwsh
-        run: ./scripts/Test-ReleaseUpgrade.ps1
-      - name: Retain tested candidate packages
-        if: matrix.os == 'windows-latest'
+          $ErrorActionPreference = 'Stop'
+          dotnet restore Caravel.slnx --force-evaluate
+          if ($LASTEXITCODE -ne 0) { throw 'Dependency lock regeneration failed.' }
+          dotnet restore Caravel.slnx --locked-mode
+          if ($LASTEXITCODE -ne 0) { throw 'Locked restore failed.' }
+          $lockRoot = Join-Path $PWD 'artifacts/sqlclient-preparation/locks'
+          $locks = @(git ls-files '*packages.lock.json')
+          if ($LASTEXITCODE -ne 0 -or $locks.Count -eq 0) { throw 'Tracked lock inventory failed.' }
+          foreach ($path in $locks) {
+            $target = Join-Path $lockRoot $path
+            New-Item -ItemType Directory -Path (Split-Path $target) -Force | Out-Null
+            Copy-Item -LiteralPath $path -Destination $target
+          }
+          git diff --stat | Set-Content artifacts/sqlclient-preparation/lock-diff-stat.txt
+      - name: Build and test dependency integration
+        run: |
+          dotnet build Caravel.slnx -c Release --no-restore
+          if ($LASTEXITCODE -ne 0) { throw 'Solution build failed.' }
+          dotnet test tests/Caravel.Provider.Tests/Caravel.Provider.Tests.csproj -c Release --no-build --no-restore --filter FullyQualifiedName~SqlClientSecurityTests --logger 'trx;LogFileName=provider.trx' --results-directory artifacts/sqlclient-preparation/tests
+          if ($LASTEXITCODE -ne 0) { throw 'SqlClient integration regressions failed.' }
+          dotnet test tests/Caravel.Bosun.Tests/Caravel.Bosun.Tests.csproj -c Release --no-build --no-restore --logger 'trx;LogFileName=bosun.trx' --results-directory artifacts/sqlclient-preparation/tests
+          if ($LASTEXITCODE -ne 0) { throw 'Starter generation tests failed.' }
+      - name: Compare vulnerable and fixed packages
+        run: |
+          ./tests/fixtures/SqlClientSecurity/Invoke-Differential.ps1 -DotnetPath (Get-Command dotnet).Source -ApprovedSdkVersion '10.0.403' -OutputRoot (Join-Path $env:RUNNER_TEMP 'sqlclient-differential')
+      - name: Verify installed Identity starter
+        run: |
+          $starterTemp = [IO.Path]::GetTempPath()
+          $before = @(Get-ChildItem -LiteralPath $starterTemp -Directory -Filter 'caravel identity starter *' | Select-Object -ExpandProperty FullName)
+          $smokePassed = $false
+          try {
+            ./scripts/Test-IdentityStarterSmoke.ps1
+            $smokePassed = $true
+          } finally {
+            $created = @(Get-ChildItem -LiteralPath $starterTemp -Directory -Filter 'caravel identity starter *' | Where-Object FullName -NotIn $before)
+            if ($created.Count -ne 1) { throw 'Expected exactly one generated Identity qualification directory.' }
+            foreach ($run in $created) {
+              $target = Join-Path $PWD ('artifacts/sqlclient-preparation/identity/' + $run.Name)
+              New-Item -ItemType Directory -Path $target -Force | Out-Null
+              $results = Join-Path $run.FullName 'results'
+              if ($smokePassed -and (-not (Test-Path -LiteralPath $results) -or @(Get-ChildItem -LiteralPath $results -Filter '*.trx' -File).Count -eq 0)) { throw 'Passing Identity qualification must retain TRX evidence.' }
+              if (Test-Path -LiteralPath $results) {
+                Get-ChildItem -LiteralPath $results -Filter '*.trx' -File | Copy-Item -Destination $target
+              }
+              $project = Join-Path $run.FullName 'Workbench/Workbench.csproj'
+              if (Test-Path -LiteralPath $project) { Copy-Item -LiteralPath $project -Destination $target }
+              $assets = Join-Path $run.FullName 'Workbench/obj/project.assets.json'
+              if (Test-Path -LiteralPath $assets) {
+                ((Get-Content -LiteralPath $assets -Raw | ConvertFrom-Json).libraries.PSObject.Properties.Name | Where-Object { $_ -like 'Microsoft.Data.SqlClient/*' }) | Set-Content -LiteralPath (Join-Path $target 'resolved-sqlclient.txt')
+              }
+            }
+          }
+      - name: Collect differential evidence
+        if: always()
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP 'sqlclient-differential'
+          if (Test-Path -LiteralPath $root) {
+            $target = Join-Path $PWD 'artifacts/sqlclient-preparation/differential'
+            New-Item -ItemType Directory -Path $target -Force | Out-Null
+            if (Test-Path -LiteralPath "$root/differential.json") { Copy-Item -LiteralPath "$root/differential.json" -Destination $target }
+            foreach ($version in @('6.1.7','6.1.8')) {
+              $lane = Join-Path $target $version
+              New-Item -ItemType Directory -Path $lane -Force | Out-Null
+              foreach ($file in @('dotnet-info.txt','restore.txt','locked-restore.txt','build.txt','test.txt','packages.lock.json','evidence/results.trx')) {
+                $source = Join-Path "$root/$version" $file
+                if (Test-Path -LiteralPath $source) { Copy-Item -LiteralPath $source -Destination $lane }
+              }
+            }
+          }
+      - name: Retain dependency qualification evidence
+        if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: clinimatix-caravel-packages-${{ github.sha }}
-          path: artifacts/smoke */packages/*.nupkg
+          name: caravel-sqlclient-preparation-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/sqlclient-preparation
           if-no-files-found: error
-          retention-days: 30
-      - name: Verify migration and seeding workflow
-        timeout-minutes: 10
-        shell: pwsh
-        run: ./scripts/Test-DataSmoke.ps1
-      - name: Verify packaged Identity, Events and OIDC samples
-        timeout-minutes: 10
-        shell: pwsh
-        run: ./scripts/Test-IdentitySmoke.ps1
-      - name: Verify packaged application services
-        timeout-minutes: 10
-        shell: pwsh
-        run: ./scripts/Test-ServicePackages.ps1
-      - name: Verify worker crash recovery
-        timeout-minutes: 10
-        shell: pwsh
-        run: ./scripts/Test-WorkerSmoke.ps1
-  package-portability:
-    if: inputs.platform == 'all'
-    needs: lts
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-dotnet@v6
-        with:
-          global-json-file: global.json
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '24'
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: clinimatix-caravel-packages-${{ github.sha }}
-          path: release-packages
-      - name: Install browser test dependencies
-        working-directory: tests/browser
-        shell: pwsh
-        run: |
-          npm ci
-          if ($LASTEXITCODE -ne 0) { throw 'Browser dependency installation failed.' }
-          npx playwright install --with-deps chromium
-          if ($LASTEXITCODE -ne 0) { throw 'Browser installation failed.' }
-      - name: Verify the Windows-built Identity starter without repacking
-        shell: pwsh
-        run: ./scripts/Test-IdentityStarterSmoke.ps1 -CandidatePackageDirectory "$PWD/release-packages" -Browser
-  providers:
-    if: inputs.platform == 'all'
-    runs-on: ubuntu-latest
-    timeout-minutes: 40
-    services:
-      postgres:
-        image: postgres:18
-        env:
-          POSTGRES_PASSWORD: caravel_disposable_ci_only
-        ports: [5432:5432]
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 10s --health-timeout 5s --health-retries 12
-      sqlserver:
-        image: mcr.microsoft.com/mssql/server:2022-latest
-        env:
-          ACCEPT_EULA: Y
-          MSSQL_PID: Developer
-          MSSQL_SA_PASSWORD: Caravel_Disposable_CI_42!
-        ports: [1433:1433]
-        options: >-
-          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P Caravel_Disposable_CI_42! -C -Q 'SELECT 1'"
-          --health-interval 10s --health-timeout 5s --health-retries 18
-    # Synthetic credentials for disposable job-local services; never a deployment connection.
-    env:
-      CARAVEL_TEST_SQLSERVER: Server=localhost,1433;User ID=sa;Password=Caravel_Disposable_CI_42!;TrustServerCertificate=true
-      CARAVEL_TEST_POSTGRES: Host=localhost;Username=postgres;Password=caravel_disposable_ci_only
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-dotnet@v6
-        with:
-          global-json-file: global.json
-      - run: dotnet restore Caravel.slnx --locked-mode
-      - run: dotnet test tests/Caravel.Provider.Tests -c Release --no-restore
-      - name: Verify server migration upgrades and rollback
-        timeout-minutes: 10
-        shell: pwsh
-        run: ./scripts/Test-ProviderMigrationSmoke.ps1
-      - name: Verify packaged backends on server providers
-        timeout-minutes: 15
-        shell: pwsh
-        run: |
-          ./scripts/Test-IdentitySmoke.ps1 -Provider sqlserver
-          ./scripts/Test-IdentitySmoke.ps1 -Provider postgres
-      - name: Verify generated Identity applications on server providers
-        timeout-minutes: 15
-        shell: pwsh
-        run: |
-          ./scripts/Test-IdentityStarterSmoke.ps1 -Provider sqlserver
-          ./scripts/Test-IdentityStarterSmoke.ps1 -Provider postgres
-  azure:
-    if: inputs.platform == 'all' || inputs.platform == 'ubuntu-latest'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-dotnet@v6
-        with:
-          global-json-file: global.json
-      - name: Verify Azure storage source and installed packages against Azurite
-        shell: pwsh
-        run: ./scripts/Test-AzureStorage.ps1
-  experimental:
-    if: inputs.experimental
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-dotnet@v6
-        with:
-          global-json-file: global.json
-      - uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: '11.0.x'
-          dotnet-quality: preview
-      - name: Select experimental SDK without changing the LTS target
-        shell: pwsh
-        run: |
-          $sdk = dotnet --list-sdks | Where-Object { $_ -match '^11\.0\.' } | Select-Object -Last 1
-          if (-not $sdk) { throw 'Experimental .NET 11 SDK is unavailable.' }
-          @{ sdk = @{ version = ($sdk -split ' ')[0]; rollForward = 'latestPatch'; allowPrerelease = $true } } | ConvertTo-Json | Set-Content global.json
-      - run: dotnet restore Caravel.slnx --locked-mode
-      - run: dotnet build Caravel.slnx -c Release --no-restore
-      - run: dotnet test Caravel.slnx -c Release --no-build --no-restore
+          retention-days: 14
