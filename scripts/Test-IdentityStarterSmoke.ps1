@@ -22,6 +22,18 @@ $packages = Join-Path $run 'packages'
 $tool = Join-Path $run 'tool'
 $tests = Join-Path $run 'Tests'
 $app = Join-Path $run 'Workbench'
+$evidence = Join-Path $root ('artifacts/identity-starter-evidence/' + $Provider + '-' + [IO.Path]::GetFileName($run).Replace('caravel identity starter ', ''))
+$sqlClientEvidence = [ordered]@{
+    provider = $Provider
+    expectedVersion = '6.1.8'
+    generatedPin = $null
+    resolvedApplication = @()
+    resolvedTests = @()
+    securityCaseCount = 0
+    securityPassedCount = 0
+    completed = $false
+    trx = @()
+}
 $null = New-Item -ItemType Directory -Path $packages, $tool, $tests
 $variables = @('NUGET_PACKAGES', 'DOTNET_GENERATE_ASPNET_CERTIFICATE', 'Caravel__DatabaseProvider', 'Caravel__IdentityDatabase', 'CARAVEL_IDENTITY_TEST_PROVIDER')
 if ($CandidatePackageDirectory) { $CandidatePackageDirectory = (Resolve-Path -LiteralPath $CandidatePackageDirectory).Path }
@@ -71,6 +83,12 @@ try {
     & (Join-Path $PSScriptRoot 'Test-InstalledManifest.ps1') @manifestArguments
     Set-Location -LiteralPath $run
     Invoke-Checked $cli @('new', 'Workbench', '--stack', 'identity')
+    [xml]$generatedProject = Get-Content -LiteralPath (Join-Path $app 'Workbench.csproj') -Raw
+    $sqlClientPins = @($generatedProject.Project.ItemGroup.PackageReference | Where-Object Include -CEQ 'Microsoft.Data.SqlClient')
+    $sqlClientEvidence.generatedPin = @($sqlClientPins | ForEach-Object { [string]$_.Version })
+    if ($sqlClientPins.Count -ne 1 -or $sqlClientPins[0].Version -cne '6.1.8') {
+        throw 'Generated Identity starter must pin Microsoft.Data.SqlClient 6.1.8.'
+    }
     foreach ($relative in @('.config/dotnet-tools.json', 'Properties/launchSettings.json',
         'Database/Identity/IdentityContextModelSnapshot.cs', 'Database/Queue/QueueDbContextModelSnapshot.cs')) {
         if (-not (Test-Path -LiteralPath (Join-Path $app $relative) -PathType Leaf)) { throw "Generated nested file is missing: $relative" }
@@ -99,6 +117,12 @@ try {
     }
     Invoke-Checked dotnet @('restore', '--configfile', $feed)
     Invoke-Checked dotnet @('restore', '--locked-mode', '--configfile', $feed)
+    $assets = Get-Content -LiteralPath (Join-Path $app 'obj/project.assets.json') -Raw | ConvertFrom-Json
+    $sqlClientLibraries = @($assets.libraries.PSObject.Properties.Name | Where-Object { $_ -like 'Microsoft.Data.SqlClient/*' })
+    $sqlClientEvidence.resolvedApplication = $sqlClientLibraries
+    if ($sqlClientLibraries.Count -ne 1 -or $sqlClientLibraries[0] -cne 'Microsoft.Data.SqlClient/6.1.8') {
+        throw 'Generated Identity starter restored an unexpected Microsoft.Data.SqlClient version.'
+    }
     Invoke-Checked dotnet @('tool', 'restore', '--configfile', $feed)
     if ($CandidatePackageDirectory) {
         foreach ($name in $components) {
@@ -120,6 +144,7 @@ try {
     foreach ($file in @('WorkItemApplicationTests.cs', 'IdentityTestDatabase.cs')) {
         (Get-Content -LiteralPath (Join-Path $root "tests/Caravel.Identity.Tests/$file") -Raw).Replace('Caravel.IdentitySample', 'WorkbenchApplication') | Set-Content -LiteralPath (Join-Path $tests $file)
     }
+    Copy-Item -LiteralPath (Join-Path $root 'tests/Caravel.Provider.Tests/SqlClientSecurityTests.cs') -Destination $tests
     foreach ($file in @('IdentityStarterFixture.cs', 'IdentityStarterLifecycleTests.cs')) {
         (Get-Content -LiteralPath (Join-Path $root "tests/fixtures/$file") -Raw).Replace('Caravel.IdentitySample', 'WorkbenchApplication') | Set-Content -LiteralPath (Join-Path $tests $file)
     }
@@ -128,9 +153,18 @@ try {
 '@ | Set-Content -LiteralPath (Join-Path $tests 'StarterTests.csproj')
     '<Solution><Project Path="Workbench/Workbench.csproj"/><Project Path="Tests/StarterTests.csproj"/></Solution>' | Set-Content -LiteralPath (Join-Path $run 'StarterQualification.slnx')
     Invoke-Checked dotnet @('restore', (Join-Path $tests 'StarterTests.csproj'), '--configfile', $feed)
+    $testAssets = Get-Content -LiteralPath (Join-Path $tests 'obj/project.assets.json') -Raw | ConvertFrom-Json
+    $sqlClientEvidence.resolvedTests = @($testAssets.libraries.PSObject.Properties.Name | Where-Object { $_ -like 'Microsoft.Data.SqlClient/*' })
+    if ($sqlClientEvidence.resolvedTests.Count -ne 1 -or $sqlClientEvidence.resolvedTests[0] -cne 'Microsoft.Data.SqlClient/6.1.8') {
+        throw 'Generated Identity starter tests restored an unexpected Microsoft.Data.SqlClient version.'
+    }
     Invoke-Checked dotnet @('test', (Join-Path $tests 'StarterTests.csproj'), '-c', 'Release', '--no-restore', '--logger', 'trx', '--results-directory', (Join-Path $run 'results'))
     $results = @(Get-ChildItem -LiteralPath (Join-Path $run 'results') -Filter '*.trx' | ForEach-Object { ([xml](Get-Content -LiteralPath $_.FullName -Raw)).TestRun.Results.UnitTestResult })
     if ($results.Count -eq 0 -or @($results | Where-Object outcome -ne 'Passed').Count -gt 0) { throw 'Generated application qualification requires executed passing tests without skips.' }
+    $securityResults = @($results | Where-Object { $_.testName -clike 'Caravel.Provider.Tests.SqlClientSecurityTests.*' })
+    if ($securityResults.Count -ne 20 -or @($securityResults | Where-Object outcome -ne 'Passed').Count -gt 0) {
+        throw 'Generated application qualification requires all 20 SqlClient security cases to pass.'
+    }
     if ($Browser) {
         $previousBrowserRoot = $env:CARAVEL_BROWSER_APP_ROOT
         try {
@@ -138,8 +172,34 @@ try {
             Invoke-Checked node @('--test', (Join-Path $root 'tests/browser/work-items.browser.test.cjs'))
         } finally { $env:CARAVEL_BROWSER_APP_ROOT = $previousBrowserRoot }
     }
+    $sqlClientEvidence.completed = $true
     Write-Output "Installed Identity starter passed against ${Provider}. Synthetic artifacts: $run"
 } finally {
-    foreach ($variable in $variables) { [Environment]::SetEnvironmentVariable($variable, $previous[$variable]) }
-    Pop-Location
+    try {
+        # Retain only bounded test evidence, never the generated app, cache, settings or connection strings.
+        $null = New-Item -ItemType Directory -Path $evidence
+        $resultDirectory = Join-Path $run 'results'
+        $trxFiles = if (Test-Path -LiteralPath $resultDirectory -PathType Container) {
+            @(Get-ChildItem -LiteralPath $resultDirectory -Filter '*.trx' -File)
+        } else { @() }
+        if ($trxFiles.Count -gt 8 -or ($trxFiles | Measure-Object Length -Sum).Sum -gt 16MB -or
+            @($trxFiles | Where-Object Length -gt 8MB).Count) { throw 'Starter test evidence exceeds its retention limits.' }
+        foreach ($file in $trxFiles) {
+            [xml]$resultDocument = Get-Content -LiteralPath $file.FullName -Raw
+            $securityCases = @($resultDocument.TestRun.Results.UnitTestResult | Where-Object { $_.testName -clike 'Caravel.Provider.Tests.SqlClientSecurityTests.*' })
+            $sqlClientEvidence.securityCaseCount += $securityCases.Count
+            $sqlClientEvidence.securityPassedCount += @($securityCases | Where-Object outcome -eq 'Passed').Count
+            Copy-Item -LiteralPath $file.FullName -Destination $evidence
+            $sqlClientEvidence.trx += [ordered]@{ file = $file.Name; sha256 = (Get-FileHash -LiteralPath (Join-Path $evidence $file.Name) -Algorithm SHA256).Hash }
+        }
+    } finally {
+        try {
+            if (Test-Path -LiteralPath $evidence -PathType Container) {
+                $sqlClientEvidence | ConvertTo-Json -Depth 5 | Set-Content -LiteralPath (Join-Path $evidence 'sqlclient-summary.json')
+            }
+        } finally {
+            foreach ($variable in $variables) { [Environment]::SetEnvironmentVariable($variable, $previous[$variable]) }
+            Pop-Location
+        }
+    }
 }

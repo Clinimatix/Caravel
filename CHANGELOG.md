@@ -2,6 +2,10 @@
 
 ## Unreleased - proposed next candidate
 
+- Selected .NET SDK 10.0.403 for source and CI builds, retaining the .NET 10 platform family and using the serviced 10.0.14 runtime.
+
+- Updated the SQL Server dependency and generated Identity starter to Microsoft.Data.SqlClient 6.1.8, enforcing explicit certificate hostnames and isolating encrypted enclave sessions by attestation protocol.
+
 - Qualified Fathom DTD rejection with valid empty declarations, internal entities and default attributes in source and installed-tool checks.
 
 - Qualified Fathom's existing project-file size limit with valid UTF-8 and UTF-16 XML at and above the byte boundary, including byte-order marks, through source and installed-tool checks.
