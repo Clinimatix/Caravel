@@ -41,7 +41,7 @@ New packages are added when there's real integration work to do. Caching, for ex
 
 ## Where things stand
 
-This guide targets **`26.1.1-rc2`**, extending the RC1 foundation with the composed application path described below. [GitHub releases](https://github.com/Clinimatix/Caravel/releases) and [NuGet](https://www.nuget.org/profiles/Clinimatix) are the canonical distribution locations. Broader development is organized into architecture milestones:
+This guide targets **`26.1.2-rc2`**, extending the RC1 foundation with the composed application path described below. [GitHub releases](https://github.com/Clinimatix/Caravel/releases) and [NuGet](https://www.nuget.org/profiles/Clinimatix) are the canonical distribution locations. Broader development is organized into architecture milestones:
 
 | Milestone | Focus | Status |
 | --- | --- | --- |
@@ -90,7 +90,7 @@ Release qualification covers the exact release commit, supported platforms and d
 
 Work toward stable 26.1 focuses on integration feedback, fixes, documentation and upgrade validation. RCs remain public previews, not stable releases or a compatibility commitment. See the [release policy](RELEASE-POLICY.md) and [changelog](../CHANGELOG.md) for status and changes.
 
-Compatible maintenance stays on the current candidate scope: `26.1.1-rc2` is a patch for published `26.1.0-rc2`, not an RC3 feature candidate. A later approved scope advances the RC suffix while carrying forward the numeric patch floor, and stable must not sort below the published candidates. No later scope or release date is implied by the maintenance version.
+Compatible maintenance stays on the current candidate scope: `26.1.2-rc2` is a patch for published `26.1.1-rc2`, not an RC3 feature candidate. A later approved scope advances the RC suffix while carrying forward the numeric patch floor, and stable must not sort below the published candidates. No later scope or release date is implied by the maintenance version.
 
 ## Non-goals
 
