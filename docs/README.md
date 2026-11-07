@@ -9,6 +9,8 @@ New here? Start with the [repository README](../README.md) and its quick start.
 - [Development sessions](DEVELOPMENT.md): watch your web app and run a worker with one command
 - [Hosting](HOSTING.md): run web apps and workers as services, containers or IIS sites
 
+- [Caravel Fathom development context](AGENT-CONTEXT.md): static project capability manifest and safe inspection
+
 ## Data
 
 - [Clarion](CLARION.md): query and save models, soft deletes, factories and seeders
@@ -23,6 +25,8 @@ New here? Start with the [repository README](../README.md) and its quick start.
 - [Windows authentication](WINDOWS-AUTHENTICATION.md): intranet sign-in with organizational accounts
 
 ## Application services
+
+- [Fathom application tools](FATHOM-TOOLS.md): explicit in-process registration, authorization and fake handlers
 
 - [Events](EVENTS.md): notify other parts of your app
 - [Queues](QUEUES.md): durable background jobs that survive restarts

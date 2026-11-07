@@ -95,11 +95,13 @@ public static class Program
                     "serve" => "Builds and runs application code; may restore packages and open network listeners.",
                     "dev" => "Builds and watches application code, optionally runs one explicit worker, and stops owned process trees on exit; may restore packages and open network listeners.",
                     "route:list" => "Builds and executes application startup code to inspect endpoints; may restore packages. Does not start the host.",
+                    "doctor" => "Starts SDK and optional development dependency diagnostic processes; does not build or execute application code.",
                     _ => DataCommands.Effects(command.Name) ?? "Read-only diagnostics or metadata."
                 }
             })
         }, JsonOptions)));
         root.Add(schema);
+        AgentManifest.AddTo(root);
         DataCommands.AddTo(root);
         return root;
     }

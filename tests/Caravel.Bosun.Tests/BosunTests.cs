@@ -46,7 +46,7 @@ public sealed class BosunTests
     public void OnlyImplementedCommandsAreAdvertised()
     {
         var root = Program.CreateCommand();
-        Assert.Equal(["new", "serve", "dev", "route:list", "doctor", "version", "schema", "make:model", "make:seeder", "make:factory", "make:job", "make:event", "make:listener", "make:migration", "migrate", "migrate:status", "migrate:rollback", "migrate:fresh", "db:seed"], root.Subcommands.Select(command => command.Name));
+        Assert.Equal(["new", "serve", "dev", "route:list", "doctor", "version", "schema", "agent:manifest", "make:model", "make:seeder", "make:factory", "make:job", "make:event", "make:listener", "make:migration", "migrate", "migrate:status", "migrate:rollback", "migrate:fresh", "db:seed"], root.Subcommands.Select(command => command.Name));
         Assert.Empty(root.Parse(["schema", "--json"]).Errors);
         Assert.NotEmpty(root.Parse(["db:wipe", "--force"]).Errors);
         Assert.NotEmpty(root.Parse(["new"]).Errors);

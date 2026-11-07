@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup><IsPackable>false</IsPackable><IsTestProject>true</IsTestProject></PropertyGroup>
   <ItemGroup>
+    <Compile Include="../../samples/FathomPolicy/ProjectTools.cs" Link="ProjectTools.cs" />
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <ProjectReference Include="../../src/Caravel.Core/Caravel.Core.csproj" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />

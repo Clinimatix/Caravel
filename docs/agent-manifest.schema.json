@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Caravel project capabilities v1",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "kind",
+    "product",
+    "toolVersion",
+    "inspection",
+    "packages",
+    "discovery",
+    "limits"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "kind": {
+      "const": "caravel.project-capabilities"
+    },
+    "product": {
+      "const": "Clinimatix Caravel"
+    },
+    "toolVersion": {
+      "type": "string"
+    },
+    "inspection": {
+      "const": "static-project-xml"
+    },
+    "packages": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "enum": [
+          "Clinimatix.Caravel.Core",
+          "Clinimatix.Caravel.AspNetCore",
+          "Clinimatix.Caravel.Clarion",
+          "Clinimatix.Caravel.Auth",
+          "Clinimatix.Caravel.Auth.Windows",
+          "Clinimatix.Caravel.Events",
+          "Clinimatix.Caravel.Queues",
+          "Clinimatix.Caravel.Scheduling",
+          "Clinimatix.Caravel.Storage",
+          "Clinimatix.Caravel.Storage.Azure",
+          "Clinimatix.Caravel.Mail",
+          "Clinimatix.Caravel.Notifications"
+        ]
+      }
+    },
+    "discovery": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "command",
+          "executesApplication",
+          "purpose"
+        ],
+        "properties": {
+          "command": {
+            "type": "string"
+          },
+          "executesApplication": {
+            "type": "boolean"
+          },
+          "purpose": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "limits": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

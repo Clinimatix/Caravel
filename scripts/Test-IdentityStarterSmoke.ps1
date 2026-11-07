@@ -66,6 +66,9 @@ try {
     $env:NUGET_PACKAGES = Join-Path $run 'cache'
     Invoke-Checked dotnet @('tool', 'install', 'Clinimatix.Caravel.Bosun', '--version', $version, '--tool-path', $tool, '--configfile', $feed)
     $cli = Join-Path $tool $(if ($IsWindows) { 'caravel.exe' } else { 'caravel' })
+    $manifestArguments = @{ ToolPath = $cli; BosunPackagePath = (Join-Path $packages "Clinimatix.Caravel.Bosun.$version.nupkg") }
+    if ($env:GITHUB_SHA) { $manifestArguments.ExpectedRepositoryCommit = $env:GITHUB_SHA }
+    & (Join-Path $PSScriptRoot 'Test-InstalledManifest.ps1') @manifestArguments
     Set-Location -LiteralPath $run
     Invoke-Checked $cli @('new', 'Workbench', '--stack', 'identity')
     foreach ($relative in @('.config/dotnet-tools.json', 'Properties/launchSettings.json',

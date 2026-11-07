@@ -1,0 +1,116 @@
+# Next candidate and first stable release
+
+The next proposed candidate is **26.1.1-rc3**, followed by the first stable **26.1.1**.
+These are planning targets, not published versions. Before release, check the highest
+published 26.1 patch: if maintenance advances it, carry that higher numeric floor into RC3
+and stable. Never replace published packages or move tags. See [release policy](RELEASE-POLICY.md).
+
+## Bounded RC3 scope
+
+Settle and qualify these additive APIs together with the existing 26.1 application foundation:
+
+- Ordered, count-free Clarion query slices, preserving caller filtering and ordering.
+- Validated transactional mail/notification staging through the existing application outbox.
+- Explicit synchronous registered-job dispatch for development and tests.
+- Model-free Bosun `agent:manifest` v1, agent guidance, a versioned JSON contract and
+  regression coverage for data minimization and execution boundaries.
+
+- A verified PowerShell Bosun installer with explicit stable/prerelease or pinned selection,
+  isolated version directories and a reviewed public `/install.ps1` serving path. See [installer](INSTALLER.md).
+- Integration and qualification of Fathom application-tool contracts and the agent manifest
+  foundation; the model-free development foundation is required for the first stable release.
+
+These APIs are combined in the qualification candidate. They remain unreleased; passing
+individual feature checks does not satisfy the combined release gates below. Installer
+website serving and application adoption require their own acceptance evidence.
+
+The candidate retains the .NET10 baseline and existing durable job wire contracts. Application
+recipient selection, invitation validity, opt-out and authorization remain application-owned.
+Synchronous dispatch is opt-in and does not replace durable enqueue or transactional staging.
+
+## Candidate release gates
+
+Every gate must have a retained result for the exact candidate commit:
+
+1. Independent review finds no unresolved release-blocking correctness or disclosure issue.
+2. All required Windows, Linux and macOS build/test/package/upgrade jobs pass, with no
+   unexplained skips. Required SQL Server/PostgreSQL execution and migration jobs pass;
+   translation and SQLite results alone do not satisfy those provider gates.
+3. Package-only consumers exercise query slices and both staging APIs. A synchronous-job
+   consumer runs without database registration and verifies failure, cancellation and scope
+   disposal. Retain immutable package checksums and reconcile declared source identity.
+   Use `Test-ServicePackages.ps1 -CandidatePackageDirectory <artifact>` to exercise the
+   supplied bytes in fresh caches; a source repack does not qualify an existing artifact.
+   Select the expected source revision independently and retain per-OS package manifests,
+   run/artifact identities and TRX results. Declared source consistency is not authenticated
+   provenance; the service manifest covers seven components, not every release package.
+4. Recovery verifies rollback, relay receipt-window deduplication, expired/stale leases and
+   retry/dead-letter/replay. Document possible duplicate external acceptance after a lost
+   acknowledgement; no exactly-once promise. Lease qualification must distinguish expiry
+   before handler startup from cancellation after confirmed startup, and verify renewal,
+   maximum lifetime, lost ownership and renewal outages against source and installed packages.
+5. At least one participating application's synthetic integration confirms the intended
+   contract; its owner signs off on application eligibility and audience behavior. Resolve
+   that consumer's exact package/source/lock attribution before claiming reproducible adoption.
+6. Changelog, API examples, known limitations and upgrade guidance match the tested bytes.
+   Security/dependency review and serviced-runtime policy checks pass without trust bypasses.
+7. Installer local fixtures cover integrity/provenance failures, prerequisites, repeated calls
+   and install failure/retry without administrator access or PATH changes. Retain exact-package
+   installed-tool and Windows/Linux/macOS evidence. Before website launch, verify the reviewed
+   installer digest, text MIME type, cache headers and download-and-inspect instructions on
+   the custom domain before launching the endpoint.
+
+Publication is a separate deliberate action after these gates. A branch push or passing
+unit suite does not create a release or prove recipient delivery.
+
+## Minimum AI capability gate for first stable
+
+The first stable major release requires the Caravel Fathom agent-friendly development foundation:
+installed Bosun exports the versioned static project/capability manifest, links accurate
+command and route inspection guidance, and passes disclosure/non-execution regressions
+and installed-tool checks on the exact release commit. Static hints must distinguish declarative MSBuild items from executable targets and foreign XML, including legacy namespace and conditional-branch coverage. Review must confirm no secrets,
+configuration or application payloads escape and no arbitrary execution or database-write
+tool is exposed. This minimum gate is required, not an optional future aspiration.
+The installed-manifest helper in the [testing guide](TESTING.md#continuous-integration)
+exercises these static boundaries through the selected Bosun shim and binds its receipt to
+the consumed package hash. Complete exact-candidate CI and provenance review remain required;
+this check does not establish participating-application acceptance or network MCP behavior.
+
+An opt-in [in-process application tool registry](FATHOM-TOOLS.md) is in development
+ahead of the network transport. The candidate includes its in-process contracts; network
+MCP remains later work. Qualify a synthetic consumer, trusted principal binding, resource-level
+denial, cancellation and safe error presentation before adding a transport.
+The compiled [application-policy example](../samples/FathomPolicy/README.md) covers trusted
+scope binding, forged tenant/resource denial, separate read/write grants, permission
+revocation between calls, concurrent scope isolation and safe application errors.
+Core's service-package consumer suite exercises this same example; run it against
+the selected immutable artifacts as well as source before first-stable review.
+Synthetic qualification does not replace participating-application acceptance, transactional
+write checks, session revocation, runtime servicing or installer acceptance.
+
+Develop in three ordered layers: (1) development context/tooling in RC3; (2) later,
+opt-in application tools/MCP with explicit authorization, cancellation, protocol tests and
+read/write boundaries; (3) application-driven model workflows with provider abstraction,
+structured output and fake-provider tests. Embeddings/search require separate storage and
+retrieval qualification. Later stages are not RC3 or first-stable prerequisites. No paid
+model call, provider key or complete Laravel ecosystem is required for the foundation.
+Caravel Fathom is the AI suite name. Existing public commands, schema identifiers and
+package names remain compatible; suite naming does not expand this release gate.
+
+## RC3 to first stable
+
+Freeze the candidate API scope; fix defects and repeat affected qualification. Before stable,
+retain repeatable clean-cache installation and upgrade evidence for the selected immutable
+package set, participating-application feedback, recovery evidence and complete exact-commit
+CI. Resolve critical defects and state the supported API/platform compatibility commitment.
+Remove the suffix at the eligible numeric floor only after those checks and release review.
+
+Calendar scheduling, S3, batches/chains, in-memory queues, passkeys, richer starters, extra
+notification transports, application MCP and model workflows remain later work.
+The model-free development foundation above is required for first stable. Laravel guides useful
+conventions; parity with its entire feature set is not a gate for 26.1 stable. Container
+images are in release scope with their own runtime/provider qualification; Kubernetes is
+out of scope. Host-based checks do not substitute for container qualification. The synthetic SQLite runtime
+image checks idle and in-flight SIGTERM, cooperative cancellation and lease recovery;
+participating application images, server-provider shutdown and security baselines still
+need their own qualification before release.

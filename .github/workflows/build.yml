@@ -32,7 +32,7 @@ jobs:
           global-json-file: global.json
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '24'
+          node-version: '24.22.2'
       - name: Install browser test dependencies
         working-directory: tests/browser
         shell: pwsh
@@ -47,6 +47,11 @@ jobs:
           ./scripts/Test-LtsPolicy.Tests.ps1
           ./scripts/Test-LtsPolicy.ps1
           ./scripts/Expand-NuGetRelease.Tests.ps1
+          ./scripts/install.Tests.ps1
+          ./scripts/Test-ServicePackages.Tests.ps1
+          ./scripts/Test-WorkerContainer.Tests.ps1
+          ./scripts/Test-WorkerContainerShutdown.Tests.ps1
+          ./scripts/Test-InstalledManifest.Tests.ps1
       - run: dotnet restore Caravel.slnx --locked-mode
       - run: dotnet build Caravel.slnx -c Release --no-restore
       - run: dotnet test Caravel.slnx -c Release --no-build --no-restore
@@ -69,6 +74,14 @@ jobs:
           path: artifacts/smoke */packages/*.nupkg
           if-no-files-found: error
           retention-days: 30
+      - name: Retain installed manifest evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: caravel-manifest-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.os }}
+          path: artifacts/fathom-manifest-evidence/*.json
+          if-no-files-found: warn
+          retention-days: 14
       - name: Verify migration and seeding workflow
         timeout-minutes: 10
         shell: pwsh
@@ -85,6 +98,19 @@ jobs:
         timeout-minutes: 10
         shell: pwsh
         run: ./scripts/Test-WorkerSmoke.ps1
+      - name: Collect service-package evidence
+        id: service_evidence
+        if: always()
+        shell: pwsh
+        run: ./scripts/Export-ServicePackageEvidence.ps1 -Destination "$PWD/artifacts/service-evidence"
+      - name: Retain service-package evidence
+        if: always() && steps.service_evidence.outcome == 'success'
+        uses: actions/upload-artifact@v7
+        with:
+          name: caravel-service-evidence-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-source-${{ matrix.os }}
+          path: artifacts/service-evidence/
+          if-no-files-found: warn
+          retention-days: 14
   package-portability:
     if: inputs.platform == 'all'
     needs: lts
@@ -101,7 +127,7 @@ jobs:
           global-json-file: global.json
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version: '24'
+          node-version: '24.22.2'
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: clinimatix-caravel-packages-${{ github.sha }}
@@ -114,11 +140,66 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw 'Browser dependency installation failed.' }
           npx playwright install --with-deps chromium
           if ($LASTEXITCODE -ne 0) { throw 'Browser installation failed.' }
+      - name: Verify the Windows-built service packages without repacking
+        shell: pwsh
+        run: ./scripts/Test-ServicePackages.ps1 -CandidatePackageDirectory "$PWD/release-packages" -ExpectedRepositoryCommit '${{ github.sha }}' -CandidateArtifactName 'clinimatix-caravel-packages-${{ github.sha }}'
       - name: Verify the Windows-built Identity starter without repacking
         shell: pwsh
         run: ./scripts/Test-IdentityStarterSmoke.ps1 -CandidatePackageDirectory "$PWD/release-packages" -Browser
+      - name: Retain installed manifest portability evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: caravel-manifest-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-portability-${{ matrix.os }}
+          path: artifacts/fathom-manifest-evidence/*.json
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Collect service-package evidence
+        id: service_evidence
+        if: always()
+        shell: pwsh
+        run: ./scripts/Export-ServicePackageEvidence.ps1 -Destination "$PWD/artifacts/service-evidence"
+      - name: Retain service-package evidence
+        if: always() && steps.service_evidence.outcome == 'success'
+        uses: actions/upload-artifact@v7
+        with:
+          name: caravel-service-evidence-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}-portability-${{ matrix.os }}
+          path: artifacts/service-evidence/
+          if-no-files-found: warn
+          retention-days: 14
+  worker-container:
+    if: inputs.platform == 'all'
+    needs: lts
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: clinimatix-caravel-packages-${{ github.sha }}
+          path: release-packages
+      - name: Verify the packaged worker in a runtime container
+        shell: pwsh
+        run: |
+          docker pull mcr.microsoft.com/dotnet/runtime:10.0
+          if ($LASTEXITCODE -ne 0) { throw 'Runtime image pull failed.' }
+          $image = docker image inspect --format '{{index .RepoDigests 0}}' mcr.microsoft.com/dotnet/runtime:10.0
+          if ($LASTEXITCODE -ne 0) { throw 'Runtime image digest lookup failed.' }
+          ./scripts/Test-WorkerContainer.ps1 -CandidatePackageDirectory "$PWD/release-packages" -ExpectedRepositoryCommit '${{ github.sha }}' -RuntimeImage $image
+      - name: Retain worker container evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: caravel-worker-container-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/worker-container-evidence/
+          if-no-files-found: warn
+          retention-days: 14
   providers:
     if: inputs.platform == 'all'
+    needs: lts
     runs-on: ubuntu-latest
     timeout-minutes: 40
     services:
@@ -151,10 +232,50 @@ jobs:
           global-json-file: global.json
       - run: dotnet restore Caravel.slnx --locked-mode
       - run: dotnet test tests/Caravel.Provider.Tests -c Release --no-restore
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: clinimatix-caravel-packages-${{ github.sha }}
+          path: release-packages
+      - name: Verify exact candidate packages on server providers
+        timeout-minutes: 10
+        shell: pwsh
+        run: ./scripts/Test-ServicePackages.ps1 -IncludeProviderTests -CandidatePackageDirectory "$PWD/release-packages" -ExpectedRepositoryCommit '${{ github.sha }}' -CandidateArtifactName 'clinimatix-caravel-packages-${{ github.sha }}'
+      - name: Collect provider package evidence
+        id: provider_evidence
+        if: always()
+        shell: pwsh
+        run: ./scripts/Export-ServicePackageEvidence.ps1 -Destination "$PWD/artifacts/provider-package-evidence"
+      - name: Retain provider package evidence
+        if: always() && steps.provider_evidence.outcome == 'success'
+        uses: actions/upload-artifact@v7
+        with:
+          name: caravel-provider-packages-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/provider-package-evidence/
+          if-no-files-found: error
+          retention-days: 14
       - name: Verify server migration upgrades and rollback
         timeout-minutes: 10
         shell: pwsh
         run: ./scripts/Test-ProviderMigrationSmoke.ps1
+      - name: Verify server-provider worker process interruption and recovery
+        timeout-minutes: 8
+        shell: pwsh
+        run: |
+          docker pull mcr.microsoft.com/dotnet/runtime:10.0
+          if ($LASTEXITCODE -ne 0) { throw 'Runtime image pull failed.' }
+          $image = docker image inspect --format '{{index .RepoDigests 0}}' mcr.microsoft.com/dotnet/runtime:10.0
+          if ($LASTEXITCODE -ne 0) { throw 'Runtime image digest lookup failed.' }
+          foreach ($provider in 'sqlserver', 'postgres') {
+            ./scripts/Test-ProviderWorkerContainer.ps1 -Provider $provider -CandidatePackageDirectory "$PWD/release-packages" -ExpectedRepositoryCommit '${{ github.sha }}' -RuntimeImage $image
+          }
+      - name: Retain server-provider worker container evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: caravel-provider-worker-container-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          path: artifacts/provider-worker-container-*-evidence/
+          if-no-files-found: warn
+          retention-days: 14
       - name: Verify packaged backends on server providers
         timeout-minutes: 15
         shell: pwsh

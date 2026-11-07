@@ -33,6 +33,32 @@ Each DI scope (for a web app, each request) gets its own `IClarion` session, whi
 - If you need other services while configuring the context, use the overload `AddClarion<TContext>((services, options) => ...)`.
 - Sessions aren't thread-safe. Give each concurrent job its own scope.
 
+## Read a count-free slice (unreleased)
+
+The development branch adds `ToSliceAsync` for lists that need a next page without a total
+count. This API is not included in the published `26.1.1-rc2` package.
+
+```csharp
+var slice = await db.Models<User>()
+    .AsNoTracking()
+    .Where(user => user.Active) // Apply application visibility rules before paging.
+    .OrderBy(user => user.Name)
+    .ThenBy(user => user.Id) // Include a unique tie breaker.
+    .ToSliceAsync(offset: 0, pageSize: 25, cancellationToken: cancellationToken);
+
+// slice.Items, slice.HasMore and slice.NextOffset
+```
+
+Use `slice.NextOffset` for the next request when `slice.HasMore` is true. The helper reads at
+most one extra row, preserves query filters and ordering, and does not run a count query.
+It accepts page sizes from 1 through 200 (default 50), nonnegative offsets whose sum with
+the page size fits `Int32`, and the caller's cancellation token.
+
+The application still owns authorization and tenant filtering. Apply projections before
+ordering when returning a small view model. Use a stable unique ordering; offsets can shift
+when rows are inserted or removed between requests. A slice is not a snapshot or a cursor,
+and it does not make cross-request consistency or permission decisions for your app.
+
 ## Models
 
 Models are plain C# classes. If your context already declares `DbSet<T>` properties or maps entities with `modelBuilder.Entity<T>()`, they work as-is. You can also mark classes with `[ClarionModel]` and have Clarion find them in the assemblies you name:
@@ -126,6 +152,25 @@ The details:
 - **A refused save leaves your changes in the context**, so you can inspect them or reload.
 
 `ExecuteDelete`, `ExecuteUpdate`, raw SQL, and database triggers skip all of this and behave exactly as they do in plain EF Core, including permanently deleting rows. Use them deliberately.
+
+## Ordered query slices (unreleased)
+
+Use `ToSliceAsync` when a list needs continuation without a total-count query:
+
+```csharp
+var slice = await db.Models<User>()
+    .Where(user => user.Active)
+    .OrderBy(user => user.Name).ThenBy(user => user.Id)
+    .ToSliceAsync(offset: 0, pageSize: 50, cancellationToken: cancellationToken);
+// slice.Items, slice.HasMore and slice.NextOffset describe this window.
+```
+
+Filter and authorize the query first, then supply a deterministic order with a unique
+tie breaker. One query reads at most the requested page size plus one row; it does not
+compute a total. Page sizes range from 1 through 200. Offset plus page size must fit a
+nonnegative `Int32`; cancellation propagates to EF Core. Concurrent inserts/deletes can
+shift offset windows, so this is not a stable cursor or snapshot. Keep existing count
+queries for screens or reports that require complete totals.
 
 ## Factories and seeders
 

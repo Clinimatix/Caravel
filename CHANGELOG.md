@@ -1,5 +1,44 @@
 # Changelog
 
+## Unreleased - proposed next candidate
+
+- Qualified Fathom DTD rejection with valid empty declarations, internal entities and default attributes in source and installed-tool checks.
+
+- Qualified Fathom's existing project-file size limit with valid UTF-8 and UTF-16 XML at and above the byte boundary, including byte-order marks, through source and installed-tool checks.
+
+- Made queue lease-renewal qualification independent of wall-clock scheduling, with separate coverage for expiry before handler startup and cancellation after startup, durable recovery and exact-package execution.
+
+- Added a compiled Fathom application-policy example with source and exact-package coverage for trusted tenant/resource binding, separate read/write grants, revocation between calls, concurrent scope isolation and safe application errors. Registry APIs and exception behavior are unchanged.
+
+- Clarified diagnostic-process effects in Bosun's command schema and extended installed Fathom guidance checks to require matching versions, existing commands and route inspection options.
+
+- Extended offline installer qualification for archive paths, duplicate entries, package identity/XML rejection and interrupted download recovery.
+
+- Added exact-package server-provider worker container SIGTERM and fresh-process recovery qualification with durable result deduplication.
+
+- Added hosted worker shutdown and fresh-host recovery contracts on disposable server providers, including persisted-result deduplication and exact candidate package verification.
+
+- Qualify installed Fathom manifests against exact Bosun package bytes, including static inspection, disclosure-safe failures and cross-platform artifact reuse.
+
+- Extended exact-package worker container checks to in-flight SIGTERM, cooperative handler cancellation and lease recovery without duplicate persisted results.
+
+- Added exact-package Linux worker runtime-container qualification for persistent deduplication, crash recovery, idle shutdown and infrastructure-failure exit without publishing images.
+
+- Added service-package testing against existing artifacts, with source/version consistency checks and restored-package checksum verification.
+- Retained bounded per-platform service-package evidence in CI and added expected-source checks and focused restored-graph integrity regressions.
+- Added ordered, count-free Clarion query slices with bounded page sizes and explicit continuation; existing total-count APIs are preserved.
+- Added validated transactional mail and notification staging through the application outbox, preserving application-owned eligibility and delivery policy.
+- Extended package-consumer qualification to Core's Fathom contracts and synchronous dispatch cancellation, payload snapshots and independent scopes, with optional unique development package versions.
+- Added a standalone PowerShell Bosun installer with a reviewed release catalog, SHA-256 and source-commit verification, isolated version directories, explicit prerelease selection and safe repeat/failure behavior. The public installer endpoint awaits separate website publication; see [installation](docs/INSTALLER.md).
+- Added explicit synchronous execution of registered jobs for development and tests, without a database or worker. Handler failures propagate; this path provides no durable receipt, retry or deduplication.
+- Planned a bounded RC3-to-stable qualification path using the existing 26.1 calendar-version convention; see [next release](docs/NEXT-RELEASE.md).
+- Added opt-in Caravel Fathom in-process application tool contracts and registry in Core, with mandatory per-call application authorization, declared read/write effects, cancellation boundaries and fake-handler coverage. Network MCP and model workflows remain planned.
+
+- Restrict Fathom static package hints to declarative MSBuild items, excluding executable targets and unrelated XML.
+
+- Added model-free Bosun `agent:manifest` v1: static, allowlisted project package hints, a versioned JSON contract and explicit inspection guidance without application startup or configuration/data export.
+- Named the AI suite Caravel Fathom and made its agent development foundation a minimum first-stable gate; application MCP and model workflows remain later opt-in stages.
+
 ## 26.1.1-rc2
 
 This maintenance candidate preserves the RC2 APIs and .NET 10 baseline. Update all first-party packages together and deliberately regenerate and review application dependency locks. No database migration is required by these dependency fixes.
@@ -22,7 +61,7 @@ This release candidate extends RC1 with a composed application path while preser
 
 - Extended the authenticated backend sample with workspace-scoped work items, versioned commands, durable retry receipts, transactional history/outbox, reference-only notices and a browser form for errors and uncertain retries. Includes an explicit additive migration and setup guide; Bosun's basic starters remain unchanged.
 
-## 26.1.0-rc1 — 2026-09-29
+## 26.1.0-rc1 - 2026-09-29
 
 The first release candidate brings together the 26.1 application foundation, data layer and services. It replaces the earlier .NET 9 prototype with a modular framework built on .NET 10 and C# 14. The documented scope and APIs are settled for release qualification; stable follows real-application feedback and upgrade validation.
 
@@ -88,5 +127,5 @@ The first release candidate brings together the 26.1 application foundation, dat
 - All 12 RC1 packages are available on [nuget.org](https://www.nuget.org/profiles/Clinimatix), with GitHub release ZIPs retained for local-feed use; see [installation instructions](docs/RELEASE-POLICY.md#using-prerelease-packages).
 - Not yet included: passkeys, finished account-management screens, calendar/time-zone scheduling, cloud storage drivers, additional notification providers, a Caravel cache API, and the AI/MCP packages. See the [roadmap](docs/ROADMAP.md).
 - SMTP and SMS adapters have automated protocol tests; provider acceptance does not guarantee recipient delivery. Configure and verify your chosen delivery service before use. SMS delivery is not SMS MFA.
-- MariaDB is waiting on an EF Core 10–compatible provider.
+- MariaDB is waiting on an EF Core 10-compatible provider.
 - Linux and macOS storage requires a filesystem that supports hard links.
