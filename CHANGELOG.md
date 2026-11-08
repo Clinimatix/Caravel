@@ -2,6 +2,8 @@
 
 ## Unreleased - proposed next candidate
 
+- Qualified asynchronous Fathom authorization with suspended approval, policy failures and independent overlapping cancellation in source and exact-package tests.
+
 - Qualified Fathom DTD rejection with valid empty declarations, internal entities and default attributes in source and installed-tool checks.
 
 - Qualified Fathom's existing project-file size limit with valid UTF-8 and UTF-16 XML at and above the byte boundary, including byte-order marks, through source and installed-tool checks.

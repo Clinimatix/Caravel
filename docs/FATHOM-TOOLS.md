@@ -51,7 +51,9 @@ state. A caller-supplied principal or read annotation is not proof of permission
 must validate their own argument shape, values and resource eligibility before acting.
 
 Cancellation is checked before dispatch and after authorization and passed to both callbacks.
-Handlers must cooperate with cancellation. Handler and policy errors propagate to the caller;
+A policy that suspends and later approves a canceled invocation cannot start its handler.
+Cancellation is cooperative: the registry does not forcibly interrupt an unresponsive policy.
+Concurrent calls retain their own cancellation tokens. Handlers must cooperate with cancellation. Handler and policy errors propagate to the caller;
 there is no automatic retry, logging, exception serialization or rollback. Applications own
 safe error presentation, output minimization, input/output size limits, transactions,
 idempotency and reconciliation of uncertain writes. A failed or canceled call can already
