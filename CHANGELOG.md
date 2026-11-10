@@ -2,6 +2,8 @@
 
 ## Unreleased - proposed next candidate
 
+- Qualified Fathom argument admission for read and write tools: invalid or disposed JSON never reaches authorization or handlers, while valid objects retain application-owned validation.
+
 - Qualified Fathom DTD rejection with valid empty declarations, internal entities and default attributes in source and installed-tool checks.
 
 - Qualified Fathom's existing project-file size limit with valid UTF-8 and UTF-16 XML at and above the byte boundary, including byte-order marks, through source and installed-tool checks.

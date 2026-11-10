@@ -45,7 +45,11 @@ or hyphens. Duplicate names fail at construction. Treat this catalog as internal
 discovery visibility and authentication at a future transport remain application concerns.
 
 Execution accepts only JSON objects, snapshots arguments before asynchronous authorization,
-and calls the required authorizer on every invocation, including reads. Authorization must
+and calls the required authorizer on every invocation, including reads. Null, arrays,
+scalars and undefined arguments are rejected before either callback. A document-owned JSON element whose
+source document was disposed before the call also fails before authorization. Empty and
+nested objects are accepted at this boundary; acceptance does not validate their schema.
+Authorization must
 check current caller, tenant, resource and effect permissions using trusted application
 state. A caller-supplied principal or read annotation is not proof of permission. Handlers
 must validate their own argument shape, values and resource eligibility before acting.
