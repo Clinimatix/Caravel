@@ -59,6 +59,18 @@ have performed effects. Read/write metadata documents intent; it cannot sandbox 
 application code. Captured handler dependencies retain application-owned lifetimes; create a
 registry within the appropriate scope when handlers use scoped services.
 
+Handlers also own result serialization and lifetime. Unlike input arguments, results are
+returned without cloning or schema validation. Return `JsonSerializer.SerializeToElement`
+or a `JsonElement.Clone()` made before disposing its `JsonDocument` when the caller needs
+an independently usable value. A borrowed element remains tied to its document; reading
+it after that document is disposed fails. Results may be objects, arrays or scalar JSON
+values; the application defines their contract and safe presentation.
+
+Once a handler starts, cancellation is cooperative: a handler that ignores the token can
+still complete successfully. The registry does not replace that result with cancellation
+or undo work already performed. Exceptions raised after an asynchronous suspension retain
+their original identity and are not retried.
+
 Fake policies and delegates can exercise success, denied reads/writes, cancellation and
 errors without any external service. No network MCP endpoint, protocol compatibility,
 provider adapter or model workflow is supplied by this registry. The required first-stable
