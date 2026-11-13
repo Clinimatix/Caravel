@@ -41,7 +41,11 @@ sealed class StatusPolicy : IApplicationToolAuthorizer
 
 `Descriptors` inspects names and declared read/write effects without invoking policies or
 handlers. Names are case-sensitive and limited to 64 ASCII letters, digits, underscores
-or hyphens. Duplicate names fail at construction. Treat this catalog as internal metadata;
+or hyphens. Duplicate names fail at construction. Registration is a construction-time snapshot:
+changes to the supplied collection do not add, remove or replace tools. Descriptor discovery
+is read-only; names that differ only by case remain distinct operations. Creating a registry
+enumerates the supplied registrations, so iterator side effects belong to the application.
+Treat this catalog as internal metadata;
 discovery visibility and authentication at a future transport remain application concerns.
 
 Execution accepts only JSON objects, snapshots arguments before asynchronous authorization,
