@@ -156,7 +156,7 @@ public static class Program
                   </PropertyGroup>
                   <ItemGroup>
                     {{reference}}
-                    {{(stack == "api" ? "<PackageReference Include=\"Microsoft.AspNetCore.OpenApi\" Version=\"10.0.13\" />" : "")}}
+                    {{(stack == "api" ? "<PackageReference Include=\"Microsoft.AspNetCore.OpenApi\" Version=\"10.0.15\" />" : "")}}
                   </ItemGroup>
                 </Project>
                 """);
