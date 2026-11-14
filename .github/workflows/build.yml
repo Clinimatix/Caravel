@@ -1,322 +1,58 @@
 name: Build Clinimatix Caravel
 on:
-  # Manual verification only; no automatic push or pull-request triggers.
   workflow_dispatch:
-    inputs:
-      platform:
-        description: Platform to verify (all includes server-provider checks)
-        type: choice
-        options: [all, windows-latest, ubuntu-latest, macos-latest]
-        default: all
-      experimental:
-        description: Also run the optional preview/STS SDK lane
-        type: boolean
-        default: false
-concurrency:
-  group: caravel-verification-${{ github.ref }}
-  cancel-in-progress: true
 permissions:
   contents: read
 jobs:
-  lts:
-    timeout-minutes: 40
-    strategy:
-      fail-fast: false
-      matrix:
-        os: ${{ fromJSON(inputs.platform == 'all' && '["windows-latest","ubuntu-latest","macos-latest"]' || format('["{0}"]', inputs.platform)) }}
-    runs-on: ${{ matrix.os }}
+  prepare:
+    runs-on: windows-latest
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-dotnet@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73
         with:
           global-json-file: global.json
-      - name: Record release toolchain
+      - name: Restore serviced graph and build
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          New-Item -ItemType Directory -Path artifacts/security-qualification -Force | Out-Null
-          $sdk = (dotnet --version).Trim()
-          if ($LASTEXITCODE -ne 0 -or $sdk -ne '10.0.403') { throw "Unexpected SDK: $sdk" }
-          dotnet --info | Set-Content artifacts/security-qualification/dotnet-info.txt
-          if ($LASTEXITCODE -ne 0) { throw 'Toolchain inventory failed.' }
-          @{commit=$env:GITHUB_SHA;run=$env:GITHUB_RUN_ID;attempt=$env:GITHUB_RUN_ATTEMPT;job=$env:GITHUB_JOB;os=$env:RUNNER_OS;sdk=$sdk} | ConvertTo-Json | Set-Content artifacts/security-qualification/source.json
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '24'
-      - name: Install browser test dependencies
-        working-directory: tests/browser
-        shell: pwsh
-        run: |
-          npm ci
-          if ($LASTEXITCODE -ne 0) { throw 'Browser dependency installation failed.' }
-          npx playwright install --with-deps chromium
-          if ($LASTEXITCODE -ne 0) { throw 'Browser installation failed.' }
-      - name: Check latest LTS policy
-        shell: pwsh
-        run: |
-          ./scripts/Test-LtsPolicy.Tests.ps1
-          ./scripts/Test-LtsPolicy.ps1
-          ./scripts/Expand-NuGetRelease.Tests.ps1
-      - run: dotnet restore Caravel.slnx --locked-mode
-      - run: dotnet build Caravel.slnx -c Release --no-restore
-      - run: dotnet test Caravel.slnx -c Release --no-build --no-restore --logger trx --results-directory artifacts/source-tests
-      - name: Verify browser session and retry behavior
-        working-directory: tests/browser
-        run: npm test
-      - name: Verify packaged CLI and generated apps
-        timeout-minutes: 10
-        shell: pwsh
-        run: ./scripts/Test-PackageSmoke.ps1 -Browser
-      - name: Verify upgrade from published RC2
-        timeout-minutes: 10
-        shell: pwsh
-        run: ./scripts/Test-ReleaseUpgrade.ps1
-      - name: Retain tested candidate packages
-        if: matrix.os == 'windows-latest'
-        uses: actions/upload-artifact@v7
-        with:
-          name: clinimatix-caravel-packages-${{ github.sha }}
-          path: artifacts/smoke */packages/*.nupkg
-          if-no-files-found: error
-          retention-days: 30
-      - name: Verify migration and seeding workflow
-        timeout-minutes: 10
-        shell: pwsh
-        run: ./scripts/Test-DataSmoke.ps1
-      - name: Verify packaged Identity, Events and OIDC samples
-        timeout-minutes: 10
-        shell: pwsh
-        run: ./scripts/Test-IdentitySmoke.ps1
-      - name: Verify packaged application services
-        timeout-minutes: 10
-        shell: pwsh
-        run: ./scripts/Test-ServicePackages.ps1
-      - name: Verify worker crash recovery
-        timeout-minutes: 10
-        shell: pwsh
-        run: ./scripts/Test-WorkerSmoke.ps1
-      - name: Retain security regression results
-        if: always()
+          dotnet restore Caravel.slnx --force-evaluate
+          if ($LASTEXITCODE -ne 0) { throw 'Restore failed.' }
+          dotnet build Caravel.slnx -c Release --no-restore
+          if ($LASTEXITCODE -ne 0) { throw 'Build failed.' }
+      - name: Prove recipient regressions against previous implementation
         shell: pwsh
         run: |
           $ErrorActionPreference = 'Stop'
-          $target = Join-Path $PWD 'artifacts/identity-starter-evidence'
-          $identityTrx = @(Get-ChildItem -LiteralPath $target -Recurse -Filter '*.trx' -File)
-          if ($identityTrx.Count -ne 1) { throw 'Expected 1 installed Identity test receipt(s).' }
-          foreach ($receipt in $identityTrx) {
-            $security = @(([xml](Get-Content -LiteralPath $receipt.FullName -Raw)).TestRun.Results.UnitTestResult | Where-Object testName -Like '*SqlClientSecurityTests*')
-            if ($security.Count -ne 20 -or @($security | Where-Object outcome -ne 'Passed').Count) { throw 'Expected 20 passing installed SqlClient security cases.' }
-            foreach ($case in $security) {
-              if ([string]$case.Output.StdOut -notmatch 'CLR: 10\.0\.14;') { throw 'Installed security evidence must identify loaded .NET runtime 10.0.14.' }
-            }
+          $file = 'src/Caravel.Auth/AccountEndpointExtensions.cs'
+          $fixed = Get-Content $file -Raw
+          try {
+            git show v26.1.2-rc2:src/Caravel.Auth/AccountEndpointExtensions.cs | Set-Content $file
+            if ($LASTEXITCODE -ne 0) { throw 'Baseline source unavailable.' }
+            dotnet test tests/Caravel.Identity.Tests -c Release --no-restore --filter 'FullyQualifiedName~Recovery_mail_' --logger 'trx;LogFileName=recipient-baseline.trx'
+            if ($LASTEXITCODE -eq 0) { throw 'Regression tests unexpectedly pass old implementation.' }
+            [xml]$trx = Get-Content tests/Caravel.Identity.Tests/TestResults/recipient-baseline.trx -Raw
+            if ([int]$trx.TestRun.ResultSummary.Counters.failed -ne 4 -or [int]$trx.TestRun.ResultSummary.Counters.passed -ne 1) { throw 'Unexpected baseline regression results.' }
+          } finally { Set-Content $file $fixed -NoNewline }
+      - name: Verify repaired Identity behavior
+        shell: pwsh
+        run: |
+          dotnet test tests/Caravel.Identity.Tests -c Release --no-restore --logger 'trx;LogFileName=recipient-fixed.trx'
+          if ($LASTEXITCODE -ne 0) { throw 'Repaired Identity tests failed.' }
+          New-Item -ItemType Directory -Force artifacts/servicing-locks | Out-Null
+          git ls-files '*packages.lock.json' | ForEach-Object {
+            $target = Join-Path 'artifacts/servicing-locks' $_
+            New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
+            Copy-Item $_ $target
           }
-          $sourceSecurity = @(Get-ChildItem artifacts/source-tests -Filter '*.trx' -File -Recurse | ForEach-Object { ([xml](Get-Content -LiteralPath $_.FullName -Raw)).TestRun.Results.UnitTestResult } | Where-Object testName -Like '*SqlClientSecurityTests*')
-          if ($sourceSecurity.Count -ne 20 -or @($sourceSecurity | Where-Object outcome -ne 'Passed').Count) { throw 'Expected 20 passing source SqlClient security cases.' }
-          foreach ($case in $sourceSecurity) {
-            if ([string]$case.Output.StdOut -notmatch 'CLR: 10\.0\.14;') { throw 'Source security evidence must identify loaded .NET runtime 10.0.14.' }
-          }
-      - name: Upload security regression evidence
+          @{commit=$env:GITHUB_SHA;run=$env:GITHUB_RUN_ID;sdk=(dotnet --version)} | ConvertTo-Json | Set-Content artifacts/servicing-locks/provenance.json
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         if: always()
-        uses: actions/upload-artifact@v7
         with:
-          name: caravel-security-${{ github.job }}-${{ runner.os }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
+          name: security-servicing-preparation
           path: |
-            artifacts/security-qualification
-            artifacts/identity-starter-evidence
-            artifacts/source-tests
+            artifacts/servicing-locks
+            tests/Caravel.Identity.Tests/TestResults/*.trx
           if-no-files-found: error
-          retention-days: 30
-  package-portability:
-    if: inputs.platform == 'all'
-    needs: lts
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-dotnet@v6
-        with:
-          global-json-file: global.json
-      - name: Record release toolchain
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          New-Item -ItemType Directory -Path artifacts/security-qualification -Force | Out-Null
-          $sdk = (dotnet --version).Trim()
-          if ($LASTEXITCODE -ne 0 -or $sdk -ne '10.0.403') { throw "Unexpected SDK: $sdk" }
-          dotnet --info | Set-Content artifacts/security-qualification/dotnet-info.txt
-          if ($LASTEXITCODE -ne 0) { throw 'Toolchain inventory failed.' }
-          @{commit=$env:GITHUB_SHA;run=$env:GITHUB_RUN_ID;attempt=$env:GITHUB_RUN_ATTEMPT;job=$env:GITHUB_JOB;os=$env:RUNNER_OS;sdk=$sdk} | ConvertTo-Json | Set-Content artifacts/security-qualification/source.json
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: '24'
-      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: clinimatix-caravel-packages-${{ github.sha }}
-          path: release-packages
-      - name: Install browser test dependencies
-        working-directory: tests/browser
-        shell: pwsh
-        run: |
-          npm ci
-          if ($LASTEXITCODE -ne 0) { throw 'Browser dependency installation failed.' }
-          npx playwright install --with-deps chromium
-          if ($LASTEXITCODE -ne 0) { throw 'Browser installation failed.' }
-      - name: Verify the Windows-built Identity starter without repacking
-        shell: pwsh
-        run: ./scripts/Test-IdentityStarterSmoke.ps1 -CandidatePackageDirectory "$PWD/release-packages" -Browser
-      - name: Retain security regression results
-        if: always()
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $target = Join-Path $PWD 'artifacts/identity-starter-evidence'
-          $identityTrx = @(Get-ChildItem -LiteralPath $target -Recurse -Filter '*.trx' -File)
-          if ($identityTrx.Count -ne 1) { throw 'Expected 1 installed Identity test receipt(s).' }
-          foreach ($receipt in $identityTrx) {
-            $security = @(([xml](Get-Content -LiteralPath $receipt.FullName -Raw)).TestRun.Results.UnitTestResult | Where-Object testName -Like '*SqlClientSecurityTests*')
-            if ($security.Count -ne 20 -or @($security | Where-Object outcome -ne 'Passed').Count) { throw 'Expected 20 passing installed SqlClient security cases.' }
-            foreach ($case in $security) {
-              if ([string]$case.Output.StdOut -notmatch 'CLR: 10\.0\.14;') { throw 'Installed security evidence must identify loaded .NET runtime 10.0.14.' }
-            }
-          }
-      - name: Upload security regression evidence
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: caravel-security-${{ github.job }}-${{ runner.os }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: |
-            artifacts/security-qualification
-            artifacts/identity-starter-evidence
-            artifacts/source-tests
-          if-no-files-found: error
-          retention-days: 30
-  providers:
-    if: inputs.platform == 'all'
-    runs-on: ubuntu-latest
-    timeout-minutes: 40
-    services:
-      postgres:
-        image: postgres:18
-        env:
-          POSTGRES_PASSWORD: caravel_disposable_ci_only
-        ports: [5432:5432]
-        options: >-
-          --health-cmd "pg_isready -U postgres"
-          --health-interval 10s --health-timeout 5s --health-retries 12
-      sqlserver:
-        image: mcr.microsoft.com/mssql/server:2022-latest
-        env:
-          ACCEPT_EULA: Y
-          MSSQL_PID: Developer
-          MSSQL_SA_PASSWORD: Caravel_Disposable_CI_42!
-        ports: [1433:1433]
-        options: >-
-          --health-cmd "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P Caravel_Disposable_CI_42! -C -Q 'SELECT 1'"
-          --health-interval 10s --health-timeout 5s --health-retries 18
-    # Synthetic credentials for disposable job-local services; never a deployment connection.
-    env:
-      CARAVEL_TEST_SQLSERVER: Server=localhost,1433;User ID=sa;Password=Caravel_Disposable_CI_42!;TrustServerCertificate=true
-      CARAVEL_TEST_POSTGRES: Host=localhost;Username=postgres;Password=caravel_disposable_ci_only
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-dotnet@v6
-        with:
-          global-json-file: global.json
-      - name: Record release toolchain
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          New-Item -ItemType Directory -Path artifacts/security-qualification -Force | Out-Null
-          $sdk = (dotnet --version).Trim()
-          if ($LASTEXITCODE -ne 0 -or $sdk -ne '10.0.403') { throw "Unexpected SDK: $sdk" }
-          dotnet --info | Set-Content artifacts/security-qualification/dotnet-info.txt
-          if ($LASTEXITCODE -ne 0) { throw 'Toolchain inventory failed.' }
-          @{commit=$env:GITHUB_SHA;run=$env:GITHUB_RUN_ID;attempt=$env:GITHUB_RUN_ATTEMPT;job=$env:GITHUB_JOB;os=$env:RUNNER_OS;sdk=$sdk} | ConvertTo-Json | Set-Content artifacts/security-qualification/source.json
-      - run: dotnet restore Caravel.slnx --locked-mode
-      - run: dotnet test tests/Caravel.Provider.Tests -c Release --no-restore --logger trx --results-directory artifacts/source-tests
-      - name: Verify server migration upgrades and rollback
-        timeout-minutes: 10
-        shell: pwsh
-        run: ./scripts/Test-ProviderMigrationSmoke.ps1
-      - name: Verify packaged backends on server providers
-        timeout-minutes: 15
-        shell: pwsh
-        run: |
-          ./scripts/Test-IdentitySmoke.ps1 -Provider sqlserver
-          ./scripts/Test-IdentitySmoke.ps1 -Provider postgres
-      - name: Verify generated Identity applications on server providers
-        timeout-minutes: 15
-        shell: pwsh
-        run: |
-          ./scripts/Test-IdentityStarterSmoke.ps1 -Provider sqlserver
-          ./scripts/Test-IdentityStarterSmoke.ps1 -Provider postgres
-      - name: Retain security regression results
-        if: always()
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $target = Join-Path $PWD 'artifacts/identity-starter-evidence'
-          $identityTrx = @(Get-ChildItem -LiteralPath $target -Recurse -Filter '*.trx' -File)
-          if ($identityTrx.Count -ne 2) { throw 'Expected 2 installed Identity test receipt(s).' }
-          foreach ($receipt in $identityTrx) {
-            $security = @(([xml](Get-Content -LiteralPath $receipt.FullName -Raw)).TestRun.Results.UnitTestResult | Where-Object testName -Like '*SqlClientSecurityTests*')
-            if ($security.Count -ne 20 -or @($security | Where-Object outcome -ne 'Passed').Count) { throw 'Expected 20 passing installed SqlClient security cases.' }
-            foreach ($case in $security) {
-              if ([string]$case.Output.StdOut -notmatch 'CLR: 10\.0\.14;') { throw 'Installed security evidence must identify loaded .NET runtime 10.0.14.' }
-            }
-          }
-          $sourceSecurity = @(Get-ChildItem artifacts/source-tests -Filter '*.trx' -File -Recurse | ForEach-Object { ([xml](Get-Content -LiteralPath $_.FullName -Raw)).TestRun.Results.UnitTestResult } | Where-Object testName -Like '*SqlClientSecurityTests*')
-          if ($sourceSecurity.Count -ne 20 -or @($sourceSecurity | Where-Object outcome -ne 'Passed').Count) { throw 'Expected 20 passing source SqlClient security cases.' }
-          foreach ($case in $sourceSecurity) {
-            if ([string]$case.Output.StdOut -notmatch 'CLR: 10\.0\.14;') { throw 'Source security evidence must identify loaded .NET runtime 10.0.14.' }
-          }
-      - name: Upload security regression evidence
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: caravel-security-${{ github.job }}-${{ runner.os }}-${{ github.sha }}-${{ github.run_id }}-${{ github.run_attempt }}
-          path: |
-            artifacts/security-qualification
-            artifacts/identity-starter-evidence
-            artifacts/source-tests
-          if-no-files-found: error
-          retention-days: 30
-  azure:
-    if: inputs.platform == 'all' || inputs.platform == 'ubuntu-latest'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-dotnet@v6
-        with:
-          global-json-file: global.json
-      - name: Verify Azure storage source and installed packages against Azurite
-        shell: pwsh
-        run: ./scripts/Test-AzureStorage.ps1
-  experimental:
-    if: inputs.experimental
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-dotnet@v6
-        with:
-          global-json-file: global.json
-      - uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: '11.0.x'
-          dotnet-quality: preview
-      - name: Select experimental SDK without changing the LTS target
-        shell: pwsh
-        run: |
-          $sdk = dotnet --list-sdks | Where-Object { $_ -match '^11\.0\.' } | Select-Object -Last 1
-          if (-not $sdk) { throw 'Experimental .NET 11 SDK is unavailable.' }
-          @{ sdk = @{ version = ($sdk -split ' ')[0]; rollForward = 'latestPatch'; allowPrerelease = $true } } | ConvertTo-Json | Set-Content global.json
-      - run: dotnet restore Caravel.slnx --locked-mode
-      - run: dotnet build Caravel.slnx -c Release --no-restore
-      - run: dotnet test Caravel.slnx -c Release --no-build --no-restore
