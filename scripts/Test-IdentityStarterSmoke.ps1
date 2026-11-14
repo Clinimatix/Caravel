@@ -141,7 +141,7 @@ try {
     }
     Invoke-Checked $cli @('route:list', '--json')
     if ($Provider -eq 'sqlite' -and (Test-Path -LiteralPath $env:Caravel__IdentityDatabase)) { throw 'Generation or route inspection created a database.' }
-    foreach ($file in @('WorkItemApplicationTests.cs', 'IdentityTestDatabase.cs')) {
+    foreach ($file in @('WorkItemApplicationTests.cs', 'IdentityTestDatabase.cs', 'AccountRecipientTests.cs')) {
         (Get-Content -LiteralPath (Join-Path $root "tests/Caravel.Identity.Tests/$file") -Raw).Replace('Caravel.IdentitySample', 'WorkbenchApplication') | Set-Content -LiteralPath (Join-Path $tests $file)
     }
     Copy-Item -LiteralPath (Join-Path $root 'tests/Caravel.Provider.Tests/SqlClientSecurityTests.cs') -Destination $tests
@@ -149,7 +149,7 @@ try {
         (Get-Content -LiteralPath (Join-Path $root "tests/fixtures/$file") -Raw).Replace('Caravel.IdentitySample', 'WorkbenchApplication') | Set-Content -LiteralPath (Join-Path $tests $file)
     }
     @'
-<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net10.0</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><IsTestProject>true</IsTestProject></PropertyGroup><ItemGroup><ProjectReference Include="../Workbench/Workbench.csproj"/><PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.13"/><PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1"/><PackageReference Include="xunit" Version="2.9.3"/><PackageReference Include="xunit.runner.visualstudio" Version="4.0.0"/></ItemGroup></Project>
+<Project Sdk="Microsoft.NET.Sdk"><PropertyGroup><TargetFramework>net10.0</TargetFramework><Nullable>enable</Nullable><ImplicitUsings>enable</ImplicitUsings><IsTestProject>true</IsTestProject></PropertyGroup><ItemGroup><ProjectReference Include="../Workbench/Workbench.csproj"/><PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.15"/><PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.10.1"/><PackageReference Include="xunit" Version="2.9.3"/><PackageReference Include="xunit.runner.visualstudio" Version="4.0.0"/></ItemGroup></Project>
 '@ | Set-Content -LiteralPath (Join-Path $tests 'StarterTests.csproj')
     '<Solution><Project Path="Workbench/Workbench.csproj"/><Project Path="Tests/StarterTests.csproj"/></Solution>' | Set-Content -LiteralPath (Join-Path $run 'StarterQualification.slnx')
     Invoke-Checked dotnet @('restore', (Join-Path $tests 'StarterTests.csproj'), '--configfile', $feed)

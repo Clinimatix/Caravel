@@ -63,9 +63,11 @@ public static class AccountEndpointExtensions
             var user = await users.FindByEmailAsync(request.Email);
             if (user is not null && await users.IsEmailConfirmedAsync(user))
             {
+                var email = await users.GetEmailAsync(user);
+                if (string.IsNullOrWhiteSpace(email)) return Results.Accepted();
                 var token = Encode(await users.GeneratePasswordResetTokenAsync(user));
-                var link = Link(options.PasswordResetPage, request.Email, token);
-                await Deliver(() => mail.SendPasswordResetLinkAsync(user, request.Email, link), context);
+                var link = Link(options.PasswordResetPage, email, token);
+                await Deliver(() => mail.SendPasswordResetLinkAsync(user, email, link), context);
             }
             return Results.Accepted();
         }).AllowAnonymous();
@@ -167,7 +169,8 @@ public static class AccountEndpointExtensions
     private static async Task SendConfirmation<TUser>(TUser user, UserManager<TUser> users, IEmailSender<TUser> mail,
         AccountEndpointOptions options, HttpContext context) where TUser : class
     {
-        var email = (await users.GetEmailAsync(user))!;
+        var email = await users.GetEmailAsync(user);
+        if (string.IsNullOrWhiteSpace(email)) return;
         var token = Encode(await users.GenerateEmailConfirmationTokenAsync(user));
         await Deliver(() => mail.SendConfirmationLinkAsync(user, email, Link(options.ConfirmationPage, email, token)), context);
     }
