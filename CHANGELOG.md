@@ -1,5 +1,12 @@
 # Changelog
 
+## Security maintenance
+
+- Password-reset links use the stored account email address rather than a request-supplied recipient. Missing stored addresses do not send reset or confirmation mail.
+- .NET dependencies and generated starters use 10.0.15, with SDK 10.0.404 and Node 24.22.3 for build qualification. Existing application-owned recovery handlers and deployed runtimes require separate remediation.
+- Pull requests run full supported-platform qualification, with immutable build Actions and a required aggregate check.
+
+
 ## Unreleased - proposed next candidate
 
 - Qualified Fathom DTD rejection with valid empty declarations, internal entities and default attributes in source and installed-tool checks.

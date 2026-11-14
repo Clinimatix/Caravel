@@ -49,8 +49,8 @@
       },
       "System.DirectoryServices.Protocols": {
         "type": "Transitive",
-        "resolved": "10.0.13",
-        "contentHash": "JZiWshNhK2+lbPnfV+JTYqKKrT27e5LRdbCU2SFkXwIIJPVKw/7KfrHU/DDbO3OXd4KwJZgAdyWbXl+kwzxWOw=="
+        "resolved": "10.0.15",
+        "contentHash": "VEiti20nQKFx5SjmlxaLJ3mPpDInxH6D2J2jislLF1pmp3aKyrh87E/pqczt1P9f0Pdc5QbpySnEJcniDKjmCg=="
       },
       "xunit.abstractions": {
         "type": "Transitive",
@@ -95,16 +95,16 @@
       "Clinimatix.Caravel.Auth.Windows": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.AspNetCore.Authentication.Negotiate": "[10.0.13, )"
+          "Microsoft.AspNetCore.Authentication.Negotiate": "[10.0.15, )"
         }
       },
       "Microsoft.AspNetCore.Authentication.Negotiate": {
         "type": "CentralTransitive",
-        "requested": "[10.0.13, )",
-        "resolved": "10.0.13",
-        "contentHash": "rpGmQJCiLgpEpBX4olK+B3F+kzP/6FHf5mrabtixgDKJiwc24W1Fgo6ce/IZcKz3wVJYdy6cLf6VoTtOXN7Meg==",
+        "requested": "[10.0.15, )",
+        "resolved": "10.0.15",
+        "contentHash": "Ad0FPDA51rcC4kIXdq7ZrWQyaEMbRKUCMD188LoM4XPPCxJFONZdmOY88Nvn7Pa63Os8XW9J70OKzyUU7SUkQw==",
         "dependencies": {
-          "System.DirectoryServices.Protocols": "10.0.13"
+          "System.DirectoryServices.Protocols": "10.0.15"
         }
       }
     }
