@@ -138,7 +138,7 @@ try {
     }
     Invoke-Checked $cli @('route:list', '--json')
     if ($Provider -eq 'sqlite' -and (Test-Path -LiteralPath $env:Caravel__IdentityDatabase)) { throw 'Generation or route inspection created a database.' }
-    foreach ($file in @('WorkItemApplicationTests.cs', 'IdentityTestDatabase.cs')) {
+    foreach ($file in @('WorkItemApplicationTests.cs', 'IdentityTestDatabase.cs', 'AccountRecipientTests.cs')) {
         (Get-Content -LiteralPath (Join-Path $root "tests/Caravel.Identity.Tests/$file") -Raw).Replace('Caravel.IdentitySample', 'WorkbenchApplication') | Set-Content -LiteralPath (Join-Path $tests $file)
     }
     Copy-Item -LiteralPath (Join-Path $root 'tests/Caravel.Provider.Tests/SqlClientSecurityTests.cs') -Destination $tests

@@ -36,6 +36,7 @@ jobs:
             if ($LASTEXITCODE -eq 0) { throw 'Regression tests unexpectedly pass old implementation.' }
             [xml]$trx = Get-Content tests/Caravel.Identity.Tests/TestResults/recipient-baseline.trx -Raw
             if ([int]$trx.TestRun.ResultSummary.Counters.failed -ne 4 -or [int]$trx.TestRun.ResultSummary.Counters.passed -ne 1) { throw 'Unexpected baseline regression results.' }
+            $global:LASTEXITCODE = 0
           } finally { Set-Content $file $fixed -NoNewline }
       - name: Verify repaired Identity behavior
         shell: pwsh
