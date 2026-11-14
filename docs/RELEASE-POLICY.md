@@ -14,9 +14,9 @@ Caravel uses calendar versions in the form **`YY.Release.Patch`**, with compact 
 
 The first release family begun in 2026 is **Caravel 26.1**. `Release` counts families, not months, and `Patch` is the last numeric component. Compatible bug and security fixes increment Patch within the current line. The next feature release family is `26.2.0`; the calendar implies no fixed release schedule. Use the full package version in install instructions, bug reports and tags.
 
-For the published `26.1.0-rc2` candidate, the first compatible maintenance version is `26.1.1-rc2`, followed by `26.1.2-rc2` if another patch is needed. The RC suffix identifies the candidate scope and does not advance for maintenance alone. A new, deliberately approved candidate scope advances that suffix, carrying forward the numeric patch floor: after `26.1.1-rc2`, a later candidate can be `26.1.1-rc3`. New scope and any feature additions require their own review and qualification; they are not maintenance patches.
+For the published `26.1.0-rc2` candidate, the first compatible maintenance version is `26.1.1-rc2`, followed by `26.1.2-rc2` and then `26.1.3-rc2`. The RC suffix identifies the candidate scope and does not advance for maintenance alone. A new, deliberately approved candidate scope advances that suffix, carrying forward the numeric patch floor: after `26.1.1-rc2`, a later candidate can be `26.1.1-rc3`. New scope and any feature additions require their own review and qualification; they are not maintenance patches.
 
-Stable removes the prerelease suffix at a numeric version no lower than the highest published patch in that candidate line. After `26.1.1-rc2`, stable can be `26.1.1`, with later compatible fixes at `26.1.2` and above. Do not publish `26.1.0-rc3` or `26.1.0` as its successor: NuGet sorts both below `26.1.1-rc2`. If RC2 reaches `26.1.2-rc2` first, the later candidate and stable floor become `26.1.2-rc3` and `26.1.2`. Check actual NuGet ordering before choosing every successor; examples select neither a release date nor future feature scope.
+Stable removes the prerelease suffix at a numeric version no lower than the highest published patch in that candidate line. After `26.1.1-rc2`, stable can be `26.1.1`, with later compatible fixes at `26.1.2` and above. Do not publish `26.1.0-rc3` or `26.1.0` as its successor: NuGet sorts both below `26.1.1-rc2`. With `26.1.3-rc2` published, the later candidate and stable floor become `26.1.3-rc3` and `26.1.3`. Check actual NuGet ordering before choosing every successor; examples select neither a release date nor future feature scope.
 
 Compatibility is promised within each stable release family. Moving from `26.1` to `26.2` is a deliberate upgrade: breaking changes are allowed when justified and must have migration guidance. Patch releases preserve documented APIs and minimum platform requirements. This is calendar versioning with NuGet-compatible syntax, not a claim of Semantic Versioning compatibility rules. Review migration notes when moving between families; do not assume every `26.*` package is interchangeable.
 
@@ -24,7 +24,7 @@ A family takes the year of its first published milestone, RC or stable release a
 
 A few details worth knowing:
 
-- **Milestone releases and architecture milestones are different things.** The roadmap's M0–M4 describe feature areas. The `-m1` in `26.1.0-m1` is just a release counter. The maturity stages are milestone, RC and stable; there is no separate 0.x stage.
+- **Milestone releases and architecture milestones are different things.** The roadmap's M0â€“M4 describe feature areas. The `-m1` in `26.1.0-m1` is just a release counter. The maturity stages are milestone, RC and stable; there is no separate 0.x stage.
 - **Suffixes sort as text.** NuGet sorts `m10` before `m2`, so pin exact versions rather than relying on "latest prerelease".
 - **Published versions never change.** A bad release is fixed with a new version and upgrade guidance, never by moving a tag or replacing packages.
 - **Raising the minimum .NET version is a breaking change** and requires a new feature release family, never a patch. New feature releases follow the latest .NET LTS. Patches to older supported families keep that family's baseline; already published packages do not change.
@@ -42,13 +42,13 @@ Every release requires a fresh, passing CI run on its exact commit.
 
 ## Using prerelease packages
 
-This source targets RC2 security maintenance version **`26.1.2-rc2`**. Check the canonical distribution locations below for publication and availability before installing. Earlier **`26.1.1-rc2`** and **`26.1.0-rc2`** releases remain immutable. [GitHub releases](https://github.com/Clinimatix/Caravel/releases) and [nuget.org](https://www.nuget.org/profiles/Clinimatix) are the canonical distribution locations. Use a configured feed containing the exact version you select. RC1's immutable packages omit the RC2 Identity starter and Azure adapter.
+This source targets RC2 security maintenance version **`26.1.3-rc2`**. Check the canonical distribution locations below for publication and availability before installing. Earlier **`26.1.2-rc2`**, **`26.1.1-rc2`** and **`26.1.0-rc2`** releases remain immutable. [GitHub releases](https://github.com/Clinimatix/Caravel/releases) and [nuget.org](https://www.nuget.org/profiles/Clinimatix) are the canonical distribution locations. Use a configured feed containing the exact version you select. RC1's immutable packages omit the RC2 Identity starter and Azure adapter.
 
 With a configured feed containing RC2, install libraries into an existing project or install Bosun to create an application:
 
 ```powershell
-dotnet add package Clinimatix.Caravel.AspNetCore --version 26.1.2-rc2
-dotnet tool install --global Clinimatix.Caravel.Bosun --version 26.1.2-rc2
+dotnet add package Clinimatix.Caravel.AspNetCore --version 26.1.3-rc2
+dotnet tool install --global Clinimatix.Caravel.Bosun --version 26.1.3-rc2
 caravel new MyApp
 ```
 
@@ -74,8 +74,8 @@ Enable **Include prerelease** when browsing packages in Visual Studio. Pin exact
 3. From that application's directory, install the selected version:
 
    ```powershell
-   dotnet add package Clinimatix.Caravel.AspNetCore --version 26.1.2-rc2
-   dotnet tool install Clinimatix.Caravel.Bosun --tool-path <tools-folder> --version 26.1.2-rc2
+   dotnet add package Clinimatix.Caravel.AspNetCore --version 26.1.3-rc2
+   dotnet tool install Clinimatix.Caravel.Bosun --tool-path <tools-folder> --version 26.1.3-rc2
    ```
 
 4. Commit your lock file, and upgrade deliberately by changing the selected version. Use locked restore in automation to enforce the recorded dependency graph.

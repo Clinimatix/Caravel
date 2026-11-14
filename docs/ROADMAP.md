@@ -26,7 +26,7 @@ Everything lives in this repository and shares one version number, but each pack
 | `Clinimatix.Caravel.Core` | Microsoft.Extensions | Configuration, `.env` and service providers. No web or EF dependency. |
 | `Clinimatix.Caravel.AspNetCore` | Core, ASP.NET Core | Routing syntax, HTTP defaults and route inspection. |
 | `Clinimatix.Caravel.Clarion` | EF Core | The data layer. Works in any .NET host and doesn't need the rest of Caravel. You choose the database provider. |
-| `Clinimatix.Caravel.Bosun` | — | The `caravel` command-line tool, installed as a .NET tool. |
+| `Clinimatix.Caravel.Bosun` | â€” | The `caravel` command-line tool, installed as a .NET tool. |
 | `Clinimatix.Caravel.Auth` | ASP.NET Core Identity | Local accounts with secure defaults. You choose the store. |
 | `Clinimatix.Caravel.Auth.Windows` | ASP.NET Core Negotiate | Windows authentication for intranet apps. |
 | `Clinimatix.Caravel.Events` | Microsoft.Extensions.DependencyInjection | In-process events. |
@@ -41,7 +41,7 @@ New packages are added when there's real integration work to do. Caching, for ex
 
 ## Where things stand
 
-This guide targets **`26.1.2-rc2`**, extending the RC1 foundation with the composed application path described below. [GitHub releases](https://github.com/Clinimatix/Caravel/releases) and [NuGet](https://www.nuget.org/profiles/Clinimatix) are the canonical distribution locations. Broader development is organized into architecture milestones:
+This guide targets **`26.1.3-rc2`**, extending the RC1 foundation with the composed application path described below. [GitHub releases](https://github.com/Clinimatix/Caravel/releases) and [NuGet](https://www.nuget.org/profiles/Clinimatix) are the canonical distribution locations. Broader development is organized into architecture milestones:
 
 | Milestone | Focus | Status |
 | --- | --- | --- |
@@ -51,7 +51,7 @@ This guide targets **`26.1.2-rc2`**, extending the RC1 foundation with the compo
 | **M3: Developer experience** | `caravel dev`, starter kits, generators, testing helpers, Windows Service and IIS helpers, optional Aspire support | In progress |
 | **M4: AI-native Caravel** | Microsoft.Extensions.AI integration, embeddings, structured output, MCP server support, agent tooling and search | Planned |
 
-Architecture milestones (M0–M4) are separate from release version suffixes: `26.1.0-m1` identifies the first milestone candidate for the 26.1 family, not "milestone 1 only". See the [release policy](RELEASE-POLICY.md) for versioning.
+Architecture milestones (M0â€“M4) are separate from release version suffixes: `26.1.0-m1` identifies the first milestone candidate for the 26.1 family, not "milestone 1 only". See the [release policy](RELEASE-POLICY.md) for versioning.
 
 ### Available today
 
@@ -81,7 +81,7 @@ An optional [Azure Blob adapter](AZURE-STORAGE.md) supplies create-only streamin
 - **Mail and notifications:** additional mail/SMS providers, in-app inboxes, browser/mobile push, chat channels, delivery receipts and recipient preferences; see [channel plans and current limits](NOTIFICATIONS.md#later-channel-work)
 - **Starter kits:** Blazor and React, richer account screens and external-identity profiles
 - **Deployment helpers:** Windows Service and IIS publishing, and optional Aspire integration
-- **Databases:** MariaDB/MySQL, once an EF Core 10–compatible provider is available (see [database providers](DATABASE-PROVIDERS.md))
+- **Databases:** MariaDB/MySQL, once an EF Core 10â€“compatible provider is available (see [database providers](DATABASE-PROVIDERS.md))
 - **AI and MCP:** the M4 packages listed above
 
 ### Toward stable 26.1
@@ -90,7 +90,7 @@ Release qualification covers the exact release commit, supported platforms and d
 
 Work toward stable 26.1 focuses on integration feedback, fixes, documentation and upgrade validation. RCs remain public previews, not stable releases or a compatibility commitment. See the [release policy](RELEASE-POLICY.md) and [changelog](../CHANGELOG.md) for status and changes.
 
-Compatible maintenance stays on the current candidate scope: `26.1.2-rc2` is a patch for published `26.1.1-rc2`, not an RC3 feature candidate. A later approved scope advances the RC suffix while carrying forward the numeric patch floor, and stable must not sort below the published candidates. No later scope or release date is implied by the maintenance version.
+Compatible maintenance stays on the current candidate scope: `26.1.3-rc2` is a patch for published `26.1.2-rc2`, not an RC3 feature candidate. A later approved scope advances the RC suffix while carrying forward the numeric patch floor, and stable must not sort below the published candidates. No later scope or release date is implied by the maintenance version.
 
 ## Non-goals
 

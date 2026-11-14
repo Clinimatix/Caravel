@@ -2,6 +2,16 @@
 
 Review dependencies against the exact Caravel commit and release line you use. Compatible bug and security fixes stay on that line with a new immutable patch version; feature additions and platform changes follow the separate [release policy](RELEASE-POLICY.md). Keep every first-party package on the same version.
 
+## November 2026 security maintenance
+
+Use Caravel **26.1.3-rc2** or a later supported maintenance version, keeping all first-party packages aligned. This patch preserves RC2 APIs and database schemas. Its build selects SDK **10.0.404**, which supplies .NET and ASP.NET Core **10.0.15**; independently referenced .NET packages and generated starters are serviced to **10.0.15**. See the [November .NET security release](https://github.com/dotnet/core/blob/main/release-notes/10.0/10.0.15/10.0.15.md).
+
+Account recovery now sends password-reset links only to the user's stored email address, including the address inside the link. A missing stored address produces the same generic response without sending mail. Confirmation delivery also rejects a missing stored address. This follows Microsoft's [updated Identity guidance](https://github.com/dotnet/aspnetcore/security/advisories/GHSA-x3vp-85cm-q97r).
+
+Existing applications must update their Caravel Auth dependency and deliberately regenerate and review locks. Inspect any copied or generated recovery handlers too: after locating an account, obtain its address with `UserManager.GetEmailAsync(user)`, reject a missing address and send recovery mail only to that stored address. Updating the SDK or Bosun does not rewrite existing application source.
+
+Service each application's loaded .NET/ASP.NET Core runtime and restart it; rebuild and redeploy self-contained applications and containers with corrected runtime packs/images. Verify the runtime actually loaded. A library update alone does not service an application host. Caravel's build/browser tooling uses Node **24.22.3**; the documentation website serves static files.
+
 ## Check the resolved graph
 
 Use the SDK pinned in `global.json` and the committed package locks:

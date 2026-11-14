@@ -6,7 +6,7 @@ Clinimatix Caravel is an open-source application framework that brings expressiv
 
 Use the whole framework, or pick just the packages you need.
 
-Caravel **26.1 is a release candidate**. [Features](#what-you-can-build) · [Quick start](#quick-start) · [Documentation](https://github.com/Clinimatix/Caravel/blob/main/docs/README.md) · [Status](#project-status)
+Caravel **26.1 is a release candidate**. [Features](#what-you-can-build) Â· [Quick start](#quick-start) Â· [Documentation](https://github.com/Clinimatix/Caravel/blob/main/docs/README.md) Â· [Status](#project-status)
 
 ```csharp
 using Caravel.AspNetCore;
@@ -29,11 +29,11 @@ await app.RunAsync();
 
 - **Expressive routing.** Typed handlers, named routes, and route groups, with ASP.NET Core authorization and metadata at hand.
 - **Clarion data access.** Query plain C# models with LINQ, and add timestamps, soft deletes, factories, and seeders. EF Core's relationships, transactions, and concurrency controls are still there when you need them. [Meet Clarion](https://github.com/Clinimatix/Caravel/blob/main/docs/CLARION.md).
-- **Bosun tooling.** The `caravel` command creates Razor or API apps, runs development sessions, lists routes, generates models, jobs and listeners, and manages migrations. [Data commands](https://github.com/Clinimatix/Caravel/blob/main/docs/BOSUN-DATA.md) · [Development sessions](https://github.com/Clinimatix/Caravel/blob/main/docs/DEVELOPMENT.md).
+- **Bosun tooling.** The `caravel` command creates Razor or API apps, runs development sessions, lists routes, generates models, jobs and listeners, and manages migrations. [Data commands](https://github.com/Clinimatix/Caravel/blob/main/docs/BOSUN-DATA.md) Â· [Development sessions](https://github.com/Clinimatix/Caravel/blob/main/docs/DEVELOPMENT.md).
 - **Authentication that fits .NET.** Local Identity accounts with opt-in registration, email confirmation, password recovery and authenticator-app MFA, Windows authentication for intranets, and recipes for OpenID Connect sign-in and bearer-token APIs. [Set up authentication](https://github.com/Clinimatix/Caravel/blob/main/docs/AUTHENTICATION.md).
 - **Simple events.** Dispatch events to ordered, scoped listeners and test them with a recording fake. [Use events](https://github.com/Clinimatix/Caravel/blob/main/docs/EVENTS.md).
-- **Durable background work.** Save typed jobs in your database, renew leases for longer work, retry failures, replay dead letters, and enqueue recurring work on fixed intervals. An application outbox commits dispatch intent alongside business data. [Queues](https://github.com/Clinimatix/Caravel/blob/main/docs/QUEUES.md) · [Scheduling](https://github.com/Clinimatix/Caravel/blob/main/docs/SCHEDULING.md).
-- **Mail and notifications.** Compose transactional email with templates and attachments, queue delivery, and choose replaceable mail or SMS channels. Development captures make messages easy to test. [Mail](https://github.com/Clinimatix/Caravel/blob/main/docs/MAIL.md) · [Notifications](https://github.com/Clinimatix/Caravel/blob/main/docs/NOTIFICATIONS.md).
+- **Durable background work.** Save typed jobs in your database, renew leases for longer work, retry failures, replay dead letters, and enqueue recurring work on fixed intervals. An application outbox commits dispatch intent alongside business data. [Queues](https://github.com/Clinimatix/Caravel/blob/main/docs/QUEUES.md) Â· [Scheduling](https://github.com/Clinimatix/Caravel/blob/main/docs/SCHEDULING.md).
+- **Mail and notifications.** Compose transactional email with templates and attachments, queue delivery, and choose replaceable mail or SMS channels. Development captures make messages easy to test. [Mail](https://github.com/Clinimatix/Caravel/blob/main/docs/MAIL.md) Â· [Notifications](https://github.com/Clinimatix/Caravel/blob/main/docs/NOTIFICATIONS.md).
 - **Storage disks.** Stream files into named, application-owned directories with safe, create-only writes, or opt into [Azure Blob storage](https://github.com/Clinimatix/Caravel/blob/main/docs/AZURE-STORAGE.md) with native conditional transfers. [Use storage](https://github.com/Clinimatix/Caravel/blob/main/docs/STORAGE.md).
 - **A cohesive foundation.** Service providers, async startup, `.env` configuration, built-in validation, consistent HTTP errors, and queue metrics through standard .NET diagnostics.
 - **Practical starting points.** Razor and API starters, an optional Identity starter with a browser command flow, data and worker samples, and an [authenticated backend sample](https://github.com/Clinimatix/Caravel/blob/main/docs/BACKEND-SAMPLE.md) that takes you from sign-in to durable processing to reporting.
@@ -60,10 +60,10 @@ It is organized into optional packages, so you can take as much or as little as 
 
 You'll need the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0). Nothing else is required: no database server, Node, or Docker.
 
-This source targets **`26.1.2-rc2`**, a compatible security maintenance patch for RC2. Check the release and package feeds for availability before installing, and pin the exact version when installing Bosun or libraries. [GitHub releases](https://github.com/Clinimatix/Caravel/releases) and [NuGet](https://www.nuget.org/profiles/Clinimatix) are the canonical distribution locations; see [prerelease installation](https://github.com/Clinimatix/Caravel/blob/main/docs/RELEASE-POLICY.md#using-prerelease-packages).
+This source targets **`26.1.3-rc2`**, a compatible security maintenance patch for RC2. Check the release and package feeds for availability before installing, and pin the exact version when installing Bosun or libraries. [GitHub releases](https://github.com/Clinimatix/Caravel/releases) and [NuGet](https://www.nuget.org/profiles/Clinimatix) are the canonical distribution locations; see [prerelease installation](https://github.com/Clinimatix/Caravel/blob/main/docs/RELEASE-POLICY.md#using-prerelease-packages).
 
 ```powershell
-dotnet tool install --global Clinimatix.Caravel.Bosun --version 26.1.2-rc2
+dotnet tool install --global Clinimatix.Caravel.Bosun --version 26.1.3-rc2
 caravel new MyApp
 caravel serve --project MyApp
 ```
@@ -86,7 +86,7 @@ caravel route:list --project MyApp   # list your routes
 caravel doctor                       # check your setup
 ```
 
-To add Caravel to an existing application, install only the [packages you need](https://www.nuget.org/profiles/Clinimatix) with an exact version, for example `dotnet add package Clinimatix.Caravel.AspNetCore --version 26.1.2-rc2` once your feed contains it. Keep all first-party packages on the same version and deliberately review regenerated dependency locks. This RC2 maintenance candidate requires no database migration. [Upgrading from RC1](https://github.com/Clinimatix/Caravel/blob/main/docs/UPGRADING.md) covers the earlier API additions and schema changes. [GitHub release ZIPs](https://github.com/Clinimatix/Caravel/releases) remain available for [local-feed installation](https://github.com/Clinimatix/Caravel/blob/main/docs/RELEASE-POLICY.md#using-a-release-zip).
+To add Caravel to an existing application, install only the [packages you need](https://www.nuget.org/profiles/Clinimatix) with an exact version, for example `dotnet add package Clinimatix.Caravel.AspNetCore --version 26.1.3-rc2` once your feed contains it. Keep all first-party packages on the same version and deliberately review regenerated dependency locks. This RC2 maintenance candidate requires no database migration. [Upgrading from RC1](https://github.com/Clinimatix/Caravel/blob/main/docs/UPGRADING.md) covers the earlier API additions and schema changes. [GitHub release ZIPs](https://github.com/Clinimatix/Caravel/releases) remain available for [local-feed installation](https://github.com/Clinimatix/Caravel/blob/main/docs/RELEASE-POLICY.md#using-a-release-zip).
 
 ## Learn more
 
@@ -101,9 +101,9 @@ To add Caravel to an existing application, install only the [packages you need](
 
 ## Project status
 
-The **`26.1.2-rc2`** maintenance candidate services RC2's SQL Server dependency and build runtime while preserving its APIs and .NET 10 platform family. Published RC2 packages remain unchanged. Its scope includes the application foundation, Clarion data layer, authentication, durable background work, mail and notifications, and Bosun tooling. Work toward stable focuses on fixes, upgrade validation and real-application feedback. See the [changelog](https://github.com/Clinimatix/Caravel/blob/main/CHANGELOG.md).
+The **`26.1.3-rc2`** maintenance candidate repairs password-recovery recipients and services .NET 10 dependencies and build tooling while preserving its APIs and .NET 10 platform family. Published RC2 packages remain unchanged. Its scope includes the application foundation, Clarion data layer, authentication, durable background work, mail and notifications, and Bosun tooling. Work toward stable focuses on fixes, upgrade validation and real-application feedback. See the [changelog](https://github.com/Clinimatix/Caravel/blob/main/CHANGELOG.md).
 
-- **Databases:** SQL Server, PostgreSQL, and SQLite are supported and tested. MariaDB is planned once an EF Core 10–compatible provider is available. See [database providers](https://github.com/Clinimatix/Caravel/blob/main/docs/DATABASE-PROVIDERS.md).
+- **Databases:** SQL Server, PostgreSQL, and SQLite are supported and tested. MariaDB is planned once an EF Core 10â€“compatible provider is available. See [database providers](https://github.com/Clinimatix/Caravel/blob/main/docs/DATABASE-PROVIDERS.md).
 - **Integration limits:** the Identity starter provides password sign-in/sign-out and work-item forms; complete account/MFA screens and external identity need application integration. Azure credentials, provisioning, scanning and cloud retention require separate setup and qualification.
 - **Coming next:** passkeys, calendar scheduling, additional cloud storage, more notification channels and starter kits, and AI tooling. See the [roadmap](https://github.com/Clinimatix/Caravel/blob/main/docs/ROADMAP.md).
 - **Adoption:** ready for deliberate prerelease evaluation and integration, with exact version pins and a rollback plan. This is not yet a stable release or compatibility commitment; see [versions and releases](https://github.com/Clinimatix/Caravel/blob/main/docs/RELEASE-POLICY.md).

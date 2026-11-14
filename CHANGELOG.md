@@ -1,5 +1,14 @@
 # Changelog
 
+## 26.1.3-rc2
+
+Compatible RC2 security maintenance; no API or database schema change. Update first-party packages together.
+
+- Send password-reset links only to the account's stored email address; do not deliver recovery mail when that address is missing. Confirmation delivery also checks for a stored address.
+- Service .NET dependencies and generated starters to 10.0.15, build SDK to 10.0.404 and Node tooling to 24.22.3. Preserve the .NET 10 platform family and SqlClient 6.1.8 corrections.
+- Pin build Actions to immutable vendor commits and exercise recovery recipient behavior in source and installed starters.
+- Existing applications must inspect customized recovery handlers, update their dependencies and service/redeploy their runtimes separately. See [dependency maintenance](docs/DEPENDENCY-MAINTENANCE.md).
+
 ## 26.1.2-rc2
 
 This compatible maintenance release preserves the RC2 APIs and .NET 10 platform family. Update first-party packages together and review application dependency locks. No database migration is required.
@@ -30,7 +39,7 @@ This release candidate extends RC1 with a composed application path while preser
 
 - Extended the authenticated backend sample with workspace-scoped work items, versioned commands, durable retry receipts, transactional history/outbox, reference-only notices and a browser form for errors and uncertain retries. Includes an explicit additive migration and setup guide; Bosun's basic starters remain unchanged.
 
-## 26.1.0-rc1 — 2026-09-29
+## 26.1.0-rc1 â€” 2026-09-29
 
 The first release candidate brings together the 26.1 application foundation, data layer and services. It replaces the earlier .NET 9 prototype with a modular framework built on .NET 10 and C# 14. The documented scope and APIs are settled for release qualification; stable follows real-application feedback and upgrade validation.
 
@@ -96,5 +105,5 @@ The first release candidate brings together the 26.1 application foundation, dat
 - All 12 RC1 packages are available on [nuget.org](https://www.nuget.org/profiles/Clinimatix), with GitHub release ZIPs retained for local-feed use; see [installation instructions](docs/RELEASE-POLICY.md#using-prerelease-packages).
 - Not yet included: passkeys, finished account-management screens, calendar/time-zone scheduling, cloud storage drivers, additional notification providers, a Caravel cache API, and the AI/MCP packages. See the [roadmap](docs/ROADMAP.md).
 - SMTP and SMS adapters have automated protocol tests; provider acceptance does not guarantee recipient delivery. Configure and verify your chosen delivery service before use. SMS delivery is not SMS MFA.
-- MariaDB is waiting on an EF Core 10–compatible provider.
+- MariaDB is waiting on an EF Core 10â€“compatible provider.
 - Linux and macOS storage requires a filesystem that supports hard links.
