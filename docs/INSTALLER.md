@@ -1,13 +1,13 @@
 # Install Bosun with PowerShell
 
-The upcoming candidate includes `scripts/install.ps1`, a standalone PowerShell 7 installer
-for the Bosun `caravel` command. It does not install framework libraries into an existing
-application, provision a runtime, create a database or install frontend tools. Bosun creates
-applications using its existing starter commands.
+The standalone PowerShell 7 installer for Bosun is available at
+`https://caravel.clinimatix.com/install.ps1`. It installs the reviewed prerelease from an
+embedded catalog of immutable release ZIP checksums and source commits. It does not install
+application libraries, provision a runtime, create a database or install frontend tools.
 
-The planned public address is `https://caravel.clinimatix.com/install.ps1`. **Website
-publication is pending; this address is not yet an available installation contract.**
-For now, download the script from a reviewed source revision and inspect it locally.
+Inspect the [installer source](../scripts/install.ps1) and verify the digest below before
+executing it. Existing applications need their own dependency, recovery-handler and
+deployed-runtime updates; see [security maintenance](DEPENDENCY-MAINTENANCE.md).
 
 ## Choose and inspect
 
@@ -17,7 +17,7 @@ your ordinary user. The installer never elevates, changes execution policy, inst
 changes PATH or changes persistent NuGet configuration. If your policy blocks scripts,
 follow your organization's approved signing/execution process; do not bypass it.
 
-After website publication, download the script and compare its SHA-256 to the digest in the
+Download the script and compare its SHA-256 to the digest in the
 reviewed website source/release record **before executing it**. A checksum downloaded from
 the same endpoint alone provides no independent authenticity assurance.
 
@@ -32,7 +32,7 @@ Get-Content ./caravel-install.ps1
 The shorter execution line, once the local script is verified, is:
 
 ```powershell
-./caravel-install.ps1 -Version 26.1.2-rc2
+./caravel-install.ps1 -Version 26.1.3-rc2
 ```
 
 Avoid piping an unverified download into `Invoke-Expression`. The script's embedded catalog
@@ -53,7 +53,7 @@ Once this exact script is published and its digest confirmed against reviewed so
 download, verification and invocation can also be written as one line:
 
 ```powershell
-$p = Join-Path ([IO.Path]::GetTempPath()) (([guid]::NewGuid().ToString('N')) + '.ps1'); Invoke-WebRequest https://caravel.clinimatix.com/install.ps1 -OutFile $p; if ((Get-FileHash $p -Algorithm SHA256).Hash -ne '17ffbbb0da345b357238a7075c11467d50e619546e8e943f4a00358fc7a9d2db') { throw 'Installer checksum mismatch' }; & $p -Channel prerelease
+$p = Join-Path ([IO.Path]::GetTempPath()) (([guid]::NewGuid().ToString('N')) + '.ps1'); Invoke-WebRequest https://caravel.clinimatix.com/install.ps1 -OutFile $p; if ((Get-FileHash $p -Algorithm SHA256).Hash -ne 'b949c3b91c89dd1b0f693d87ceb4ebb62e5c767d09d571db5aa6915d1d194b3a') { throw 'Installer checksum mismatch' }; & $p -Channel prerelease
 ```
 
 An endpoint update deliberately causes an older digest-pinned command to fail. Review the
@@ -64,7 +64,7 @@ file according to your normal review workflow.
 
 The default `-Channel stable` selects the catalog's reviewed stable release. No stable
 release is cataloged yet, so it stops with guidance instead of silently installing an RC.
-`-Channel prerelease` currently selects `26.1.2-rc2`. `-Version` overrides the channel and
+`-Channel prerelease` currently selects `26.1.3-rc2`. `-Version` overrides the channel and
 must match an exact catalog entry. The earlier `26.1.1-rc2` entry remains available for explicit pins and rollback. Unsupported versions fail before download. Channel
 advancement requires a reviewed catalog update after immutable release qualification;
 this change does not publish or invent RC3 packages.
@@ -73,8 +73,8 @@ The default destination is `$HOME/.caravel/tools/<version>`; `-InstallRoot <dire
 selects another writable root. Invoke the printed full path, for example:
 
 ```powershell
-& "$HOME/.caravel/tools/26.1.2-rc2/caravel" version
-& "$HOME/.caravel/tools/26.1.2-rc2/caravel" new MyApp
+& "$HOME/.caravel/tools/26.1.3-rc2/caravel" version
+& "$HOME/.caravel/tools/26.1.3-rc2/caravel" new MyApp
 ```
 
 Earlier version directories remain available for rollback. Repeating the same version

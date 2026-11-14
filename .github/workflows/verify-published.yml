@@ -1,0 +1,91 @@
+name: Verify published Caravel packages
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Exact published maintenance version
+        required: true
+        type: string
+      sha256:
+        description: Reviewed release ZIP SHA-256
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  published-consumer:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - name: Validate exact release inputs
+        shell: pwsh
+        env:
+          VERSION: ${{ inputs.version }}
+          SHA256: ${{ inputs.sha256 }}
+        run: |
+          if ($env:VERSION -cnotmatch '^[0-9]{2}\.[0-9]+\.[0-9]+-rc[0-9]+$' -or $env:SHA256 -cnotmatch '^[a-f0-9]{64}$') { throw 'Invalid exact-release input.' }
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: v${{ inputs.version }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: '10.0.404'
+      - name: Verify feed signatures and exact release payloads
+        shell: pwsh
+        env:
+          VERSION: ${{ inputs.version }}
+          SHA256: ${{ inputs.sha256 }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:NUGET_PACKAGES = Join-Path $env:RUNNER_TEMP 'caravel-published-cache'
+          $env:NUGET_HTTP_CACHE_PATH = Join-Path $env:RUNNER_TEMP 'caravel-published-http-cache'
+          $env:DOTNET_GENERATE_ASPNET_CERTIFICATE = 'false'
+          New-Item -ItemType Directory artifacts/published-consumer -Force | Out-Null
+          $commit = (git rev-parse HEAD).Trim()
+          $asset = "Clinimatix.Caravel.$env:VERSION.packages.zip"
+          gh release download "v$env:VERSION" --repo Clinimatix/Caravel --pattern $asset --dir artifacts/published-consumer
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot retain published release.' }
+          Remove-Item Env:GH_TOKEN
+          ./scripts/Expand-NuGetRelease.ps1 -Archive "artifacts/published-consumer/$asset" -Sha256 $env:SHA256 -Version $env:VERSION -Commit $commit -Destination "$PWD/artifacts/published-consumer/release"
+          New-Item -ItemType Directory artifacts/published-consumer/feed -Force | Out-Null
+          $records = foreach ($original in Get-ChildItem artifacts/published-consumer/release -Filter '*.nupkg') {
+            $id = $original.Name.Substring(0, $original.Name.Length - ".$env:VERSION.nupkg".Length).ToLowerInvariant()
+            $payload = Join-Path "$PWD/artifacts/published-consumer/feed" $original.Name
+            Invoke-WebRequest "https://api.nuget.org/v3-flatcontainer/$id/$env:VERSION/$id.$env:VERSION.nupkg" -OutFile $payload
+            $verification = & dotnet nuget verify $payload --all 2>&1 | Out-String
+            if ($LASTEXITCODE -ne 0) { throw "Signature verification failed: $id" }
+            $before = [IO.Compression.ZipFile]::OpenRead($original.FullName)
+            $after = [IO.Compression.ZipFile]::OpenRead($payload)
+            try {
+              if (@($after.Entries | Where-Object FullName -eq '.signature.p7s').Count -ne 1 -or $after.Entries.Count -ne $before.Entries.Count + 1) { throw 'Unexpected signed package inventory.' }
+              foreach ($entry in $before.Entries) {
+                $other = $after.GetEntry($entry.FullName)
+                if (!$other) { throw 'Missing original package entry.' }
+                $one = $entry.Open(); $two = $other.Open()
+                try {
+                  $digest = [Security.Cryptography.SHA256]::Create()
+                  if ([Convert]::ToHexString($digest.ComputeHash($one)) -cne [Convert]::ToHexString($digest.ComputeHash($two))) { throw 'Feed bytes differ from reviewed original payload.' }
+                } finally { $one.Dispose(); $two.Dispose() }
+              }
+            } finally { $before.Dispose(); $after.Dispose() }
+            @{id=$id;sha256=(Get-FileHash $payload -Algorithm SHA256).Hash;signature=$verification;payloadEntriesIdentical=$true}
+          }
+          if ($records.Count -ne 13) { throw 'Incomplete package inventory.' }
+          $records | ConvertTo-Json -Depth 5 | Set-Content artifacts/published-consumer/packages.json
+          dotnet tool install Clinimatix.Caravel.Bosun --version $env:VERSION --tool-path artifacts/published-consumer/tool --add-source https://api.nuget.org/v3/index.json
+          if ($LASTEXITCODE -ne 0) { throw 'Published Bosun installation failed.' }
+          & artifacts/published-consumer/tool/caravel.exe --version
+          if ($LASTEXITCODE -ne 0) { throw 'Published Bosun execution failed.' }
+          ./scripts/Test-IdentityStarterSmoke.ps1 -CandidatePackageDirectory "$PWD/artifacts/published-consumer/feed"
+          if ($LASTEXITCODE -ne 0) { throw 'Published Identity starter regression checks failed.' }
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: published-consumer-${{ inputs.version }}
+          path: |
+            artifacts/published-consumer/packages.json
+            artifacts/identity-starter-evidence
+          if-no-files-found: error

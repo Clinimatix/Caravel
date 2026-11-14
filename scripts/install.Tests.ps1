@@ -31,10 +31,13 @@ function MustFail([scriptblock]$Action, [string]$Message) {
 $publishedCatalog = Get-CaravelInstallerCatalog
 Assert ($null -eq $publishedCatalog.stable) 'Stable channel must remain unavailable until a stable release is reviewed'
 Assert ($publishedCatalog.releases.ContainsKey($publishedCatalog.prerelease)) 'Prerelease channel is not cataloged'
-Assert ($publishedCatalog.prerelease -ceq '26.1.2-rc2') 'Prerelease channel did not advance to the reviewed maintenance release'
-$currentRelease = $publishedCatalog.releases['26.1.2-rc2']
-Assert ($currentRelease.sha256 -ceq '65211142ccd277b34e2380cef14b6e3fbd1af30a1dcb8920559045fd647c6913') 'Current release archive pin changed'
-Assert ($currentRelease.commit -ceq '50664cf0c9dae783d5390d2eb64485df93832fd8') 'Current release source pin changed'
+Assert ($publishedCatalog.prerelease -ceq '26.1.3-rc2') 'Prerelease channel did not advance to the reviewed maintenance release'
+$currentRelease = $publishedCatalog.releases['26.1.3-rc2']
+Assert ($currentRelease.sha256 -ceq 'fc2ac4c0d0fa2fca42d54a7b4dafbac5d124449a87880bb39b033d0a97bd77d5') 'Current release archive pin changed'
+Assert ($currentRelease.commit -ceq '415ff3affa2851ba893d34e67e955601f440e961') 'Current release source pin changed'
+$previousMaintenance = $publishedCatalog.releases['26.1.2-rc2']
+Assert ($previousMaintenance.sha256 -ceq '65211142ccd277b34e2380cef14b6e3fbd1af30a1dcb8920559045fd647c6913') 'Previous maintenance archive pin changed'
+Assert ($previousMaintenance.commit -ceq '50664cf0c9dae783d5390d2eb64485df93832fd8') 'Previous maintenance source pin changed'
 $previousRelease = $publishedCatalog.releases['26.1.1-rc2']
 Assert ($previousRelease.sha256 -ceq 'd695d8d3c179b7542a34d99015eaa354a05ac61f2661a5c6fb0b4fa15c6796bc') 'Previous release archive pin changed'
 Assert ($previousRelease.commit -ceq 'fcaa760cef15a81925e389b8727b18a2dadd0271') 'Previous release source pin changed'
