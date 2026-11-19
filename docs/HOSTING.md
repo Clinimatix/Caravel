@@ -4,6 +4,9 @@ Caravel apps are ordinary .NET apps. Web apps run on ASP.NET Core and background
 
 For local development, use [development sessions](DEVELOPMENT.md). For a complete, runnable worker, see the [queue sample](QUEUES.md#try-the-runnable-worker-sample).
 
+For consistent feature registration across development and managed-identity profiles, see
+[deployment-profile composition](HOSTING-PROFILES.md).
+
 ## Run a durable worker
 
 After registering your database queue and job handlers, add the hosted worker:

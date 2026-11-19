@@ -9,6 +9,8 @@
 
 ## Unreleased - proposed next candidate
 
+- Added hosting-profile composition guidance and model-free examples for route parity, explicit read-only mode, startup validation and authenticated mounted capabilities.
+
 - Qualified Fathom DTD rejection with valid empty declarations, internal entities and default attributes in source and installed-tool checks.
 
 - Qualified Fathom's existing project-file size limit with valid UTF-8 and UTF-16 XML at and above the byte boundary, including byte-order marks, through source and installed-tool checks.
