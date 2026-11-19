@@ -41,11 +41,19 @@ sealed class StatusPolicy : IApplicationToolAuthorizer
 
 `Descriptors` inspects names and declared read/write effects without invoking policies or
 handlers. Names are case-sensitive and limited to 64 ASCII letters, digits, underscores
-or hyphens. Duplicate names fail at construction. Treat this catalog as internal metadata;
+or hyphens. Duplicate names fail at construction. Registration is a construction-time snapshot:
+changes to the supplied collection do not add, remove or replace tools. Descriptor discovery
+is read-only; names that differ only by case remain distinct operations. Creating a registry
+enumerates the supplied registrations, so iterator side effects belong to the application.
+Treat this catalog as internal metadata;
 discovery visibility and authentication at a future transport remain application concerns.
 
 Execution accepts only JSON objects, snapshots arguments before asynchronous authorization,
-and calls the required authorizer on every invocation, including reads. Authorization must
+and calls the required authorizer on every invocation, including reads. Null, arrays,
+scalars and undefined arguments are rejected before either callback. A document-owned JSON element whose
+source document was disposed before the call also fails before authorization. Empty and
+nested objects are accepted at this boundary; acceptance does not validate their schema.
+Authorization must
 check current caller, tenant, resource and effect permissions using trusted application
 state. A caller-supplied principal or read annotation is not proof of permission. Handlers
 must validate their own argument shape, values and resource eligibility before acting.
@@ -58,6 +66,18 @@ idempotency and reconciliation of uncertain writes. A failed or canceled call ca
 have performed effects. Read/write metadata documents intent; it cannot sandbox arbitrary
 application code. Captured handler dependencies retain application-owned lifetimes; create a
 registry within the appropriate scope when handlers use scoped services.
+
+Handlers also own result serialization and lifetime. Unlike input arguments, results are
+returned without cloning or schema validation. Return `JsonSerializer.SerializeToElement`
+or a `JsonElement.Clone()` made before disposing its `JsonDocument` when the caller needs
+an independently usable value. A borrowed element remains tied to its document; reading
+it after that document is disposed fails. Results may be objects, arrays or scalar JSON
+values; the application defines their contract and safe presentation.
+
+Once a handler starts, cancellation is cooperative: a handler that ignores the token can
+still complete successfully. The registry does not replace that result with cancellation
+or undo work already performed. Exceptions raised after an asynchronous suspension retain
+their original identity and are not retried.
 
 Fake policies and delegates can exercise success, denied reads/writes, cancellation and
 errors without any external service. No network MCP endpoint, protocol compatibility,

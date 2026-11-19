@@ -121,6 +121,79 @@ public sealed class ApplicationToolTests
         Assert.Equal(1, (await pending).GetProperty("id").GetInt32());
     }
 
+    [Theory]
+    [InlineData(ToolEffect.Read)]
+    [InlineData(ToolEffect.Write)]
+    public async Task NonObjectArgumentsNeverAuthorizeOrExecute(ToolEffect effect)
+    {
+        var checks = 0;
+        var calls = 0;
+        var registry = new ApplicationToolRegistry([Tool((_, _, _) =>
+        {
+            calls++;
+            return ValueTask.FromResult(Args);
+        }, effect)], new Policy((_, _) => { checks++; return ValueTask.FromResult(true); }));
+
+        foreach (var json in new[] { "null", "[]", "[{}]", "\"text\"", "0", "1.5", "true", "false" })
+        {
+            using var document = JsonDocument.Parse(json);
+            var error = await Assert.ThrowsAsync<ArgumentException>(() =>
+                registry.ExecuteAsync("lookup", Principal, document.RootElement).AsTask());
+            Assert.Equal("arguments", error.ParamName);
+            Assert.Equal(0, checks);
+            Assert.Equal(0, calls);
+        }
+        await Assert.ThrowsAsync<ArgumentException>(() =>
+            registry.ExecuteAsync("lookup", Principal, default).AsTask());
+        Assert.Equal(0, checks);
+        Assert.Equal(0, calls);
+    }
+
+    [Theory]
+    [InlineData(ToolEffect.Read)]
+    [InlineData(ToolEffect.Write)]
+    public async Task DisposedArgumentsNeverAuthorizeOrExecute(ToolEffect effect)
+    {
+        var checks = 0;
+        var calls = 0;
+        var registry = new ApplicationToolRegistry([Tool((_, _, _) =>
+        {
+            calls++;
+            return ValueTask.FromResult(Args);
+        }, effect)], new Policy((_, _) => { checks++; return ValueTask.FromResult(true); }));
+        var document = JsonDocument.Parse("{}");
+        var arguments = document.RootElement;
+        document.Dispose();
+
+        await Assert.ThrowsAsync<ObjectDisposedException>(() =>
+            registry.ExecuteAsync("lookup", Principal, arguments).AsTask());
+        Assert.Equal(0, checks);
+        Assert.Equal(0, calls);
+    }
+
+    [Theory]
+    [InlineData(ToolEffect.Read)]
+    [InlineData(ToolEffect.Write)]
+    public async Task ValidObjectsStillRequireAuthorizationAndReachHandlerUnchanged(ToolEffect effect)
+    {
+        var checks = 0;
+        var calls = 0;
+        var registry = new ApplicationToolRegistry([Tool((_, arguments, _) =>
+        {
+            Assert.Equal(++calls, checks);
+            return ValueTask.FromResult(arguments);
+        }, effect)], new Policy((_, _) => { checks++; return ValueTask.FromResult(true); }));
+
+        foreach (var json in new[] { "{}", "{\"nested\":{\"items\":[null,true,1,\"text\"]}}" })
+        {
+            using var document = JsonDocument.Parse(json);
+            var result = await registry.ExecuteAsync("lookup", Principal, document.RootElement);
+            Assert.Equal(json, result.GetRawText());
+        }
+        Assert.Equal(2, checks);
+        Assert.Equal(2, calls);
+    }
+
     [Fact]
     public void RegistrationRejectsDuplicatesAndInvalidMetadata()
     {
