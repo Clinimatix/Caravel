@@ -109,3 +109,24 @@ app.MapHealthChecks("/health/live");
 ```
 
 On its own, this only shows the app can respond. Add readiness checks for your database and other dependencies (the [backend sample](BACKEND-SAMPLE.md#control-load-and-check-readiness) has an example), and keep detailed health output away from the public. A healthy web app doesn't mean your worker is processing jobs, so monitor the queue too. See [ASP.NET Core health checks](https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/health-checks?view=aspnetcore-10.0).
+
+## Check readiness for each required workflow
+
+A running process and a successful connection do not show that a workflow can run.
+Declare each required workflow's schema and minimum migration state. Apply migrations
+separately; verify the workflow using the same permissions the application or worker
+uses at runtime. Do not grant schema-changing permissions to the runtime just to
+make readiness pass. A deliberately disabled optional workflow is not a failed
+required dependency.
+
+The [disposable SQLite example](../tests/Caravel.Clarion.Tests/WorkflowSchemaReadinessTests.cs)
+shows three cases: a ready workflow, a missing table, and a table that exists but is
+not writable by the runtime connection. It keeps another workflow's read check
+separate, rolls back the synthetic write, and checks that the database did not gain a
+row or table. SQLite read-only mode demonstrates the distinction; it does not
+validate the grants or identity of another database provider.
+
+Prefer harmless metadata and permission checks where they suffice. Qualify any
+necessary write using synthetic data in a dedicated test database, not an ongoing
+production health probe. Keep the public response coarse and put capability and
+failure details only in protected operator diagnostics.
