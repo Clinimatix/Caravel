@@ -31,7 +31,10 @@ function MustFail([scriptblock]$Action, [string]$Message) {
 $publishedCatalog = Get-CaravelInstallerCatalog
 Assert ($null -eq $publishedCatalog.stable) 'Stable channel must remain unavailable until a stable release is reviewed'
 Assert ($publishedCatalog.releases.ContainsKey($publishedCatalog.prerelease)) 'Prerelease channel is not cataloged'
-Assert ($publishedCatalog.prerelease -ceq '26.1.3-rc2') 'Prerelease channel did not advance to the reviewed maintenance release'
+Assert ($publishedCatalog.prerelease -ceq '26.1.3-rc3') 'Prerelease channel did not advance to the reviewed release candidate'
+$rc3 = $publishedCatalog.releases[$publishedCatalog.prerelease]
+Assert ($rc3.sha256 -ceq '5d9b1ebe834e188a5d3672901e1398047cb10d63837b671b08eff8e2e243620d') 'RC3 archive pin changed'
+Assert ($rc3.commit -ceq '2e2a10e57afa6df1edecf56584496cfe2fb88e47') 'RC3 source pin changed'
 $currentRelease = $publishedCatalog.releases['26.1.3-rc2']
 Assert ($currentRelease.sha256 -ceq 'fc2ac4c0d0fa2fca42d54a7b4dafbac5d124449a87880bb39b033d0a97bd77d5') 'Current release archive pin changed'
 Assert ($currentRelease.commit -ceq '415ff3affa2851ba893d34e67e955601f440e961') 'Current release source pin changed'
