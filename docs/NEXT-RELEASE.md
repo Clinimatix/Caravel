@@ -1,6 +1,6 @@
 # Next candidate and first stable release
 
-The next proposed candidate is **26.1.2-rc3**, followed by the first stable **26.1.2**.
+The next candidate is **26.1.3-rc3**, with **26.1.3** as the minimum first stable version.
 These are planning targets, not published versions. Before release, check the highest
 published 26.1 patch: if maintenance advances it, carry that higher numeric floor into RC3
 and stable. Never replace published packages or move tags. See [release policy](RELEASE-POLICY.md).
