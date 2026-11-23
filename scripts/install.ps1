@@ -10,8 +10,12 @@ param(
 function Get-CaravelInstallerCatalog {
     @{
         stable = $null
-        prerelease = '26.1.3-rc2'
+        prerelease = '26.1.3-rc3'
         releases = @{
+            '26.1.3-rc3' = @{
+                sha256 = '5d9b1ebe834e188a5d3672901e1398047cb10d63837b671b08eff8e2e243620d'
+                commit = '2e2a10e57afa6df1edecf56584496cfe2fb88e47'
+            }
             '26.1.3-rc2' = @{
                 sha256 = 'fc2ac4c0d0fa2fca42d54a7b4dafbac5d124449a87880bb39b033d0a97bd77d5'
                 commit = '415ff3affa2851ba893d34e67e955601f440e961'
