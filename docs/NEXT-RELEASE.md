@@ -1,13 +1,13 @@
 # Next candidate and first stable release
 
-The next candidate is **26.1.3-rc3**, with **26.1.3** as the minimum first stable version.
-These are planning targets, not published versions. Before release, check the highest
-published 26.1 patch: if maintenance advances it, carry that higher numeric floor into RC3
-and stable. Never replace published packages or move tags. See [release policy](RELEASE-POLICY.md).
+[26.1.3-rc3](https://github.com/Clinimatix/Caravel/releases/tag/v26.1.3-rc3) is published.
+The minimum first-stable version is **26.1.3**. Before release, check the highest published
+26.1 patch and carry any higher numeric floor into subsequent releases. Never replace
+published packages or move tags. See [release policy](RELEASE-POLICY.md).
 
 ## Bounded RC3 scope
 
-Settle and qualify these additive APIs together with the existing 26.1 application foundation:
+RC3 adds these APIs alongside the existing 26.1 application foundation:
 
 - Ordered, count-free Clarion query slices, preserving caller filtering and ordering.
 - Validated transactional mail/notification staging through the existing application outbox.
@@ -20,11 +20,11 @@ Settle and qualify these additive APIs together with the existing 26.1 applicati
 - Integration and qualification of Fathom application-tool contracts and the agent manifest
   foundation; the model-free development foundation is required for the first stable release.
 
-These APIs are combined in the qualification candidate. They remain unreleased; passing
-individual feature checks does not satisfy the combined release gates below. Installer
-website serving and application adoption require their own acceptance evidence.
+RC3 combines these APIs. Individual feature checks do not establish readiness for a
+subsequent release. Installer serving and application adoption have their own acceptance
+evidence and must be verified separately for the selected release.
 
-The candidate retains the .NET10 baseline and existing durable job wire contracts. Application
+RC3 retains the .NET 10 baseline and existing durable job wire contracts. Application
 recipient selection, invitation validity, opt-out and authorization remain application-owned.
 Synchronous dispatch is opt-in and does not replace durable enqueue or transactional staging.
 
@@ -77,7 +77,7 @@ the consumed package hash. Complete exact-candidate CI and provenance review rem
 this check does not establish participating-application acceptance or network MCP behavior.
 
 An opt-in [in-process application tool registry](FATHOM-TOOLS.md) is in development
-ahead of the network transport. The candidate includes its in-process contracts; network
+ahead of the network transport. RC3 includes its in-process contracts; network
 MCP remains later work. Qualify a synthetic consumer, trusted principal binding, resource-level
 denial, cancellation and safe error presentation before adding a transport.
 The compiled [application-policy example](../samples/FathomPolicy/README.md) covers trusted
